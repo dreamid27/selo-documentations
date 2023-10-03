@@ -1,10 +1,17 @@
 {
-  "index": "Introduction",
-  "another": "Another Page",
-  "advanced": "Advanced (A Folder)",
+  "index": {
+    "title": "Beranda",
+    "type": "page"
+  },
+  "docs": "Docs",
   "about": {
     "title": "About",
     "type": "page"
+  },
+  "docs_link": {
+    "title": "Dokumentasi",
+    "type": "page",
+    "href": "/docs"
   },
   "contact": {
     "title": "Contact ↗",

@@ -1,0 +1,195 @@
+import { Callout } from 'nextra/components';
+import { Cards, Card } from 'nextra/components';
+
+# Installation
+
+Persyaratan Sistem:
+
+- [Node.js 16.14↗][nodejs] atau yang lebih baru.
+- macOS, Windows (termasuk WSL), dan Linux didukung.
+
+## Intallasi Otomatis
+
+Kami merekomendasikan memulai aplikasi Next.js baru menggunakan `create-next-app`, yang mengatur semua hal secara otomatis untuk Anda. Untuk membuat sebuah proyek, jalankan:
+
+```bash filename="Terminal" copy
+npx create-next-app@latest
+```
+
+Pada saat pemasangan, Anda akan melihat prompt-prompt berikut:
+
+```bash filename="Terminal"
+What is your project named? my-app
+Would you like to use TypeScript? No / Yes
+Would you like to use ESLint? No / Yes
+Would you like to use Tailwind CSS? No / Yes
+Would you like to use `src/` directory? No / Yes
+Would you like to use App Router? (recommended) No / Yes
+Would you like to customize the default import alias (@/ * )? No / Yes
+What import alias would you like configured? @ / *
+```
+
+Setelah prompt-prompt tersebut, `create-next-app` akan membuat sebuah folder dengan nama proyek Anda dan menginstal dependensi yang diperlukan.
+
+<Callout>
+  ***Good To Know:***
+  <br /> - Next.js sekarang sudah dilengkapi dengan konfigurasi [TypeScript][TypeScript],
+  [ESLint][ESLint], dan [Tailwind CSS][Tailwind CSS] secara default. <br /> - Anda
+  dapat opsional menggunakan [direktori `src`][Directory] di root proyek Anda untuk
+  memisahkan kode aplikasi Anda dari file-file konfigurasi.
+</Callout>
+
+## Intallasi Manual
+
+Untuk membuat aplikasi Next.js baru secara manual, instal paket-paket yang dibutuhkan:
+
+```bash filename="Terminal"
+npm install next@latest react@latest react-dom@latest
+```
+
+Buka berkas (file) `package.json` Anda dan tambahkan skrip-skrip berikut:
+
+```json filename="package.json" copy
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
+```
+
+Skrip-skrip ini merujuk kepada tahapan-tahapan berbeda dalam pengembangan sebuah aplikasi:
+
+- `dev`: menjalankan [`next dev`][Next Dev] untuk memulai Next.js dalam mode pengembangan.
+- `build`: menjalankan [`next build`][Next Build] untuk membangun aplikasi untuk penggunaan produksi.
+- `start`: menjalankan [`next start`][Next Start] untuk memulai server produksi Next.js.
+- `lint`: menjalankan [`next lint`][Next Link] untuk mengatur konfigurasi ESLint bawaan Next.js.
+
+### Membuat Direktori
+
+Next.js menggunakan routing berbasis sistem berkas, yang berarti rute-rute dalam aplikasi Anda ditentukan oleh bagaimana Anda menyusun berkas-berkas Anda.
+
+#### Direktori `app`
+
+Untuk aplikasi baru, kami merekomendasikan penggunaan [App Router][App Router]. Router ini memungkinkan Anda menggunakan fitur-fitur terbaru React dan merupakan evolusi dari [Pages Router][Pages Router] berdasarkan umpan balik dari komunitas.
+
+Buat direktori `app/`, kemudian tambahkan berkas `layout.tsx` dan `page.tsx`. Berkas-berkas ini akan dirender saat pengguna mengunjungi akar (root) aplikasi Anda (`/`).
+
+![Struktur Applikasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fapp-getting-started.png&w=3840&q=75&dpl=dpl_8qqMvrmCHNxCAyxPYjfhBxK8Y2at)
+
+Buat tata [letak root][Root Layout] di dalam `app/layout.tsx` dengan tag-tag `<html>` dan `<body>` yang diperlukan:
+
+```typescript filename="app/layout.tsx" copy
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Terakhir, buat halaman beranda `app/page.tsx` dengan beberapa konten awal:
+
+```tsx filename="app/page.tsx" copy
+export default function Page() {
+  return <h1>Hello, Next.js!</h1>;
+}
+```
+
+<Callout>
+  ***Good To Know:***: Jika Anda lupa membuat `layout.tsx`, Next.js akan secara
+  otomatis membuat berkas ini ketika menjalankan server pengembangan dengan
+  `next dev`.
+</Callout>
+
+Pelajari lebih lanjut tentang penggunaan [App Router][Routes].
+
+#### Direktori `pages` (opsional)
+
+Jika Anda lebih suka menggunakan Pages Router daripada App Router, Anda dapat membuat direktori `pages/` di akar proyek Anda.
+
+Kemudian, tambahkan berkas `index.tsx` di dalam folder pages Anda. Ini akan menjadi halaman beranda Anda (`/`):
+
+```tsx filename="pages/index.tsx" copy
+export default function Page() {
+  return <h1>Hello, Next.js!</h1>;
+}
+```
+
+Selanjutnya, tambahkan berkas `_app.tsx` di dalam folder `pages/` untuk mendefinisikan tata letak global. Pelajari lebih lanjut tentang berkas [Kustom App][Custom App File].
+
+```tsx filename="pages/_app.tsx" copy
+import type { AppProps } from 'next/app';
+
+export default function App({ Component, pageProps }: AppProps) {
+  return <Component {...pageProps} />;
+}
+```
+
+Terakhir, tambahkan berkas `_document.tsx` di dalam folder `pages/` untuk mengontrol respons awal dari server. Pelajari lebih lanjut tentang berkas [Kustom Dokumen.][Custom Document]
+
+```tsx filename="pages/_document.tsx" copy
+import { Html, Head, Main, NextScript } from 'next/document';
+
+export default function Document() {
+  return (
+    <Html>
+      <Head />
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  );
+}
+```
+
+Pelajari lebih lanjut tentang penggunaan [Pages Router][Pages Routing].
+
+<Callout>
+  ***Good to know:*** Meskipun Anda dapat menggunakan kedua router dalam proyek yang sama, rute-rute di dalam `app` akan diprioritaskan daripada `pages`. Kami merekomendasikan penggunaan hanya satu router dalam proyek baru Anda untuk menghindari kebingungan.
+
+</Callout>
+
+#### Direktori `public` (opsional)
+
+Buat folder `public` untuk menyimpan aset-aset statis seperti gambar, font, dan lain sebagainya. Berkas-berkas di dalam direktori `public` dapat diakses oleh kode Anda dimulai dari URL dasar (`/`).
+
+## Jalankan Server Pengembangan
+
+1. Jalankan `npm run dev` untuk memulai server pengembangan.
+2. Kunjungi `http://localhost:3000` untuk melihat aplikasi Anda.
+3. Edit berkas `app/layout.tsx` (atau `pages/index.tsx`) dan simpan untuk melihat hasil yang diperbarui di browser Anda.
+
+## Next Steps
+
+Pelajari tentang berkas-berkas dan folder-folder dalam proyek Next.js Anda.
+
+<Cards num={2}>
+  <Card title="Struktur Proyek" href="/docs/getting-started/project-structure" />
+
+</Cards>
+
+[nodejs]: https://nodejs.org/
+[TypeScript]: /docs/app/building-your-application/configuring/typescript
+[ESLint]: /docs/app/building-your-application/configuring/eslint
+[Tailwind CSS]: /docs/app/building-your-application/styling/tailwind-css
+[Directory]: /docs/app/building-your-application/configuring/src-directory
+[Next Dev]: /docs/app/api-reference/next-cli#development
+[Next Build]: /docs/app/api-reference/next-cli#build
+[Next Start]: /docs/app/api-reference/next-cli#production
+[Next Link]: /docs/app/api-reference/next-cli#lint
+[App Router]: /docs/app
+[Pages Router]: /docs/pages
+[Root Layout]: /docs/app/building-your-application/routing/pages-and-layouts#root-layout-required
+[Routes]: /docs/app/building-your-application/routing/defining-routes
+[Custom App File]: /docs/pages/building-your-application/routing/custom-app
+[Custom Document]: /docs/pages/building-your-application/routing/custom-document
+[Pages Routing]: /docs/pages/building-your-application/routing/pages-and-layouts

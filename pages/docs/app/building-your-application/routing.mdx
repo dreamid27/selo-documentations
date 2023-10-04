@@ -1,0 +1,172 @@
+import { Cards, Card } from 'nextra/components';
+
+# Routing Fundamentals
+
+Tulang punggung dari setiap aplikasi adalah routing. Halaman ini akan memperkenalkan Anda pada **konsep-konsep dasar** routing untuk web dan bagaimana mengelola routing dalam Next.js.
+
+## Terminologi
+
+Pertama, Anda akan melihat istilah-istilah ini digunakan dalam dokumentasi. Berikut adalah referensi cepat:
+
+![Terminologi untuk Pohon Komponen](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fterminology-component-tree.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+- **Pohon (Tree):** Sebuah konvensi untuk memvisualisasikan struktur hierarkis. Misalnya, sebuah pohon komponen dengan komponen-komponen induk dan anak, sebuah struktur folder, dll.
+- **Subpohon (Subtree):** Bagian dari pohon, dimulai dari akar baru (pertama) dan berakhir di daun-daun (terakhir).
+- **Akar (Root):** Node pertama dalam sebuah pohon atau subpohon, seperti tata letak akar.
+- **Daun (Leaf):** Node dalam sebuah subpohon yang tidak memiliki anak, seperti segmen terakhir dalam jalur URL."
+
+![Terminologi untuk Anatomi URL](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fterminology-url-anatomy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+- **Segmen URL (URL Segment):** Bagian dari jalur URL yang dibatasi oleh garis miring.
+- **Jalur URL (URL Path):** Bagian dari URL yang muncul setelah domain (terdiri dari segmen-segmen).
+
+## Router `app`
+
+Pada versi 13, Next.js memperkenalkan **App Router** baru yang dibangun di atas [React Server Components](/docs/app/building-your-application/rendering/server-components), yang mendukung tata letak bersama, routing bersarang, status pemuatan, penanganan kesalahan, dan lainnya.
+
+App Router berfungsi dalam direktori baru yang bernama `app`. Direktori `app` bekerja bersama dengan direktori `pages` untuk memungkinkan adopsi bertahap. Ini memungkinkan Anda mengadopsi beberapa rute aplikasi Anda ke perilaku baru sambil tetap menjaga rute lainnya dalam direktori `pages` untuk perilaku sebelumnya. Jika aplikasi Anda menggunakan direktori `pages`, lihat juga dokumentasi [Pages Router](/docs/pages/building-your-application/routing).
+
+> **Penting untuk diketahui**: App Router memiliki prioritas lebih tinggi daripada Pages Router. Rute-rute di seluruh direktori tidak boleh meresolusi ke jalur URL yang sama dan akan menyebabkan kesalahan waktu pembangunan untuk mencegah konflik.
+
+![Direktori Next.js App](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnext-router-directories.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+Secara default, komponen di dalam `app` adalah [React Server Components](/docs/app/building-your-application/rendering/server-components). Ini adalah optimasi kinerja yang memungkinkan Anda untuk mengadopsi mereka dengan mudah, dan Anda juga dapat menggunakan [Client Components](/docs/app/building-your-application/rendering/client-components).
+
+> **Rekomendasi:** Lihat halaman [Server](/docs/app/building-your-application/rendering/server-components) jika Anda baru mengenal Server Components.
+
+## Peran Folder dan Berkas
+
+Next.js menggunakan router berbasis sistem berkas di mana:
+
+- **Folder** digunakan untuk mendefinisikan rute. Sebuah rute adalah satu jalur dari folder bersarang, mengikuti hierarki sistem berkas dari **folder akar** ke folder **daun terakhir** yang mencakup berkas `page.js`. Lihat [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes).
+- **Berkas** digunakan untuk membuat UI yang ditampilkan untuk segmen rute. Lihat [berkas khusus](#file-conventions).
+
+## Segmen Rute
+
+Setiap folder dalam sebuah rute mewakili sebuah **segmen rute**. Setiap segmen rute dipetakan ke segmen yang sesuai dalam **jalur URL**.
+
+![Bagaimana Segmen Rute Dipetakan ke Segmen URL](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-segments-to-path-segments.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+## Rute Bersarang (Nested Routes)
+
+Untuk membuat rute bersarang, Anda dapat menyusun folder di dalam folder lain. Sebagai contoh, Anda dapat menambahkan rute `/dashboard/settings` baru dengan menyusun dua folder baru di dalam direktori `app`.
+
+Rute `/dashboard/settings` terdiri dari tiga segmen:
+
+- `/` (Segmen Akar)
+- `dashboard` (Segmen)
+- `settings` (Segmen Daun)
+
+## Konvensi Berkas
+
+Next.js menyediakan serangkaian berkas khusus untuk membuat UI dengan perilaku tertentu dalam rute bersarang:
+
+|                                                                                       |                                                                                                                 |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [`layout`](/docs/app/building-your-application/routing/pages-and-layouts#layouts)     | UI bersama untuk segmen dan anak-anaknya                                                                        |
+| [`page`](/docs/app/building-your-application/routing/pages-and-layouts#pages)         | UI unik untuk sebuah rute dan membuat rute dapat diakses secara publik                                          |
+| [`loading`](/docs/app/building-your-application/routing/loading-ui-and-streaming)     | UI pemuatan untuk segmen dan anak-anaknya                                                                       |
+| [`not-found`](/docs/app/api-reference/file-conventions/not-found)                     | UI tidak ditemukan untuk segmen dan anak-anaknya                                                                |
+| [`error`](/docs/app/building-your-application/routing/error-handling)                 | UI kesalahan untuk segmen dan anak-anaknya                                                                      |
+| [`global-error`](/docs/app/building-your-application/routing/error-handling)          | UI Kesalahan Global                                                                                             |
+| [`route`](/docs/app/building-your-application/routing/route-handlers)                 | Titik akhir API sisi server                                                                                     |
+| [`template`](/docs/app/building-your-application/routing/pages-and-layouts#templates) | UI Tata Letak yang diperbarui khusus                                                                            |
+| [`default`](/docs/app/api-reference/file-conventions/default)                         | UI cadangan untuk [Rute Paralel (Parallel Routes)](/docs/app/building-your-application/routing/parallel-routes) |
+
+> **Penting untuk diketahui**: Ekstensi berkas `.js`, `.jsx`, atau `.tsx` dapat digunakan untuk berkas khusus.
+
+## Hirarki Komponen
+
+Komponen-komponen React yang didefinisikan dalam berkas-berkas khusus dari segmen rute dirender dalam hirarki tertentu:
+
+- `layout.js`
+- `template.js`
+- `error.js` (Batasan kesalahan React)
+- `loading.js` (Batasan penantian React)
+- `not-found.js` (Batasan kesalahan React)
+- `page.js` atau `layout.js` yang bersarang
+
+![Hirarki Komponen untuk Konvensi Berkas](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffile-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+Dalam rute bersarang, komponen-komponen dari segmen akan bersarang **di dalam** komponen-komponen dari segmen induk.
+
+![Hirarki Komponen untuk Konvensi Berkas Bersarang](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-file-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+## Kolkasi (Colocation)
+
+Selain berkas-berkas khusus, Anda memiliki opsi untuk meletakkan berkas-berkas Anda sendiri (misalnya, komponen, gaya, uji, dll) di dalam folder-folder dalam direktori `app`.
+
+Hal ini karena sementara folder-foder menentukan rute-rute, hanya konten yang dikembalikan oleh `page.js` atau `route.js` yang dapat diakses secara publik.
+
+![Contoh Struktur Folder dengan Berkas Kolkasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-colocation.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+
+Pelajari lebih lanjut tentang [Organisasi Proyek dan Kolkasi (Project Organization and Colocation)](/docs/app/building-your-application/routing/colocation).
+
+## Pola Routing Lanjutan
+
+App Router juga menyediakan serangkaian konvensi untuk membantu Anda mengimplementasikan pola-pola routing yang lebih maju. Ini termasuk:
+
+- [Rute Paralel (Parallel Routes)](/docs/app/building-your-application/routing/parallel-routes): Memungkinkan Anda untuk secara bersamaan menampilkan dua atau lebih halaman dalam tampilan yang sama yang dapat dinavigasi secara independen. Anda dapat menggunakannya untuk tampilan terpisah yang memiliki navigasi subnya sendiri. Misalnya, Dashboards.
+- [Rute yang Diintersep (Intercepting Routes)](/docs/app/building-your-application/routing/intercepting-routes): Memungkinkan Anda untuk mengintersep rute dan menampilkannya dalam konteks rute lain. Anda dapat menggunakannya ketika menjaga konteks untuk halaman saat ini penting. Misalnya, melihat semua tugas saat mengedit satu tugas atau memperluas sebuah foto dalam umpan.
+
+Pola-pola ini memungkinkan Anda untuk membangun UI yang lebih kaya dan kompleks, mendemokratisasikan fitur-fitur yang secara historis kompleks untuk tim kecil dan pengembang individu untuk mengimplementasikannya.
+
+## Langkah Selanjutnya
+
+Sekarang setelah Anda memahami dasar-dasar routing dalam Next.js, ikuti tautan di bawah ini untuk membuat rute-rute pertama Anda:
+
+<Cards num={2}>
+  <Card title="Mendefinisikan Rute-rute" href="https://nextjs.org/docs/app/building-your-application/routing/defining-routes" />
+
+{' '}
+
+<Card
+  title="Halaman dan Layouts"
+  href="https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts"
+/>
+<Card
+  title="Linking dan Navigasi"
+  href="https://nextjs.org/docs/app/building-your-application/routing/linking-and-navigating"
+/>
+<Card
+  title="Route Groups"
+  href="https://nextjs.org/docs/app/building-your-application/routing/route-groups"
+/>
+<Card
+  title="Dynamic Routes"
+  href="https://nextjs.org/docs/app/building-your-application/routing/dynamic-routes"
+/>
+<Card
+  title="Loading UI dan Streaming"
+  href="https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming"
+/>
+<Card
+  title="Handling Error"
+  href="https://nextjs.org/docs/app/building-your-application/routing/error-handling"
+/>
+<Card
+  title="Routes Parallel"
+  href="https://nextjs.org/docs/app/building-your-application/routing/parallel-routes"
+/>
+<Card
+  title="Intercepting Routes"
+  href="https://nextjs.org/docs/app/building-your-application/routing/intercepting-routes"
+/>
+<Card
+  title="Route Handlers"
+  href="https://nextjs.org/docs/app/building-your-application/routing/route-handlers"
+/>
+<Card
+  title="Middleware"
+  href="https://nextjs.org/docs/app/building-your-application/routing/middleware"
+/>
+<Card
+  title="Project Organisasi"
+  href="https://nextjs.org/docs/app/building-your-application/routing/colocation"
+/>
+<Card
+  title="Internationalization"
+  href="https://nextjs.org/docs/app/building-your-application/routing/internationalization"
+/>
+
+</Cards>

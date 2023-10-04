@@ -1,0 +1,240 @@
+import Image from '../../../../../components/image';
+
+# Parallel Routes
+
+Parallel Routing memungkinkan Anda untuk secara bersamaan atau kondisional merender satu atau lebih halaman dalam tata letak yang sama. Untuk bagian aplikasi yang sangat dinamis, seperti dasbor dan umpan berita di situs sosial, Parallel Routing dapat digunakan untuk mengimplementasikan pola routing yang kompleks.
+
+Sebagai contoh, Anda dapat secara bersamaan merender halaman tim dan analitik.
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="952"
+/>
+
+Parallel Routing memungkinkan Anda untuk mendefinisikan keadaan error dan loading yang independen untuk setiap rute saat mereka di-streaming secara independen.
+
+<Image
+  alt="Parallel routes enable custom error and loading states"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-cinematic-universe.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-cinematic-universe.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="1218"
+/>
+
+Parallel Routing juga memungkinkan Anda untuk merender slot secara kondisional berdasarkan kondisi tertentu, seperti status autentikasi. Ini memungkinkan pemisahan kode yang sepenuhnya terpisah pada URL yang sama.
+
+<Image
+  alt="Conditional routes diagram"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fconditional-routes-ui.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fconditional-routes-ui.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="898"
+/>
+
+## Konvensi
+
+Rute-rute paralel dibuat menggunakan **slot** bernama. Slot-slot ini didefinisikan dengan konvensi `@folder`, dan diteruskan ke tata letak pada tingkat yang sama sebagai prop.
+
+> Slot-slot bukanlah segmen rute dan _tidak memengaruhi struktur URL_. Jalur file `/@team/members` akan dapat diakses di `/members`.
+
+Sebagai contoh, struktur file berikut mendefinisikan dua slot eksplisit: `@analytics` dan `@team`.
+
+<Image
+  alt="Parallel Routes File-system Structure"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-file-system.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-file-system.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="687"
+/>
+
+The folder structure above means that the component in `app/layout.js` now accepts the `@analytics` and `@team` slots props, and can render them in parallel alongside the `children` prop:
+
+```tsx filename="app/layout.tsx" switcher
+export default function Layout(props: {
+  children: React.ReactNode;
+  analytics: React.ReactNode;
+  team: React.ReactNode;
+}) {
+  return (
+    <>
+      {props.children}
+      {props.team}
+      {props.analytics}
+    </>
+  );
+}
+```
+
+> **Tidak ada salahnya untuk mengetahui**: Properti `children` adalah slot implisit yang tidak perlu dipetakan ke dalam folder. Ini berarti `app/page.js` setara dengan `app/@children/page.js`.
+
+## Rute yang Tidak Cocok
+
+Secara default, konten yang dirender dalam sebuah slot akan sesuai dengan URL saat ini.
+
+Dalam kasus slot yang tidak cocok, konten yang Next.js render berbeda berdasarkan teknik routing dan struktur folder.
+
+### `default.js`
+
+Anda dapat mendefinisikan file `default.js` untuk dirender sebagai fallback ketika Next.js tidak dapat memulihkan status aktif slot berdasarkan URL saat ini.
+
+Pertimbangkan struktur folder berikut. Slot `@team` memiliki direktori `settings`, tetapi `@analytics` tidak memiliki.
+
+<Image
+  alt="Parallel Routes unmatched routes"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-unmatched-routes.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-unmatched-routes.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="930"
+/>
+
+#### Navigasi
+
+Pada navigasi, Next.js akan merender state slot sebelumnya, bahkan jika tidak cocok dengan URL saat ini.
+
+#### Muat Ulang
+
+Pada muat ulang, Next.js akan mencoba merender file `default.js` dari slot yang tidak cocok. Jika itu tidak tersedia, maka akan merender 404.
+
+> 404 untuk rute yang tidak cocok membantu memastikan Anda tidak secara tidak sengaja merender rute yang seharusnya tidak di-render secara paralel.
+
+## `useSelectedLayoutSegment(s)`
+
+Baik [`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment) maupun [`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segments) menerima parameter `parallelRoutesKey`, yang memungkinkan Anda membaca segmen rute aktif dalam slot tersebut.
+
+```tsx filename="app/layout.tsx" switcher
+'use client';
+
+import { useSelectedLayoutSegment } from 'next/navigation';
+
+export default async function Layout(props: {
+  //...
+  auth: React.ReactNode;
+}) {
+  const loginSegments = useSelectedLayoutSegment('auth');
+  // ...
+}
+```
+
+Ketika seorang pengguna menavigasi ke `@auth/login`, atau `/login` dalam bilah URL, maka `loginSegments` akan sama dengan string `"login"`.
+
+## Contoh
+
+### Modal
+
+Rute Paralel dapat digunakan untuk merender modal.
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-auth-modal.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-auth-modal.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="687"
+/>
+
+Slot `@auth` merender komponen `<Modal>` yang dapat ditampilkan dengan menavigasi ke rute yang sesuai, misalnya, `/login`.
+
+```tsx filename="app/layout.tsx" switcher
+export default async function Layout(props: {
+  // ...
+  auth: React.ReactNode;
+}) {
+  return (
+    <>
+      {/* ... */}
+      {props.auth}
+    </>
+  );
+}
+```
+
+```tsx filename="app/@auth/login/page.tsx" switcher
+import { Modal } from 'components/modal';
+
+export default function Login() {
+  return (
+    <Modal>
+      <h1>Login</h1>
+      {/* ... */}
+    </Modal>
+  );
+}
+```
+
+Untuk memastikan bahwa isi modal tidak dirender saat tidak aktif, Anda dapat membuat file `default.js` yang mengembalikan `null`.
+
+```tsx filename="app/@auth/default.tsx" switcher
+export default function Default() {
+  return null;
+}
+```
+
+#### Menutup Modal
+
+Jika sebuah modal diinisiasi melalui navigasi klien, misalnya dengan menggunakan `<Link href="/login">`, Anda dapat menutup modal tersebut dengan memanggil `router.back()` atau dengan menggunakan komponen `Link`.
+
+```tsx filename="app/@auth/login/page.tsx" highlight="5" switcher
+'use client';
+import { useRouter } from 'next/navigation';
+import { Modal } from 'components/modal';
+
+export default async function Login() {
+  const router = useRouter();
+  return (
+    <Modal>
+      <span onClick={() => router.back()}>Close modal</span>
+      <h1>Login</h1>
+      ...
+    </Modal>
+  );
+}
+```
+
+> Informasi lebih lanjut tentang modal dibahas dalam bagian [Mengintersep Rute](/docs/app/building-your-application/routing/intercepting-routes).
+
+Jika Anda ingin navigasi ke tempat lain dan menutup modal, Anda juga dapat menggunakan rute catch-all.
+
+<Image
+  alt="Parallel Routes Diagram"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-catchall.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fparallel-routes-catchall.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="768"
+/>
+
+```tsx filename="app/@auth/[...catchAll]/page.tsx" switcher
+export default function CatchAll() {
+  return null;
+}
+```
+
+> Rute catch-all memiliki prioritas lebih tinggi daripada `default.js`.
+
+### Rute Kondisional
+
+Rute Paralel dapat digunakan untuk mengimplementasikan pengarahan kondisional. Sebagai contoh, Anda dapat merender rute `@dashboard` atau `@login` tergantung pada status autentikasi.
+
+```tsx filename="app/layout.tsx" switcher
+import { getUser } from '@/lib/auth';
+
+export default function Layout({
+  dashboard,
+  login,
+}: {
+  dashboard: React.ReactNode;
+  login: React.ReactNode;
+}) {
+  const isLoggedIn = getUser();
+  return isLoggedIn ? dashboard : login;
+}
+```
+
+<Image
+  alt="Parallel routes authentication example"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fconditional-routes-ui.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fconditional-routes-ui.png&w=3840&q=75&dpl=dpl_4jhehsTqGcVaGw8i4yTfdntbf5X1"
+  width="1600"
+  height="898"
+/>

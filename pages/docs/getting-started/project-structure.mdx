@@ -1,19 +1,164 @@
-# Struktur Proyek Next.js
+# Next.js Project Structure
 
-Halaman ini memberikan gambaran tentang struktur berkas dan folder dalam proyek Next.js. Ini mencakup berkas-berkas dan folder tingkat atas, berkas konfigurasi, dan konvensi routing dalam direktori `app` dan `pages`.
+Halaman ini memberikan gambaran tentang struktur berkas dan folder tingkat atas dari proyek Next.js. Ini mencakup berkas dan folder tingkat atas, berkas konfigurasi, dan konvensi routing dalam direktori `app` dan `pages`.
 
-## Top-level folders
+## Folder tingkat atas
 
-## Top-level files
+|                                                                          |                                 |
+| ------------------------------------------------------------------------ | ------------------------------- |
+| [`app`](/docs/app/building-your-application/routing)                     | Router Aplikasi                 |
+| [`pages`](/docs/pages/building-your-application/routing)                 | Router Halaman                  |
+| [`public`](/docs/app/building-your-application/optimizing/static-assets) | Aset statis yang akan disajikan |
+| [`src`](/docs/app/building-your-application/configuring/src-directory)   | Folder sumber aplikasi opsional |
 
-## Konvensi Routing dalam `app`
+## Berkas tingkat atas
 
-### Routing Files
+|                                                                                             |                                           |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **Next.js**                                                                                 |                                           |
+| [`next.config.js`](/docs/app/api-reference/next-config-js)                                  | Berkas konfigurasi untuk Next.js          |
+| [`package.json`](/docs/getting-started/installation#manual-installation)                    | Dependensi proyek dan skrip               |
+| [`instrumentation.ts`](/docs/app/building-your-application/optimizing/instrumentation)      | Berkas OpenTelemetry dan Instrumen        |
+| [`middleware.ts`](/docs/app/building-your-application/routing/middleware)                   | Middleware permintaan Next.js             |
+| [`.env`](/docs/app/building-your-application/configuring/environment-variables)             | Variabel lingkungan                       |
+| [`.env.local`](/docs/app/building-your-application/configuring/environment-variables)       | Variabel lingkungan lokal                 |
+| [`.env.production`](/docs/app/building-your-application/configuring/environment-variables)  | Variabel lingkungan produksi              |
+| [`.env.development`](/docs/app/building-your-application/configuring/environment-variables) | Variabel lingkungan pengembangan          |
+| [`.eslintrc.json`](/docs/app/building-your-application/configuring/eslint)                  | Berkas konfigurasi untuk ESLint           |
+| `.gitignore`                                                                                | Berkas dan folder Git yang diabaikan      |
+| `next-env.d.ts`                                                                             | Berkas deklarasi TypeScript untuk Next.js |
+| `tsconfig.json`                                                                             | Berkas konfigurasi untuk TypeScript       |
+| `jsconfig.json`                                                                             | Berkas konfigurasi untuk JavaScript       |
 
-### Nested Routes
+## Konvensi Routing `app`
 
-### Dynamic Routes
+### Berkas Routing
+
+|                                                                                 |                     |                                |
+| ------------------------------------------------------------------------------- | ------------------- | ------------------------------ |
+| [`layout`](/docs/app/api-reference/file-conventions/layout)                     | `.js` `.jsx` `.tsx` | Layout                         |
+| [`page`](/docs/app/api-reference/file-conventions/page)                         | `.js` `.jsx` `.tsx` | Halaman                        |
+| [`loading`](/docs/app/api-reference/file-conventions/loading)                   | `.js` `.jsx` `.tsx` | Antarmuka Loading              |
+| [`not-found`](/docs/app/api-reference/file-conventions/not-found)               | `.js` `.jsx` `.tsx` | Antarmuka Tidak Ditemukan      |
+| [`error`](/docs/app/api-reference/file-conventions/error)                       | `.js` `.jsx` `.tsx` | Antarmuka Kesalahan            |
+| [`global-error`](/docs/app/api-reference/file-conventions/error#global-errorjs) | `.js` `.jsx` `.tsx` | Antarmuka Kesalahan Global     |
+| [`route`](/docs/app/api-reference/file-conventions/route)                       | `.js` `.ts`         | Titik akhir API                |
+| [`template`](/docs/app/api-reference/file-conventions/template)                 | `.js` `.jsx` `.tsx` | Layout yang Diperbarui         |
+| [`default`](/docs/app/api-reference/file-conventions/default)                   | `.js` `.jsx` `.tsx` | Halaman cadangan rute parallel |
+
+### Rute Bersarang
+
+|                                                                              |                       |
+| ---------------------------------------------------------------------------- | --------------------- |
+| [`folder`](/docs/app/building-your-application/routing#route-segments)       | Segmen rute           |
+| [`folder/folder`](/docs/app/building-your-application/routing#nested-routes) | Segmen rute bersarang |
+
+### Rute Dinamis
+
+|                                                                                                           |                                      |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [`[folder]`](/docs/app/building-your-application/routing/dynamic-routes#convention)                       | Segmen rute dinamis                  |
+| [`[...folder]`](/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)            | Segmen rute penangkap semua          |
+| [`[[...folder]]`](/docs/app/building-your-application/routing/dynamic-routes#optional-catch-all-segments) | Segmen rute penangkap semua opsional |
 
 ### Grup Rute dan Folder Pribadi
 
+|                                                                                     |                                                    |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------- |
+| [`(folder)`](/docs/app/building-your-application/routing/route-groups#convention)   | Kelompok rute tanpa memengaruhi routing            |
+| [`_folder`](/docs/app/building-your-application/routing/colocation#private-folders) | Folder opsional dan semua segmen anak dari routing |
+
+### Rute Parallel dan Tertangkap
+
+|                                                                                                |                                 |
+| ---------------------------------------------------------------------------------------------- | ------------------------------- |
+| [`@folder`](/docs/app/building-your-application/routing/parallel-routes#convention)            | Slot bernama                    |
+| [`(.)folder`](/docs/app/building-your-application/routing/intercepting-routes#convention)      | Tertangkap di tingkat yang sama |
+| [`(..)folder`](/docs/app/building-your-application/routing/intercepting-routes#convention)     | Tertangkap satu tingkat di atas |
+| [`(..)(..)folder`](/docs/app/building-your-application/routing/intercepting-routes#convention) | Tertangkap dua tingkat di atas  |
+| [`(...)folder`](/docs/app/building-your-application/routing/intercepting-routes#convention)    | Tertangkap dari root            |
+
+### Konvensi Berkas Metadata
+
+#### Ikon Aplikasi
+
+|                                                                                                                 |                                     |                                     |
+| --------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------- |
+| [`favicon`](/docs/app/api-reference/file-conventions/metadata/app-icons#favicon)                                | `.ico`                              | Berkas Favicon                      |
+| [`icon`](/docs/app/api-reference/file-conventions/metadata/app-icons#icon)                                      | `.ico` `.jpg` `.jpeg` `.png` `.svg` | Berkas Ikon Aplikasi                |
+| [`icon`](/docs/app/api-reference/file-conventions/metadata/app-icons#generate-icons-using-code-js-ts-tsx)       | `.js` `.ts` `.tsx`                  | Ikon Aplikasi yang Dihasilkan       |
+| [`apple-icon`](/docs/app/api-reference/file-conventions/metadata/app-icons#apple-icon)                          | `.jpg` `.jpeg`, `.png`              | Berkas Ikon Aplikasi Apple          |
+| [`apple-icon`](/docs/app/api-reference/file-conventions/metadata/app-icons#generate-icons-using-code-js-ts-tsx) | `.js` `.ts` `.tsx`                  | Ikon Aplikasi Apple yang Dihasilkan |
+
+#### Gambar Open Graph dan Twitter
+
+|                                                                                                                             |                              |                                   |
+| --------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------- |
+| [`opengraph-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image#opengraph-image)                      | `.jpg` `.jpeg` `.png` `.gif` | Berkas Gambar Open Graph          |
+| [`opengraph-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image#generate-images-using-code-js-ts-tsx) | `.js` `.ts` `.tsx`           | Gambar Open Graph yang Dihasilkan |
+| [`twitter-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image#twitter-image)                          | `.jpg` `.jpeg` `.png` `.gif` | Berkas Gambar Twitter             |
+| [`twitter-image`](/docs/app/api-reference/file-conventions/metadata/opengraph-image#generate-images-using-code-js-ts-tsx)   | `.js` `.ts` `.tsx`           | Gambar Twitter yang Dihasilkan    |
+
+|                                                                                 |                     |                               |
+| ------------------------------------------------------------------------------- | ------------------- | ----------------------------- |
+| [`layout`](/docs/app/api-reference/file-conventions/layout)                     | `.js` `.jsx` `.tsx` | Tata Letak                    |
+| [`page`](/docs/app/api-reference/file-conventions/page)                         | `.js` `.jsx` `.tsx` | Halaman                       |
+| [`loading`](/docs/app/api-reference/file-conventions/loading)                   | `.js` `.jsx` `.tsx` | UI Pemuatan                   |
+| [`not-found`](/docs/app/api-reference/file-conventions/not-found)               | `.js` `.jsx` `.tsx` | UI Tidak Ditemukan            |
+| [`error`](/docs/app/api-reference/file-conventions/error)                       | `.js` `.jsx` `.tsx` | UI Kesalahan                  |
+| [`global-error`](/docs/app/api-reference/file-conventions/error#global-errorjs) | `.js` `.jsx` `.tsx` | UI Kesalahan Global           |
+| [`route`](/docs/app/api-reference/file-conventions/route)                       | `.js` `.ts`         | Titik akhir API               |
+| [`template`](/docs/app/api-reference/file-conventions/template)                 | `.js` `.jsx` `.tsx` | Tata ulang tata letak         |
+| [`default`](/docs/app/api-reference/file-conventions/default)                   | `.js` `.jsx` `.tsx` | Halaman cadangan rute paralel |
+
 ### Nested Routes
+
+|                                                                              |                        |
+| ---------------------------------------------------------------------------- | ---------------------- |
+| [`folder`](/docs/app/building-your-application/routing#route-segments)       | Segmen rute            |
+| [`folder/folder`](/docs/app/building-your-application/routing#nested-routes) | Segmen rute bertingkat |
+
+#### SEO
+
+|                                                                                             |             |                               |
+| ------------------------------------------------------------------------------------------- | ----------- | ----------------------------- |
+| [`sitemap`](/docs/app/api-reference/file-conventions/metadata/sitemap#static-sitemapxml)    | `.xml`      | Berkas Sitemap Statis         |
+| [`sitemap`](/docs/app/api-reference/file-conventions/metadata/sitemap#generate-a-sitemap)   | `.js` `.ts` | Sitemap yang Dihasilkan       |
+| [`robots`](/docs/app/api-reference/file-conventions/metadata/robots#static-robotstxt)       | `.txt`      | Berkas Robots Statis          |
+| [`robots`](/docs/app/api-reference/file-conventions/metadata/robots#generate-a-robots-file) | `.js` `.ts` | Berkas Robots yang Dihasilkan |
+
+## Konvensi Routing `pages`
+
+### Berkas Khusus
+
+|                                                                                                             |                     |                          |
+| ----------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------ |
+| [`_app`](/docs/pages/building-your-application/routing/custom-app)                                          | `.js` `.jsx` `.tsx` | Aplikasi Kustom          |
+| [`_document`](/docs/pages/building-your-application/routing/custom-document)                                | `.js` `.jsx` `.tsx` | Dokumen Kustom           |
+| [`_error`](/docs/pages/building-your-application/routing/custom-error#more-advanced-error-page-customizing) | `.js` `.jsx` `.tsx` | Halaman Kesalahan Kustom |
+| [`404`](/docs/pages/building-your-application/routing/custom-error#404-page)                                | `.js` `.jsx` `.tsx` | Halaman Kesalahan 404    |
+| [`500`](/docs/pages/building-your-application/routing/custom-error#500-page)                                | `.js` `.jsx` `.tsx` | Halaman Kesalahan 500    |
+
+### Rute
+
+|                                                                                                |                     |                   |
+| ---------------------------------------------------------------------------------------------- | ------------------- | ----------------- |
+| **Konvensi Folder**                                                                            |                     |                   |
+| [`index`](/docs/pages/building-your-application/routing/pages-and-layouts#index-routes)        | `.js` `.jsx` `.tsx` | Halaman Utama     |
+| [`folder/index`](/docs/pages/building-your-application/routing/pages-and-layouts#index-routes) | `.js` `.jsx` `.tsx` | Halaman Tersarang |
+| **Konvensi Berkas**                                                                            |                     |                   |
+| [`index`](/docs/pages/building-your-application/routing/pages-and-layouts#index-routes)        | `.js` `.jsx` `.tsx` | Halaman Utama     |
+| [`file`](/docs/pages/building-your-application/routing/pages-and-layouts)                      | `.js` `.jsx` `.tsx` | Halaman Tersarang |
+
+### Rute Dinamis
+
+|                                                                                                                   |                     |                                      |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------- | ------------------------------------ |
+| **Konvensi Folder**                                                                                               |                     |                                      |
+| [`[folder]/index`](/docs/pages/building-your-application/routing/dynamic-routes)                                  | `.js` `.jsx` `.tsx` | Segmen Rute Dinamis                  |
+| [`[...folder]/index`](/docs/pages/building-your-application/routing/dynamic-routes#catch-all-segments)            | `.js` `.jsx` `.tsx` | Segmen Rute Penangkap Semua          |
+| [`[[...folder]]/index`](/docs/pages/building-your-application/routing/dynamic-routes#optional-catch-all-segments) | `.js` `.jsx` `.tsx` | Segmen Rute Penangkap Semua Opsional |
+| **Konvensi Berkas**                                                                                               |                     |                                      |
+| [`[file]`](/docs/pages/building-your-application/routing/dynamic-routes)                                          | `.js` `.jsx` `.tsx` | Segmen Rute Dinamis                  |
+| [`[...file]`](/docs/pages/building-your-application/routing/dynamic-routes#catch-all-segments)                    | `.js` `.jsx` `.tsx` | Segmen Rute Penangkap Semua          |
+| [`[[...file]]`](/docs/pages/building-your-application/routing/dynamic-routes#optional-catch-all-segments)         | `.js` `.jsx` `.tsx` | Segmen Rute Penangkap Semua Opsional |

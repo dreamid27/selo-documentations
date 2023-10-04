@@ -1,0 +1,77 @@
+import Image from '../../../../../components/image';
+
+# Grup Rute
+
+Dalam direktori `app`, folder bertingkat biasanya dipetakan ke jalur URL. Namun, Anda dapat menandai folder sebagai **Grup Rute** untuk mencegah folder tersebut disertakan dalam jalur URL rute.
+
+Ini memungkinkan Anda mengorganisir segmen rute Anda dan file proyek ke dalam grup logis tanpa memengaruhi struktur jalur URL.
+
+Grup rute berguna untuk:
+
+- [Mengorganisir rute ke dalam grup](#organize-routes-without-affecting-the-url-path) misalnya berdasarkan bagian situs, tujuan, atau tim.
+- Mengaktifkan [layout bertingkat](/docs/app/building-your-application/routing/pages-and-layouts) di tingkat segmen rute yang sama:
+  - [Membuat beberapa layout bertingkat dalam segmen yang sama, termasuk beberapa layout root](#creating-multiple-root-layouts)
+  - [Menambahkan layout ke subset rute dalam segmen umum](#opting-specific-segments-into-a-layout)
+
+## Konvensi
+
+Grup rute dapat dibuat dengan melingkupi nama folder dalam tanda kurung: `(namaFolder)`
+
+## Contoh
+
+### Mengorganisir rute tanpa memengaruhi jalur URL
+
+Untuk mengorganisir rute tanpa memengaruhi URL, buat grup untuk menjaga rute terkait bersama-sama. Folder dalam tanda kurung akan diabaikan dari URL (mis. `(pemasaran)` atau `(toko)`).
+
+<Image
+  alt="Organizing Routes with Route Groups"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-organisation.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-organisation.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  width="1600"
+  height="930"
+/>
+
+Meskipun rute di dalam `(pemasaran)` dan `(toko)` berbagi hirarki URL yang sama, Anda dapat membuat tata letak yang berbeda untuk setiap grup dengan menambahkan file `layout.js` di dalam folder mereka.
+
+<Image
+  alt="Route Groups with Multiple Layouts"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-multiple-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-multiple-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  width="1600"
+  height="768"
+/>
+
+### Mengoptinkan segmen tertentu ke dalam layout
+
+Untuk mengoptinkan rute tertentu ke dalam layout, buat grup rute baru (mis. `(toko)`) dan pindahkan rute yang berbagi tata letak ke dalam grup (mis. `akun` dan `keranjang`). Rute di luar grup tidak akan menggunakan layout (mis. `checkout`).
+
+<Image
+  alt="Route Groups with Opt-in Layouts"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-opt-in-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-opt-in-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  width="1600"
+  height="930"
+/>
+
+### Membuat beberapa layout root
+
+Untuk membuat beberapa [layout root](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required), hapus file `layout.js` tingkat atas, dan tambahkan file `layout.js` di dalam setiap grup rute. Ini berguna untuk mempartisi aplikasi menjadi bagian yang memiliki antarmuka pengguna atau pengalaman yang benar-benar berbeda. Tag `<html>` dan `<body>` harus ditambahkan ke setiap layout root.
+
+<Image
+  alt="Route Groups with Multiple Root Layouts"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-multiple-root-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-group-multiple-root-layouts.png&w=3840&q=75&dpl=dpl_ESATauYFEzQjWiumAbUz9Ey6m1H4"
+  width="1600"
+  height="687"
+/>
+
+Dalam contoh di atas, baik `(pemasaran)` dan `(toko)` memiliki layout root sendiri.
+
+---
+
+> **Penting untuk diketahui**:
+>
+> - Penamaan grup rute tidak memiliki makna khusus selain untuk organisasi. Mereka tidak memengaruhi jalur URL.
+> - Rute yang mencakup grup rute **tidak boleh** diresolusi ke jalur URL yang sama dengan rute lainnya. Misalnya, karena grup rute tidak memengaruhi struktur URL, `(pemasaran)/tentang/halaman.js` dan `(toko)/tentang/halaman.js` akan keduanya diresolusi menjadi `/tentang` dan menyebabkan kesalahan.
+> - Jika Anda menggunakan beberapa layout root tanpa file `layout.js` tingkat atas, file `page.js` beranda Anda harus didefinisikan dalam salah satu grup rute, misalnya: `app/(pemasaran)/page.js`.
+> - Menavigasi **melintasi beberapa layout root** akan menyebabkan **pemuatan halaman penuh** (berbeda dengan navigasi sisi klien).

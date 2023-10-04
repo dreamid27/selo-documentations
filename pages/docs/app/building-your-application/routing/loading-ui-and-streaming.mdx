@@ -1,0 +1,154 @@
+import Image from '../../../../../components/image';
+
+# Antarmuka Pemuatan dan Streaming
+
+Berkas khusus `loading.js` membantu Anda menciptakan antarmuka Loading yang bermakna dengan [React Suspense](https://react.dev/reference/react/Suspense). Dengan konvensi ini, Anda dapat menampilkan [keadaan loading instan](#instant-loading-states) dari server ketika konten dari segmen rute sedang dimuat. Konten baru akan otomatis digantikan begitu proses rendering selesai.
+
+<Image
+  alt="Loading UI"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-ui.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-ui.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="691"
+/>
+
+## Keadaan Loading Instan
+
+Keadaan loading instan adalah antarmuka pengganti yang ditampilkan segera setelah navigasi. Anda dapat memprediksi indikator loading seperti gambar kerangka (skeleton) dan spinner, atau bagian kecil namun bermakna dari tampilan masa depan seperti gambar sampul, judul, dan sebagainya. Ini membantu pengguna memahami bahwa aplikasi merespons dan memberikan pengalaman pengguna yang lebih baik.
+
+Buatlah keadaan loading dengan menambahkan berkas `loading.js` di dalam suatu folder.
+
+<Image
+  alt="loading.js special file"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-special-file.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-special-file.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="606"
+/>
+
+```tsx filename="app/dashboard/loading.tsx" switcher
+export default function Loading() {
+  // You can add any UI inside Loading, including a Skeleton.
+  return <LoadingSkeleton />;
+}
+```
+
+Di dalam folder yang sama, `loading.js` akan bersarang di dalam `layout.js`. Ini akan secara otomatis membungkus file `page.js` dan semua anak di bawahnya dalam batas `<Suspense>`.
+
+<Image
+  alt="loading.js overview"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-overview.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Floading-overview.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="768"
+/>
+
+> **Informasi Penting**:
+
+> - Navigasi bersifat instan, bahkan dengan [routing berbasis server](/docs/app/building-your-application/routing/linking-and-navigating#how-routing-and-navigation-works).
+> - Navigasi dapat diinterupsi, yang berarti perubahan rute tidak perlu menunggu konten rute untuk sepenuhnya dimuat sebelum berpindah ke rute lain.
+> - Tata letak bersama tetap interaktif saat segmen rute baru dimuat.
+
+> **Rekomendasi:** Gunakan konvensi `loading.js` untuk segmen rute (tata letak dan halaman) karena Next.js mengoptimalkan fungsionalitas ini.
+
+## Streaming dengan Suspense
+
+Selain `loading.js`, Anda juga dapat membuat Batasan Suspense secara manual untuk komponen UI Anda sendiri. Router Aplikasi mendukung streaming dengan [Suspense](https://react.dev/reference/react/Suspense) baik untuk [Node.js maupun Edge runtimes](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+
+### Apa Itu Streaming?
+
+Untuk memahami bagaimana Streaming bekerja dalam React dan Next.js, penting untuk memahami **Server-Side Rendering (SSR)** dan keterbatasannya.
+
+Dengan SSR, ada serangkaian langkah yang harus diselesaikan sebelum pengguna dapat melihat dan berinteraksi dengan halaman:
+
+1. Pertama, semua data untuk halaman yang diberikan diambil di server.
+2. Kemudian, server merender HTML untuk halaman tersebut.
+3. HTML, CSS, dan JavaScript untuk halaman dikirimkan ke klien.
+4. Antarmuka pengguna non-interaktif ditampilkan menggunakan HTML yang dihasilkan, dan CSS.
+5. Akhirnya, React [menghidrasi](https://react.dev/reference/react-dom/client/hydrateRoot#hydrating-server-rendered-html) antarmuka pengguna untuk menjadikannya interaktif.
+
+<Image
+  alt="Chart showing Server Rendering without Streaming"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-without-streaming-chart.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-without-streaming-chart.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="612"
+/>
+
+Ini langkah-langkah yang bersifat berurutan dan bersifat memblokir, yang berarti server hanya dapat merender HTML untuk halaman setelah semua data telah diambil. Dan, di sisi klien, React hanya dapat menghidupkan UI setelah kode untuk semua komponen dalam halaman telah diunduh.
+
+SSR dengan React dan Next.js membantu meningkatkan kinerja pengisian yang terasa dengan menampilkan halaman non-interaktif kepada pengguna sesegera mungkin.
+
+<Image
+  alt="Server Rendering without Streaming"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-without-streaming.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-without-streaming.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="748"
+/>
+
+Namun, proses ini masih bisa berjalan dengan lambat karena semua pengambilan data di server harus selesai sebelum halaman dapat ditampilkan kepada pengguna.
+
+**Streaming** memungkinkan Anda untuk memecah HTML halaman menjadi potongan-potongan kecil dan secara bertahap mengirimkan potongan-potongan tersebut dari server ke client.
+
+<Image
+  alt="How Server Rendering with Streaming Works"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="785"
+/>
+Ini memungkinkan bagian-bagian dari halaman untuk ditampilkan lebih cepat, tanpa
+harus menunggu semua data selesai dimuat sebelum antarmuka pengguna dapat dirender.
+
+Streaming bekerja dengan baik dengan model komponen React karena setiap komponen dapat dianggap sebagai bagian yang dapat diirimkan terpisah. Komponen yang memiliki prioritas lebih tinggi (misalnya, informasi produk) atau yang tidak bergantung pada data dapat dikirimkan terlebih dahulu (misalnya, tata letak), dan React dapat memulai proses hidrasi lebih awal. Komponen yang memiliki prioritas lebih rendah (misalnya, ulasan, produk terkait) dapat dikirimkan dalam permintaan server yang sama setelah data mereka telah diambil.
+
+<Image
+  alt="Chart showing Server Rendering with Streaming"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming-chart.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming-chart.png&w=3840&q=75&dpl=dpl_5pbpLPAmSQeAYYtMvcAxCEyNYuXQ"
+  width="1600"
+  height="730"
+/>
+
+Streaming sangat bermanfaat terutama ketika Anda ingin mencegah permintaan data yang panjang menghalangi proses penggambaran halaman, karena dapat mengurangi [Time To First Byte (TTFB)](https://web.dev/ttfb/) dan [First Contentful Paint (FCP)](https://web.dev/first-contentful-paint/). Ini juga membantu meningkatkan [Time to Interactive (TTI)](https://developer.chrome.com/en/docs/lighthouse/performance/interactive/), terutama pada perangkat yang lebih lambat.
+
+### Contoh
+
+`<Suspense>` bekerja dengan cara melingkupi komponen yang melakukan tindakan asinkron (misalnya, mengambil data), menampilkan UI pengganti sementara (misalnya, kerangka, spinner) selama tindakan tersebut berlangsung, dan kemudian menggantikan komponen Anda begitu tindakan selesai.
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import { Suspense } from 'react';
+import { PostFeed, Weather } from './Components';
+
+export default function Posts() {
+  return (
+    <section>
+      <Suspense fallback={<p>Loading feed...</p>}>
+        <PostFeed />
+      </Suspense>
+      <Suspense fallback={<p>Loading weather...</p>}>
+        <Weather />
+      </Suspense>
+    </section>
+  );
+}
+```
+
+By using Suspense, Anda akan mendapatkan manfaat berikut:
+
+1. **Streaming Server Rendering** - Secara progresif merender HTML dari server ke client.
+2. **Selective Hydration** - React memberikan prioritas kepada komponen-komponen mana yang akan dijadikan interaktif terlebih dahulu berdasarkan interaksi pengguna.
+
+Untuk lebih banyak contoh Suspense dan kasus penggunaan, silakan lihat [Dokumentasi React](https://react.dev/reference/react/Suspense).
+
+### SEO
+
+- Next.js akan menunggu proses pengambilan data di dalam [`generateMetadata`](/docs/app/api-reference/functions/generate-metadata) selesai sebelum mengirimkan UI ke client. Hal ini menjamin bahwa bagian pertama dari respons yang di-streaming mencakup tag `<head>`.
+- Karena streaming ini dihasilkan oleh server, ini tidak berdampak pada SEO. Anda dapat menggunakan alat [Tes Mobile Friendly](https://search.google.com/test/mobile-friendly) dari Google untuk melihat bagaimana halaman Anda muncul di peramban web Google dan melihat HTML yang sudah diserialkan ([sumber](https://web.dev/rendering-on-the-web/#seo-considerations)).
+
+### Kode Status
+
+Saat melakukan streaming, kode status `200` akan dikembalikan untuk menandakan bahwa permintaan berhasil.
+
+Server masih dapat mengkomunikasikan kesalahan atau masalah kepada client melalui konten yang di-stream, misalnya, saat menggunakan [`redirect`](/docs/app/api-reference/functions/redirect) atau [`notFound`](/docs/app/api-reference/functions/not-found). Karena header respons sudah dikirimkan ke client, kode status respons tidak dapat diperbarui. Hal ini tidak memengaruhi SEO.

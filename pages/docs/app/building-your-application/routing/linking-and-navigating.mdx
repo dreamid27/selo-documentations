@@ -1,0 +1,205 @@
+import { Cards, Card } from 'nextra/components';
+
+# Linking dan Navigasi
+
+Ada dua cara untuk berpindah antara rute dalam Next.js:
+
+- Menggunakan [Komponen `<Link>`](#link-component)
+- Menggunakan [Hook `useRouter`](#userouter-hook)
+
+Halaman ini akan menjelaskan cara menggunakan `<Link>`, `useRouter()`, dan mendalam tentang cara navigasi berfungsi.
+
+## Komponen `<Link>`
+
+`<Link>` adalah komponen bawaan yang memperluas tag HTML `<a>` untuk memberikan [prefetching](#1-prefetching) dan navigasi sisi klien antara rute. Ini adalah cara utama untuk berpindah antara rute dalam Next.js.
+
+Anda dapat menggunakannya dengan mengimpornya dari `next/link`, dan meneruskan prop `href` ke komponen:
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return <Link href="/dashboard">Dashboard</Link>;
+}
+```
+
+Ada prop opsional lain yang dapat Anda teruskan ke `<Link>`. Lihat [referensi API](/docs/app/api-reference/components/link) untuk lebih lanjut.
+
+### Contoh
+
+#### Menghubungkan ke Segmen Dinamis
+
+Saat menghubungkan ke [segmen dinamis](/docs/app/building-your-application/routing/dynamic-routes), Anda dapat menggunakan [template literals dan interpolasi](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Template_literals) untuk menghasilkan daftar tautan. Misalnya, untuk menghasilkan daftar posting blog:
+
+```jsx filename="app/blog/PostList.js"
+import Link from 'next/link';
+
+export default function PostList({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+#### Memeriksa Tautan Aktif
+
+Anda dapat menggunakan [`usePathname()`](/docs/app/api-reference/functions/use-pathname) untuk menentukan apakah sebuah tautan aktif. Misalnya, untuk menambahkan sebuah class ke tautan yang aktif, Anda dapat memeriksa apakah `pathname` saat ini cocok dengan `href` dari tautan:
+
+```tsx filename="app/components/links.tsx" switcher
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+
+export function Links() {
+  const pathname = usePathname();
+
+  return (
+    <nav>
+      <ul>
+        <li>
+          <Link className={`link ${pathname === '/' ? 'active' : ''}`} href="/">
+            Home
+          </Link>
+        </li>
+        <li>
+          <Link
+            className={`link ${pathname === '/about' ? 'active' : ''}`}
+            href="/about"
+          >
+            About
+          </Link>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+```
+
+#### Menggulir ke `id`
+
+Perilaku default dari Next.js App Router adalah menggulir ke bagian atas rute baru atau mempertahankan posisi gulir untuk navigasi mundur dan maju.
+
+Jika Anda ingin menggulir ke `id` tertentu saat navigasi, Anda dapat menambahkan URL Anda dengan tautan hash `#` atau hanya meneruskan tautan hash ke prop `href`. Ini memungkinkan karena `<Link>` merender menjadi elemen `<a>`.
+
+```jsx
+<Link href="/dashboard#settings">Settings</Link>
+
+// Output
+<a href="/dashboard#settings">Settings</a>
+```
+
+#### Menonaktifkan pemulihan gulir
+
+Perilaku default dari Next.js App Router adalah menggulir ke bagian atas rute baru atau mempertahankan posisi gulir untuk navigasi mundur dan maju. Jika Anda ingin menonaktifkan perilaku ini, Anda dapat meneruskan `scroll={false}` ke komponen `<Link>`, atau `scroll: false` ke `router.push()` atau `router.replace()`.
+
+```jsx
+// next/link
+<Link href="/dashboard" scroll={false}>
+  Dashboard
+</Link>
+```
+
+```jsx
+// useRouter
+import { useRouter } from 'next/navigation';
+
+const router = useRouter();
+
+router.push('/dashboard', { scroll: false });
+```
+
+## Hook `useRouter()`
+
+Hook `useRouter` memungkinkan Anda untuk secara programatik mengubah rute.
+
+Hook ini hanya dapat digunakan di dalam Komponen Klien dan diimpor dari `next/navigation`.
+
+```jsx filename="app/page.js"
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function Page() {
+  const router = useRouter();
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dashboard
+    </button>
+  );
+}
+```
+
+Untuk daftar lengkap metode `useRouter`, lihat [referensi API](/docs/app/api-reference/functions/use-router).
+
+> **Rekomendasi:** Gunakan komponen `<Link>` untuk berpindah antara rute kecuali jika Anda memiliki persyaratan khusus untuk menggunakan `useRouter`.
+
+## Bagaimana Routing dan Navigasi Bekerja
+
+App Router menggunakan pendekatan hibrid untuk routing dan navigasi. Di server, kode aplikasi Anda secara otomatis dibagi berdasarkan segmen rute. Dan di sisi klien, Next.js [mengambil data di latar belakang](#1-prefetching) dan [menggulirkan ke cache](#2-caching) segmen rute. Ini berarti, saat pengguna berpindah ke rute baru, browser tidak akan me-reload halaman, dan hanya segmen rute yang berubah akan di-render ulang - meningkatkan pengalaman navigasi dan kinerja.
+
+### 1. Prefetching
+
+Prefetching adalah cara untuk memuat rute di latar belakang sebelum pengguna mengunjunginya.
+
+Ada dua cara rute di-prefetch di Next.js:
+
+- **Komponen `<Link>`**: Rute secara otomatis di-prefetch saat mereka menjadi terlihat dalam viewport pengguna. Prefetching terjadi saat halaman pertama kali dimuat atau saat halaman masuk ke dalam viewport melalui pengguliran.
+- **`router.prefetch()`**: Hook `useRouter` dapat digunakan untuk melakukan prefetching rute secara programatik.
+
+Perilaku prefetching dari `<Link>` berbeda untuk rute statis dan dinamis:
+
+- [**Rute Statis**](/docs/app/building-your-application/rendering/server-components#static-rendering-default): `prefetch` default ke `true`. Seluruh rute di-prefetch dan di-cache.
+- [**Rute Dinamis**](/docs/app/building-your-application/rendering/server-components#dynamic-rendering): `prefetch` default ke otomatis. Hanya tata letak bersama hingga file `loading.js` pertama di-prefetch dan di-cache selama `30 detik`. Ini mengurangi biaya mengambil seluruh rute dinamis, dan ini berarti Anda dapat menampilkan [keadaan pemuatan instan](/docs/app/building-your-application/routing/loading-ui-and-streaming#instant-loading-states) untuk umpan balik visual yang lebih baik kepada pengguna.
+
+Anda dapat menonaktifkan prefetching dengan mengatur prop `prefetch` menjadi `false`.
+
+Lihat [referensi API `<Link>`](/docs/app/api-reference/components/link) untuk informasi lebih lanjut.
+
+> **Perlu diketahui**:
+>
+> - Prefetching tidak diaktifkan dalam pengembangan, hanya di produksi.
+
+### 2. Caching
+
+Next.js memiliki **cache sisi klien berbasis memori** yang disebut [Router Cache](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#caching-data#router-cache). Saat pengguna menjelajah di sekitar aplikasi, Payload Komponen Server React dari segmen rute yang telah di-prefetch dan rute yang telah dikunjungi disimpan di dalam cache.
+
+Ini berarti pada saat navigasi, cache digunakan kembali sebanyak mungkin, alih-alih melakukan permintaan baru ke server - meningkatkan kinerja dengan mengurangi jumlah permintaan dan data yang ditransfer.
+
+Pelajari lebih lanjut tentang cara kerja [Router Cache](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#caching-data) dan cara mengkonfigurasinya.
+
+### 3. Rendernya Sebagian
+
+Rendernya sebagian berarti hanya segmen rute yang berubah saat navigasi yang di-render ulang di sisi klien, dan segmen bersama dipertahankan.
+
+Misalnya, saat berpindah antara dua rute bersaudara, `/dashboard/settings` dan `/dashboard/analytics`, halaman `settings` dan `analytics` akan di-render, dan tata letak `dashboard` yang bersama akan dipertahankan.
+
+![Bagaimana cara kerja rendering sebagian](/docs/light/partial-rendering.png)
+
+Tanpa rendering sebagian, setiap navigasi akan menyebabkan halaman lengkap di-render ulang di server. Dengan hanya merender segmen yang berubah, mengurangi jumlah data yang ditransfer dan waktu eksekusi, sehingga meningkatkan kinerja.
+
+### 4. Navigasi Lembut
+
+Secara default, browser melakukan navigasi keras antara halaman. Ini berarti browser me-reload halaman dan mereset state React seperti `useState` hooks dalam aplikasi Anda dan state browser seperti posisi gulir pengguna atau elemen yang difokuskan. Namun, di Next.js, App Router menggunakan navigasi lembut. Ini berarti React hanya merender segmen yang berubah sambil mempertahankan state React dan state browser, dan tidak ada reload halaman lengkap.
+
+### 5. Navigasi Mundur dan Maju
+
+Secara default, Next.js akan mempertahankan posisi gulir untuk navigasi mundur dan maju, dan menggunakan kembali segmen rute di [Router Cache](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#caching-data).
+
+## Next Steps
+
+<Cards num={2}>
+  <Card title="Caching" href="/docs/app/building-your-application/caching" />
+
+<Card
+  title="Typescript"
+  href="/docs/app/building-your-application/configuring/typescript"
+/>
+</Cards>

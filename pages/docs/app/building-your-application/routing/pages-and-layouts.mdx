@@ -1,0 +1,211 @@
+import Image from '../../../../../components/image';
+
+# Pages and Layouts
+
+> Kami merekomendasikan membaca halaman [Dasar-Dasar Routing](/docs/app/building-your-application/routing) dan [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes) sebelum melanjutkan.
+
+App Router di dalam Next.js 13 memperkenalkan konvensi file baru untuk dengan mudah membuat [halaman](#pages), [layout bersama](#layouts), dan [template](#templates). Halaman ini akan membimbing Anda tentang cara menggunakan file khusus ini dalam aplikasi Next.js Anda.
+
+## Halaman
+
+Halaman adalah UI yang **unik** untuk suatu rute. Anda dapat mendefinisikan halaman dengan mengekspor komponen dari file `page.js`. Gunakan folder bertingkat untuk [mendefinisikan rute](/docs/app/building-your-application/routing/defining-routes) dan file `page.js` untuk membuat rute tersebut dapat diakses secara publik.
+
+Buat halaman pertama Anda dengan menambahkan file `page.js` di dalam direktori `app`:
+
+<Image
+  alt="File khusus page.js"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fpage-special-file.png&w=1920&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fpage-special-file.png&w=1920&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  width="1600"
+  height="444"
+/>
+
+```tsx filename="app/page.tsx" switcher
+// `app/page.tsx` is the UI for the `/` URL
+export default function Page() {
+  return <h1>Hello, Home page!</h1>;
+}
+```
+
+```tsx filename="app/dashboard/page.tsx" switcher
+// `app/dashboard/page.tsx` is the UI for the `/dashboard` URL
+export default function Page() {
+  return <h1>Hello, Dashboard Page!</h1>;
+}
+```
+
+> **Perlu diketahui**:
+>
+> - Halaman selalu merupakan [leaf](/docs/app/building-your-application/routing#terminology) dari [subtree rute](/docs/app/building-your-application/routing#terminology).
+> - Ekstensi file `.js`, `.jsx`, atau `.tsx` dapat digunakan untuk Halaman.
+> - File `page.js` diperlukan untuk membuat segmen rute dapat diakses secara publik.
+> - Halaman secara default adalah [Server Components](/docs/app/building-your-application/rendering/server-components) tetapi dapat diatur menjadi [Client Component](/docs/app/building-your-application/rendering/client-components).
+> - Halaman dapat mengambil data. Lihat bagian [Pengambilan Data](/docs/app/building-your-application/data-fetching) untuk informasi lebih lanjut.
+
+## Layouts
+
+Layout adalah UI yang **dibagikan** antara beberapa halaman. Saat navigasi, layout mempertahankan status, tetap interaktif, dan tidak dirender ulang. Layout juga dapat [bertingkat](#nesting-layouts).
+
+Anda dapat mendefinisikan layout dengan cara mengekspor komponen React dari file `layout.js`. Komponen tersebut harus menerima prop `children` yang akan diisi dengan layout anak (jika ada) atau halaman anak saat dirender.
+
+<Image
+  alt="File khusus layout.js"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Flayout-special-file.png&w=1920&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Flayout-special-file.png&w=1920&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  width="1600"
+  height="606"
+/>
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children, // will be a page or nested layout
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      {/* Include shared UI here e.g. a header or sidebar */}
+      <nav></nav>
+
+      {children}
+    </section>
+  );
+}
+```
+
+> **Penting untuk diketahui**:
+>
+> - Layout teratas disebut [Layout Dasar](#root-layout-required). Layout yang **wajib** ini digunakan di semua halaman dalam sebuah aplikasi. Layout dasar harus mengandung tag `html` dan `body`.
+> - Segmen rute mana pun dapat secara opsional mendefinisikan [Layout](#nesting-layouts) sendiri. Layout-layout ini akan digunakan di semua halaman dalam segmen tersebut.
+> - Layout dalam sebuah rute **bersarang** secara default. Setiap layout induk membungkus layout anak di bawahnya menggunakan prop React `children`.
+> - Anda dapat menggunakan [Grup Rute](/docs/app/building-your-application/routing/route-groups) untuk mengaktifkan atau menonaktifkan segmen rute tertentu dalam layout bersama.
+> - Layout secara default adalah [Komponen Server](/docs/app/building-your-application/rendering/server-components) tetapi dapat diatur menjadi [Komponen Klien](/docs/app/building-your-application/rendering/client-components).
+> - Layout dapat mengambil data. Lihat bagian [Pengambilan Data](/docs/app/building-your-application/data-fetching) untuk informasi lebih lanjut.
+> - Mengirimkan data antara layout induk dan anak-anaknya tidak mungkin. Namun, Anda dapat mengambil data yang sama dalam sebuah rute lebih dari sekali, dan React akan [secara otomatis menghapus permintaan](/docs/app/building-your-application/caching#request-memoization) tanpa memengaruhi kinerja.
+> - Layout tidak memiliki akses ke segmen rute di bawahnya. Untuk mengakses semua segmen rute, Anda dapat menggunakan [`useSelectedLayoutSegment`](/docs/app/api-reference/functions/use-selected-layout-segment) atau [`useSelectedLayoutSegments`](/docs/app/api-reference/functions/use-selected-layout-segments) dalam Komponen Klien.
+> - Ekstensi file `.js`, `.jsx`, atau `.tsx` dapat digunakan untuk Layout.
+> - Sebuah file `layout.js` dan `page.js` dapat didefinisikan dalam folder yang sama. Layout akan melingkupi halaman.
+
+### Root Layout (Wajib)
+
+Layout root didefinisikan pada tingkat teratas direktori `app` dan berlaku untuk semua rute. Layout ini memungkinkan Anda untuk memodifikasi HTML awal yang dikembalikan dari server.
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+> **Penting untuk diketahui**:
+>
+> - Direktori `app` **wajib** menyertakan layout dasar.
+> - Layout dasar harus mendefinisikan tag `<html>` dan `<body>` karena Next.js tidak secara otomatis membuatnya.
+> - Anda dapat menggunakan [dukungan SEO bawaan](/docs/app/building-your-application/optimizing/metadata) untuk mengelola elemen-elemen HTML `<head>`, contohnya, elemen `<title>`.
+> - Anda dapat menggunakan [grup rute](/docs/app/building-your-application/routing/route-groups) untuk membuat beberapa layout dasar. Lihat [contohnya di sini](/docs/app/building-your-application/routing/route-groups#creating-multiple-root-layouts).
+> - Layout dasar secara default adalah [Komponen Server](/docs/app/building-your-application/rendering/server-components) dan **tidak dapat** diatur menjadi [Komponen Klien](/docs/app/building-your-application/rendering/client-components).
+
+> **Migrasi dari direktori `pages`**: Layout dasar menggantikan file [`_app.js`](/docs/pages/building-your-application/routing/custom-app) dan [`_document.js`](/docs/pages/building-your-application/routing/custom-document). [Lihat panduan migrasi](/docs/app/building-your-application/upgrading/app-router-migration#migrating-_documentjs-and-_appjs).
+
+### Nesting Layouts (Penanaman Layout)
+
+Layout yang didefinisikan di dalam suatu folder (misalnya `app/dashboard/layout.js`) berlaku untuk segmen rute tertentu (misalnya `acme.com/dashboard`) dan dirender ketika segmen-segmen tersebut aktif. Secara default, layout dalam hierarki file bersifat **bersarang**, yang berarti mereka mengelilingi layout anak melalui prop `children`.
+
+<Image
+  alt="Nested Layout"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-layout.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-layout.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  width="1600"
+  height="606"
+/>
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <section>{children}</section>;
+}
+```
+
+> **Tahukah Anda**:
+>
+> - Hanya layout root yang dapat mengandung tag `<html>` dan `<body>`.
+
+Jika Anda menggabungkan kedua layout di atas, layout root (`app/layout.js`) akan mengelilingi layout dashboard (`app/dashboard/layout.js`), yang akan mengelilingi segmen-segmen rute di dalam `app/dashboard/*`.
+
+Kedua layout akan bersarang seperti ini:
+
+<Image
+  alt="Nested Layouts"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-layouts-ui.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-layouts-ui.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  width="1600"
+  height="1026"
+/>
+
+Anda dapat menggunakan [Route Groups](/docs/app/building-your-application/routing/route-groups) untuk mengatur segmen-segmen rute tertentu agar masuk atau keluar dari layout bersama.
+
+## Template
+
+Template mirip dengan layout dalam hal melingkupi setiap layout atau halaman anak. Berbeda dengan layout yang tetap ada di seluruh rute dan menjaga keadaan, template menciptakan sebuah instansi baru untuk setiap anaknya saat navigasi. Ini berarti bahwa ketika seorang pengguna menavigasi antara rute-rute yang menggunakan template yang sama, sebuah instansi baru dari komponen tersebut dipasang, elemen-elemen DOM diciptakan kembali, keadaan **tidak** dipertahankan, dan efek-efek disinkronkan ulang.
+
+Ada kemungkinan situasi di mana Anda memerlukan perilaku-perilaku khusus tersebut, dan template dapat menjadi pilihan yang lebih sesuai daripada layout. Contoh-contoh termasuk:
+
+- Fitur-fitur yang bergantung pada `useEffect` (misalnya, mencatat kunjungan halaman) dan `useState` (misalnya, formulir umpan balik per halaman).
+- Untuk mengubah perilaku bawaan kerangka kerja. Sebagai contoh, Suspense Boundaries dalam layout hanya menampilkan fallback saat Layout pertama kali dimuat dan tidak saat beralih halaman. Dalam template, fallback ditampilkan pada setiap navigasi.
+
+Sebuah template dapat didefinisikan dengan mengekspor sebuah komponen React default dari file `template.js`. Komponen tersebut seharusnya menerima prop `children`.
+
+<Image
+  alt="template.js special file"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftemplate-special-file.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-layouts-ui.png&w=3840&q=75&dpl=dpl_H4DPSJM8vN5Nwv9DV7VTJVHU6qHo"
+  width="1600"
+  height="1026"
+/>
+
+```tsx filename="app/template.tsx" switcher
+export default function Template({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>;
+}
+```
+
+Dalam hal penanaman, `template.js` dirender di antara layout dan anak-anaknya. Berikut adalah keluaran yang disederhanakan:
+
+```jsx filename="Output"
+<Layout>
+  {/* Note that the template is given a unique key. */}
+  <Template key={routeParam}>{children}</Template>
+</Layout>
+```
+
+## Memodifikasi `<head>`
+
+Pada direktori `app`, Anda dapat memodifikasi elemen-elemen HTML `<head>` seperti `title` dan `meta` menggunakan [dukungan SEO bawaan](/docs/app/building-your-application/optimizing/metadata).
+
+Metadata dapat didefinisikan dengan mengekspor objek [`metadata`](/docs/app/api-reference/functions/generate-metadata#the-metadata-object) atau fungsi [`generateMetadata`](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function) dalam file [`layout.js`](/docs/app/api-reference/file-conventions/layout) atau [`page.js`](/docs/app/api-reference/file-conventions/page).
+
+```tsx filename="app/page.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Next.js',
+};
+
+export default function Page() {
+  return '...';
+}
+```
+
+> **Penting untuk diketahui**: Anda **tidak** seharusnya secara manual menambahkan tag `<head>` seperti `<title>` dan `<meta>` ke dalam layout dasar. Sebaliknya, Anda sebaiknya menggunakan [Metadata API](/docs/app/api-reference/functions/generate-metadata) yang secara otomatis menangani kebutuhan lanjutan seperti streaming dan penghapusan elemen-elemen `<head>` yang berlebihan.
+
+[Pelajari lebih lanjut tentang opsi metadata yang tersedia dalam referensi API.](/docs/app/api-reference/functions/generate-metadata)

@@ -47,7 +47,7 @@ Untuk membuat aplikasi Next.js baru secara manual, instal paket-paket yang dibut
 npm install next@latest react@latest react-dom@latest
 ```
 
-Buka berkas (file) `package.json` Anda dan tambahkan skrip-skrip berikut:
+Buka file (file) `package.json` Anda dan tambahkan skrip-skrip berikut:
 
 ```json filename="package.json" copy
 {
@@ -69,13 +69,13 @@ Skrip-skrip ini merujuk kepada tahapan-tahapan berbeda dalam pengembangan sebuah
 
 ### Membuat Direktori
 
-Next.js menggunakan routing berbasis sistem berkas, yang berarti rute-rute dalam aplikasi Anda ditentukan oleh bagaimana Anda menyusun berkas-berkas Anda.
+Next.js menggunakan routing berbasis sistem file, yang berarti rute-rute dalam aplikasi Anda ditentukan oleh bagaimana Anda menyusun file-file Anda.
 
 #### Direktori `app`
 
 Untuk aplikasi baru, kami merekomendasikan penggunaan [App Router][App Router]. Router ini memungkinkan Anda menggunakan fitur-fitur terbaru React dan merupakan evolusi dari [Pages Router][Pages Router] berdasarkan umpan balik dari komunitas.
 
-Buat direktori `app/`, kemudian tambahkan berkas `layout.tsx` dan `page.tsx`. Berkas-berkas ini akan dirender saat pengguna mengunjungi akar (root) aplikasi Anda (`/`).
+Buat direktori `app/`, kemudian tambahkan file `layout.tsx` dan `page.tsx`. File-file ini akan dirender saat pengguna mengunjungi akar (root) aplikasi Anda (`/`).
 
 ![Struktur Applikasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fapp-getting-started.png&w=3840&q=75&dpl=dpl_8qqMvrmCHNxCAyxPYjfhBxK8Y2at)
 
@@ -105,8 +105,8 @@ export default function Page() {
 
 <Callout>
   ***Good To Know:***: Jika Anda lupa membuat `layout.tsx`, Next.js akan secara
-  otomatis membuat berkas ini ketika menjalankan server pengembangan dengan
-  `next dev`.
+  otomatis membuat file ini ketika menjalankan server pengembangan dengan `next
+  dev`.
 </Callout>
 
 Pelajari lebih lanjut tentang penggunaan [App Router][Routes].
@@ -115,7 +115,7 @@ Pelajari lebih lanjut tentang penggunaan [App Router][Routes].
 
 Jika Anda lebih suka menggunakan Pages Router daripada App Router, Anda dapat membuat direktori `pages/` di akar proyek Anda.
 
-Kemudian, tambahkan berkas `index.tsx` di dalam folder pages Anda. Ini akan menjadi halaman beranda Anda (`/`):
+Kemudian, tambahkan file `index.tsx` di dalam folder pages Anda. Ini akan menjadi halaman beranda Anda (`/`):
 
 ```tsx filename="pages/index.tsx" copy
 export default function Page() {
@@ -123,7 +123,7 @@ export default function Page() {
 }
 ```
 
-Selanjutnya, tambahkan berkas `_app.tsx` di dalam folder `pages/` untuk mendefinisikan tata letak global. Pelajari lebih lanjut tentang berkas [Kustom App][Custom App File].
+Selanjutnya, tambahkan file `_app.tsx` di dalam folder `pages/` untuk mendefinisikan tata letak global. Pelajari lebih lanjut tentang file [Kustom App][Custom App File].
 
 ```tsx filename="pages/_app.tsx" copy
 import type { AppProps } from 'next/app';
@@ -133,7 +133,7 @@ export default function App({ Component, pageProps }: AppProps) {
 }
 ```
 
-Terakhir, tambahkan berkas `_document.tsx` di dalam folder `pages/` untuk mengontrol respons awal dari server. Pelajari lebih lanjut tentang berkas [Kustom Dokumen.][Custom Document]
+Terakhir, tambahkan file `_document.tsx` di dalam folder `pages/` untuk mengontrol respons awal dari server. Pelajari lebih lanjut tentang file [Kustom Dokumen.][Custom Document]
 
 ```tsx filename="pages/_document.tsx" copy
 import { Html, Head, Main, NextScript } from 'next/document';
@@ -160,17 +160,17 @@ Pelajari lebih lanjut tentang penggunaan [Pages Router][Pages Routing].
 
 #### Direktori `public` (opsional)
 
-Buat folder `public` untuk menyimpan aset-aset statis seperti gambar, font, dan lain sebagainya. Berkas-berkas di dalam direktori `public` dapat diakses oleh kode Anda dimulai dari URL dasar (`/`).
+Buat folder `public` untuk menyimpan aset-aset statis seperti gambar, font, dan lain sebagainya. File-file di dalam direktori `public` dapat diakses oleh kode Anda dimulai dari URL dasar (`/`).
 
 ## Jalankan Server Pengembangan
 
 1. Jalankan `npm run dev` untuk memulai server pengembangan.
 2. Kunjungi `http://localhost:3000` untuk melihat aplikasi Anda.
-3. Edit berkas `app/layout.tsx` (atau `pages/index.tsx`) dan simpan untuk melihat hasil yang diperbarui di browser Anda.
+3. Edit file `app/layout.tsx` (atau `pages/index.tsx`) dan simpan untuk melihat hasil yang diperbarui di browser Anda.
 
 ## Next Steps
 
-Pelajari tentang berkas-berkas dan folder-folder dalam proyek Next.js Anda.
+Pelajari tentang file-file dan folder-folder dalam proyek Next.js Anda.
 
 <Cards num={2}>
   <Card title="Struktur Proyek" href="/docs/getting-started/project-structure" />

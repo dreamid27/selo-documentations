@@ -1,0 +1,75 @@
+import Image from '../../../../../components/image';
+
+# Intercepting Routes (Menyelusuri Rute-rute)
+
+Menangkap rute memungkinkan Anda untuk memuat suatu rute dari bagian lain aplikasi Anda dalam tata letak saat ini. Paradigma routing ini dapat berguna ketika Anda ingin menampilkan konten dari suatu rute tanpa pengguna harus beralih ke konteks yang berbeda.
+
+Sebagai contoh, saat mengklik foto dalam umpan, Anda dapat menampilkan foto tersebut dalam modal, menutupi umpan tersebut. Dalam kasus ini, Next.js menangkap rute `/photo/123`, menyembunyikan URL-nya, dan menutupinya di atas `/feed`.
+
+<Image
+  alt="Intercepting routes soft navigation"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepting-routes-soft-navigate.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepting-routes-soft-navigate.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  width="1600"
+  height="617"
+/>
+
+Namun, ketika mengakses foto dengan mengklik URL yang dapat dibagikan atau dengan menyegarkan halaman, seluruh halaman foto seharusnya dirender daripada modal. Tidak ada intersepsi rute yang harus terjadi.
+
+<Image
+  alt="Intercepting routes hard navigation"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepting-routes-hard-navigate.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepting-routes-hard-navigate.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  width="1600"
+  height="604"
+/>
+
+## Konvensi
+
+Pengintersepsi rute dapat didefinisikan dengan konvensi `(..)`, yang mirip dengan konvensi jalur relatif `../` tetapi untuk segmen.
+
+Anda dapat menggunakan:
+
+- `(.)` untuk mencocokkan segmen pada **tingkat yang sama**
+- `(..)` untuk mencocokkan segmen **satu tingkat di atas**
+- `(..)(..)` untuk mencocokkan segmen **dua tingkat di atas**
+- `(...)` untuk mencocokkan segmen dari direktori **root** aplikasi `app`
+
+Sebagai contoh, Anda dapat mengintersepsi segmen `photo` dari dalam segmen `feed` dengan membuat direktori `(..)photo`.
+
+<Image
+  alt="Intercepting routes folder structure"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepted-routes-files.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepted-routes-files.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  width="1600"
+  height="604"
+/>
+
+> Harap dicatat bahwa konvensi `(..)` didasarkan pada _segmen rute_, bukan pada sistem file.
+
+## Contoh
+
+### Modal
+
+Pengintersepsi Rute dapat digunakan bersama dengan [Rute Paralel](/docs/app/building-your-application/routing/parallel-routes) untuk membuat modal.
+
+Menggunakan pola ini untuk membuat modal mengatasi beberapa tantangan umum saat bekerja dengan modal, dengan memungkinkan Anda untuk:
+
+- Membuat konten modal **dapat dibagikan melalui URL**
+- **Mempertahankan konteks** ketika halaman diperbarui, daripada menutup modal
+- **Menutup modal saat navigasi ke belakang** daripada kembali ke rute sebelumnya
+- **Membuka kembali modal saat navigasi ke depan**
+
+<Image
+  alt="Intercepting routes modal example"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepted-routes-modal-example.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fintercepted-routes-modal-example.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  width="1600"
+  height="976"
+/>
+
+> Pada contoh di atas, jalur ke segmen `photo` dapat menggunakan pemadanan `(..)` karena `@modal` adalah sebuah _slot_ dan bukan sebuah _segmen_. Ini berarti bahwa rute `photo` hanya berada satu _tingkat segmen_ di atas, meskipun sebenarnya dua _tingkat sistem berkas_ di atas.
+
+Contoh lain dapat mencakup membuka modal login dalam navbar atas sambil juga memiliki halaman `/login` yang didedikasikan, atau membuka keranjang belanja dalam modal samping.
+
+[Lihat contoh](https://github.com/vercel-labs/nextgram) tentang modal dengan Rute yang Diintersepsi dan Paralel.

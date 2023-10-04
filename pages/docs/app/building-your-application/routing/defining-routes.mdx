@@ -10,11 +10,11 @@ Halaman ini akan memandu Anda tentang cara mendefinisikan dan mengorganisir rute
 
 Next.js menggunakan router berbasis sistem file di mana **folder** digunakan untuk mendefinisikan rute.
 
-Setiap folder mewakili [segmen rute](/docs/app/building-your-application/routing#route-segments) yang memetakan ke segmen **URL**. Untuk membuat [rute bersarang](/docs/app/building-your-application/routing#nested-routes), Anda dapat mengepakan folder di dalam folder lain.
+Setiap folder mewakili [segmen rute](/docs/app/building-your-application/routing#segmen-rute) yang memetakan ke segmen **URL**. Untuk membuat [rute bersarang](/docs/app/building-your-application/routing#rute-bersarang-nested-routes), Anda dapat mengepakan folder di dalam folder lain.
 
 ![Segmen rute ke segmen jalur](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-segments-to-path-segments.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
 
-Sebuah [`page.js` file khusus](/docs/app/building-your-application/routing/pages-and-layouts#pages) digunakan untuk membuat segmen rute dapat diakses secara publik.
+Sebuah [`page.js` file khusus](/docs/app/building-your-application/routing/pages-and-layouts#halaman) digunakan untuk membuat segmen rute dapat diakses secara publik.
 
 <Image
   alt="Mendefinisikan Rute"
@@ -30,7 +30,7 @@ Dalam contoh ini, jalur URL `/dashboard/analytics` _tidak_ dapat diakses secara 
 
 ## Membuat Antarmuka Pengguna (UI)
 
-[Konvensi file khusus](/docs/app/building-your-application/routing#file-conventions) digunakan untuk membuat antarmuka pengguna (UI) untuk setiap segmen rute. Yang paling umum adalah [halaman](/docs/app/building-your-application/routing/pages-and-layouts#pages) untuk menampilkan UI yang unik untuk suatu rute, dan [tata letak](/docs/app/building-your-application/routing/pages-and-layouts#layouts) untuk menampilkan UI yang dibagikan di beberapa rute.
+[Konvensi file khusus](/docs/app/building-your-application/routing#konvensi-file) digunakan untuk membuat antarmuka pengguna (UI) untuk setiap segmen rute. Yang paling umum adalah [halaman](/docs/app/building-your-application/routing/pages-and-layouts#halaman) untuk menampilkan UI yang unik untuk suatu rute, dan [tata letak](/docs/app/building-your-application/routing/pages-and-layouts#layouts) untuk menampilkan UI yang dibagikan di beberapa rute.
 
 Misalnya, untuk membuat halaman pertama Anda, tambahkan file `page.js` di dalam direktori `app` dan ekspor komponen React:
 

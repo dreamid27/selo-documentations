@@ -4,7 +4,7 @@ import Image from '../../../../../components/image';
 
 > Kami merekomendasikan membaca halaman [Dasar-Dasar Routing](/docs/app/building-your-application/routing) dan [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes) sebelum melanjutkan.
 
-App Router di dalam Next.js 13 memperkenalkan konvensi file baru untuk dengan mudah membuat [halaman](#pages), [layout bersama](#layouts), dan [template](#templates). Halaman ini akan membimbing Anda tentang cara menggunakan file khusus ini dalam aplikasi Next.js Anda.
+App Router di dalam Next.js 13 memperkenalkan konvensi file baru untuk dengan mudah membuat [halaman](#halaman), [layout bersama](#layouts), dan [template](#template). Halaman ini akan membimbing Anda tentang cara menggunakan file khusus ini dalam aplikasi Next.js Anda.
 
 ## Halaman
 
@@ -44,7 +44,7 @@ export default function Page() {
 
 ## Layouts
 
-Layout adalah UI yang **dibagikan** antara beberapa halaman. Saat navigasi, layout mempertahankan status, tetap interaktif, dan tidak dirender ulang. Layout juga dapat [bertingkat](#nesting-layouts).
+Layout adalah UI yang **dibagikan** antara beberapa halaman. Saat navigasi, layout mempertahankan status, tetap interaktif, dan tidak dirender ulang. Layout juga dapat [bertingkat](#nesting-layouts-penanaman-layout-penanaman-layout).
 
 Anda dapat mendefinisikan layout dengan cara mengekspor komponen React dari file `layout.js`. Komponen tersebut harus menerima prop `children` yang akan diisi dengan layout anak (jika ada) atau halaman anak saat dirender.
 
@@ -75,8 +75,8 @@ export default function DashboardLayout({
 
 > **Penting untuk diketahui**:
 >
-> - Layout teratas disebut [Layout Dasar](#root-layout-required). Layout yang **wajib** ini digunakan di semua halaman dalam sebuah aplikasi. Layout dasar harus mengandung tag `html` dan `body`.
-> - Segmen rute mana pun dapat secara opsional mendefinisikan [Layout](#nesting-layouts) sendiri. Layout-layout ini akan digunakan di semua halaman dalam segmen tersebut.
+> - Layout teratas disebut [Layout Dasar](#root-layout-wajib). Layout yang **wajib** ini digunakan di semua halaman dalam sebuah aplikasi. Layout dasar harus mengandung tag `html` dan `body`.
+> - Segmen rute mana pun dapat secara opsional mendefinisikan [Layout](#nesting-layouts-penanaman-layout) sendiri. Layout-layout ini akan digunakan di semua halaman dalam segmen tersebut.
 > - Layout dalam sebuah rute **bersarang** secara default. Setiap layout induk membungkus layout anak di bawahnya menggunakan prop React `children`.
 > - Anda dapat menggunakan [Grup Rute](/docs/app/building-your-application/routing/route-groups) untuk mengaktifkan atau menonaktifkan segmen rute tertentu dalam layout bersama.
 > - Layout secara default adalah [Komponen Server](/docs/app/building-your-application/rendering/server-components) tetapi dapat diatur menjadi [Komponen Klien](/docs/app/building-your-application/rendering/client-components).

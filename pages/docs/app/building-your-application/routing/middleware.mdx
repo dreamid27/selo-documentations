@@ -1,0 +1,384 @@
+# Middleware
+
+{/* Konten dokumen ini digunakan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Middleware memungkinkan Anda menjalankan kode sebelum permintaan selesai. Kemudian, berdasarkan permintaan yang masuk, Anda dapat mengubah respons dengan menulis ulang, mengalihkan, mengubah permintaan atau header respons, atau merespons secara langsung.
+
+Middleware berjalan sebelum konten yang di-cache dan rute cocok. Lihat [Cocokkan Path](#cocokkan-path) untuk lebih banyak detail.
+
+## Konvensi
+
+Gunakan file `middleware.ts` (atau `.js`) di akar proyek Anda untuk mendefinisikan Middleware. Misalnya, di level yang sama dengan `pages` atau `app`, atau di dalam `src` jika berlaku.
+
+## Contoh
+
+```ts filename="middleware.ts" switcher
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+// Fungsi ini dapat ditandai `async` jika menggunakan `await` di dalamnya
+export function middleware(request: NextRequest) {
+  return NextResponse.redirect(new URL('/home', request.url));
+}
+
+// Lihat "Cocokkan Path" di bawah untuk informasi lebih lanjut
+export const config = {
+  matcher: '/about/:path*',
+};
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server';
+
+// Fungsi ini dapat ditandai `async` jika menggunakan `await` di dalamnya
+export function middleware(request) {
+  return NextResponse.redirect(new URL('/home', request.url));
+}
+
+// Lihat "Cocokkan Path" di bawah untuk informasi lebih lanjut
+export const config = {
+  matcher: '/about/:path*',
+};
+```
+
+## Cocokkan Path
+
+Middleware akan dipanggil untuk **setiap rute dalam proyek Anda**. Berikut adalah urutan eksekusi:
+
+1. `headers` dari `next.config.js`
+2. `redirects` dari `next.config.js`
+3. Middleware (`rewrites`, `redirects`, dll.)
+4. `beforeFiles` (`rewrites`) dari `next.config.js`
+5. Rute sistem file (`public/`, `_next/static/`, `pages/`, `app/`, dll.)
+6. `afterFiles` (`rewrites`) dari `next.config.js`
+7. Rute Dinamis (`/blog/[slug]`)
+8. `fallback` (`rewrites`) dari `next.config.js`
+
+Ada dua cara untuk menentukan jalur mana yang akan berjalan Middleware:
+
+1. [Konfigurasi pencocokan kustom](#matcher)
+2. [Pernyataan kondisional](#pernyataan-kondisional)
+
+### Pencocokan (Matcher)
+
+`matcher` memungkinkan Anda untuk menyaring Middleware agar berjalan pada jalur tertentu.
+
+```js filename="middleware.js"
+export const config = {
+  matcher: '/about/:path*',
+};
+```
+
+Anda dapat mencocokkan satu jalur atau beberapa jalur dengan sintaks array:
+
+```js filename="middleware.js"
+export const config = {
+  matcher: ['/about/:path*', '/dashboard/:path*'],
+};
+```
+
+Konfigurasi `matcher` memungkinkan penggunaan regex lengkap sehingga pencocokan seperti negative lookaheads atau pencocokan karakter didukung. Contoh negative lookahead untuk mencocokkan semua kecuali jalur tertentu dapat dilihat di sini:
+
+````js filename="middleware.js"
+export const config = {
+matcher: [
+/\*
+
+- Cocokkan semua jalur permintaan kecuali yang dimulai dengan:
+- - api (rute API)
+- - \_next/static (file statis)
+- - \_next/image (file optimasi gambar)
+- - favicon.ico (file favicon)
+    _/
+    '/((?!api|\_next/static|\_next/image|favicon.ico)._)',
+    ],
+    }
+    ```
+
+> **Baik untuk diketahui**: Nilai-nilai `matcher` harus konstan sehingga mereka dapat dianalisis secara statis saat pembuatan. Nilai-nilai dinamis seperti variabel akan diabaikan.
+
+Pencocokan yang dikonfigurasi:
+
+1. HARUS dimulai dengan `/`
+2. Bisa menyertakan parameter beri nama: `/about/:path` cocok dengan `/about/a` dan `/about/b` tetapi tidak dengan `/about/a/c`
+3. Bisa memiliki modifier pada parameter beri nama (dimulai dengan `:`): `/about/:path*` cocok dengan `/about/a/b/c` karena `*` adalah _nol atau lebih_. `?` adalah _nol atau satu_ dan `+` _satu atau lebih_
+4. Bisa menggunakan ekspresi reguler dalam tanda kurung: `/about/(.*)` sama dengan `/about/:path*`
+
+Baca lebih lanjut detailnya di [dokumentasi path-to-regexp](https://github.com/pillarjs/path-to-regexp#path-to-regexp-1).
+
+> **Baik untuk diketahui**: Untuk kompatibilitas mundur, Next.js selalu menganggap `/public` sebagai `/public/index`. Oleh karena itu, pencocokan `/public/:path` akan cocok.
+
+### Pernyataan Kondisional
+
+```ts filename="middleware.ts" switcher
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/about')) {
+    return NextResponse.rewrite(new URL('/about-2', request.url))
+  }
+
+if (request.nextUrl.pathname.startsWith('/dashboard')) {
+return NextResponse.rewrite(new URL('/dashboard/user', request.url))
+}
+}
+````
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server';
+
+export function middleware(request) {
+  if (request.nextUrl.pathname.startsWith('/about')) {
+    return NextResponse.rewrite(new URL('/about-2', request.url));
+  }
+
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.rewrite(new URL('/dashboard/user', request.url));
+  }
+}
+```
+
+## NextResponse
+
+API `NextResponse` memungkinkan Anda:
+
+- `redirect` permintaan masuk ke URL yang berbeda
+- `rewrite` respons dengan menampilkan URL tertentu
+- Mengatur header permintaan untuk Rute API, `getServerSideProps`, dan tujuan `rewrite`
+- Mengatur cookie respons
+- Mengatur header respons
+
+Untuk menghasilkan respons dari Middleware, Anda dapat:
+
+1. `rewrite` ke rute ([Halaman](/docs/app/building-your-application/routing/pages-and-layouts) atau [Pengolah Rute](/docs/app/building-your-application/routing/route-handlers)) yang menghasilkan respons
+2. mengembalikan `NextResponse` secara langsung. Lihat [Menghasilkan Respons](#menghasilkan-respons)
+
+## Menggunakan Cookie
+
+Cookie adalah header biasa. Pada `Request`, mereka disimpan dalam header `Cookie`. Pada `Response`, mereka ada dalam header `Set-Cookie`. Next.js menyediakan cara yang nyaman untuk mengakses dan memanipulasi cookie ini melalui ekstensi `cookies` pada `NextRequest` dan `NextResponse`.
+
+1. Untuk permintaan masuk, `cookies` dilengkapi dengan metode berikut: `get`, `getAll`, `set`, dan `delete` cookie. Anda dapat memeriksa keberadaan cookie dengan `has` atau menghapus semua cookie dengan `clear`.
+2. Untuk respons keluar, `cookies` memiliki metode berikut: `get`, `getAll`, `set`, dan `delete`.
+
+```ts filename="middleware.ts" switcher
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Anggap header "Cookie:nextjs=fast" ada dalam permintaan masuk
+  // Mendapatkan cookie dari permintaan menggunakan API `RequestCookies`
+  let cookie = request.cookies.get('nextjs');
+  console.log(cookie); // => { name: 'nextjs', value: 'fast', Path: '/' }
+  const allCookies = request.cookies.getAll();
+  console.log(allCookies); // => [{ name: 'nextjs', value: 'fast' }]
+
+  request.cookies.has('nextjs'); // => true
+  request.cookies.delete('nextjs');
+  request.cookies.has('nextjs'); // => false
+
+  // Menetapkan cookie pada respons menggunakan API `ResponseCookies`
+  const response = NextResponse.next();
+  response.cookies.set('vercel', 'fast');
+  response.cookies.set({
+    name: 'vercel',
+    value: 'fast',
+    path: '/',
+  });
+  cookie = response.cookies.get('vercel');
+  console.log(cookie); // => { name: 'vercel', value: 'fast', Path: '/' }
+  // Respons keluar akan memiliki header `Set-Cookie:vercel=fast;path=/test`.
+
+  return response;
+}
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server';
+
+export function middleware(request) {
+  // Anggap header "Cookie:nextjs=fast" ada dalam permintaan masuk
+  // Mendapatkan cookie dari permintaan menggunakan API `RequestCookies`
+  let cookie = request.cookies.get('nextjs');
+  console.log(cookie); // => { name: 'nextjs', value: 'fast', Path: '/' }
+  const allCookies = request.cookies.getAll();
+  console.log(allCookies); // => [{ name: 'nextjs', value: 'fast' }]
+
+  request.cookies.has('nextjs'); // => true
+  request.cookies.delete('nextjs');
+  request.cookies.has('nextjs'); // => false
+
+  // Menetapkan cookie pada respons menggunakan API `ResponseCookies`
+  const response = NextResponse.next();
+  response.cookies.set('vercel', 'fast');
+  response.cookies.set({
+    name: 'vercel',
+    value: 'fast',
+    path: '/',
+  });
+  cookie = response.cookies.get('vercel');
+  console.log(cookie); // => { name: 'vercel', value: 'fast', Path: '/' }
+  // Respons keluar akan memiliki header `Set-Cookie:vercel=fast;path=/test`.
+
+  return response;
+}
+```
+
+## Menetapkan Header
+
+Anda dapat menetapkan header permintaan dan respons menggunakan API `NextResponse` (menetapkan _header permintaan_ tersedia sejak Next.js v13.0.0).
+
+```ts filename="middleware.ts" switcher
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Klona header permintaan dan tetapkan header baru `x-hello-from-middleware1`
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-hello-from-middleware1', 'hello');
+
+  // Anda juga dapat menetapkan header permintaan di NextResponse.rewrite
+  const response = NextResponse.next({
+    request: {
+      // Header permintaan baru
+      headers: requestHeaders,
+    },
+  });
+
+  // Tetapkan header respons baru `x-hello-from-middleware2`
+  response.headers.set('x-hello-from-middleware2', 'hello');
+  return response;
+}
+```
+
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server';
+
+export function middleware(request) {
+  // Klona header permintaan dan tetapkan header baru `x-hello-from-middleware1`
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-hello-from-middleware1', 'hello');
+
+  // Anda juga dapat menetapkan header permintaan di NextResponse.rewrite
+  const response = NextResponse.next({
+    request: {
+      // Header permintaan baru
+      headers: requestHeaders,
+    },
+  });
+
+  // Tetapkan header respons baru `x-hello-from-middleware2`
+  response.headers.set('x-hello-from-middleware2', 'hello');
+  return response;
+}
+```
+
+> **Baik untuk diketahui**: Hindari menetapkan header besar karena dapat menyebabkan kesalahan [431 Request Header Fields Too Large](https://developer.mozilla.org/docs/Web/HTTP/Status/431) tergantung pada konfigurasi server web backend Anda.
+
+## Menghasilkan Respons
+
+Anda dapat merespons dari Middleware langsung dengan mengembalikan instance `Response` atau `NextResponse`. (Ini tersedia sejak [Next.js v13.1.0](https://nextjs.org/blog/next-13-1#nextjs-advanced-middleware))
+
+````ts filename="middleware.ts" switcher
+import { NextRequest } from 'next/server'
+import { isAuthenticated } from '@lib/auth'
+
+// Batasi middleware pada jalur yang dimulai dengan `/api/`
+export const config = {
+matcher: '/api/:function\*',
+}
+
+export function middleware(request: NextRequest) {
+  // Panggil fungsi otentikasi kami untuk memeriksa permintaan
+  if (!isAuthenticated(request)) {
+    // Respon dengan JSON yang menunjukkan pesan kesalahan
+    return Response.json(
+      { success: false, message: 'autentikasi gagal' },
+      { status: 401 }
+    );
+  }
+}
+```;
+
+```js filename="middleware.js" switcher
+import { isAuthenticated } from '@lib/auth'
+
+// Batasi middleware pada jalur yang dimulai dengan `/api/`
+export const config = {
+matcher: '/api/:function\*',
+}
+
+export function middleware(request) {
+  // Panggil fungsi otentikasi kami untuk memeriksa permintaan
+  if (!isAuthenticated(request)) {
+    // Respon dengan JSON yang menunjukkan pesan kesalahan
+    return Response.json(
+      { success: false, message: 'autentikasi gagal' },
+      { status: 401 }
+    );
+  }
+}
+```;
+
+## Bendera Middleware Lanjutan
+
+Pada `v13.1` Next.js, dua bendera tambahan diperkenalkan untuk middleware, `skipMiddlewareUrlNormalize` dan `skipTrailingSlashRedirect` untuk menangani kasus penggunaan lanjutan.
+
+`skipTrailingSlashRedirect` memungkinkan menonaktifkan pengalihan default Next.js untuk menambahkan atau menghapus tanda slash di akhir, yang memungkinkan penanganan kustom di dalam middleware yang dapat memungkinkan menjaga tanda slash di beberapa jalur tetapi tidak di jalur lainnya untuk migrasi yang lebih mudah.
+
+```js filename="next.config.js"
+module.exports = {
+skipTrailingSlashRedirect: true,
+}
+````
+
+```js filename="middleware.js"
+const legacyPrefixes = ['/docs', '/blog'];
+
+export default async function middleware(req) {
+  const { pathname } = req.nextUrl;
+
+  if (legacyPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next();
+  }
+
+  // Terapkan penanganan tanda slash di sini
+  if (
+    !pathname.endsWith('/') &&
+    !pathname.match(/((?!\.well-known(?:\/._)?)(?:[^/]+\/)_[^/]+\.\w+)/)
+  ) {
+    req.nextUrl.pathname += '/';
+    return NextResponse.redirect(req.nextUrl);
+  }
+}
+```
+
+`skipMiddlewareUrlNormalize` memungkinkan menonaktifkan normalisasi URL yang dilakukan oleh Next.js untuk membuat penanganan kunjungan langsung dan transisi klien sama. Ada beberapa kasus lanjutan di mana Anda memerlukan kontrol penuh dengan menggunakan URL asli yang ini membukanya.
+
+```js filename="next.config.js"
+module.exports = {
+  skipMiddlewareUrlNormalize: true,
+};
+```
+
+```js filename="middleware.js"
+export default async function middleware(req) {
+  const { pathname } = req.nextUrl;
+
+  // GET /\_next/data/build-id/hello.json
+
+  console.log(pathname);
+  // dengan bendera ini sekarang /\_next/data/build-id/hello.json
+  // tanpa bendera ini akan dinormalisasi menjadi /hello
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------- |
+| `v13.1.0` | Bendera Middleware lanjutan ditambahkan                                                   |
+| `v13.0.0` | Middleware dapat mengubah header permintaan, header respons, dan mengirim respons         |
+| `v12.2.0` | Middleware stabil, lihat [panduan pembaruan](/docs/messages/middleware-upgrade-guide)     |
+| `v12.0.9` | Paksakan URL absolut di Edge Runtime ([PR](https://github.com/vercel/next.js/pull/33410)) |
+| `v12.0.0` | Middleware (Beta) ditambahkan                                                             |

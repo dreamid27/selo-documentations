@@ -1,6 +1,6 @@
 import Image from '../../../../../components/image';
 
-# Penanganan Kesalahan
+# Penanganan Error
 
 Konvensi file `error.js` memungkinkan Anda untuk secara anggun mengatasi kesalahan runtime yang tidak terduga dalam [nested routes](/docs/app/building-your-application/routing#nested-routes).
 
@@ -67,11 +67,11 @@ export default function Error({
 - Jika terjadi kesalahan dalam batasan kesalahan, kesalahan tersebut **terkandung**, dan komponen pengganti **diberikan**.
 - Ketika komponen kesalahan pengganti aktif, tata letak **di atas** batasan kesalahan **mempertahankan** keadaan mereka dan **tetap** interaktif, dan komponen kesalahan dapat menampilkan fungsionalitas untuk pulih dari kesalahan.
 
-### Pulih Dari Kesalahan
+### Pulih Dari Error
 
 Penyebab kesalahan kadang-kadang bisa bersifat sementara. Dalam kasus-kasus ini, mencoba lagi mungkin dapat menyelesaikan masalah.
 
-Komponen kesalahan dapat menggunakan fungsi `reset()` untuk mendorong pengguna untuk mencoba pulih dari kesalahan. Saat dieksekusi, fungsi tersebut akan mencoba untuk merender ulang konten Batasan Kesalahan. Jika berhasil, komponen kesalahan pengganti digantikan oleh hasil dari penggambaran ulang.
+Komponen kesalahan dapat menggunakan fungsi `reset()` untuk mendorong pengguna untuk mencoba pulih dari kesalahan. Saat dieksekusi, fungsi tersebut akan mencoba untuk merender ulang konten Batasan Error. Jika berhasil, komponen kesalahan pengganti digantikan oleh hasil dari penggambaran ulang.
 
 ```tsx filename="app/dashboard/error.tsx" switcher
 'use client';
@@ -108,10 +108,10 @@ Sebagai contoh, sebuah rute tertanam dengan dua segmen yang keduanya mencakup fi
 
 Hierarki komponen yang bersarang memiliki implikasi pada perilaku file `error.js` di seluruh rute yang bersarang:
 
-- Kesalahan akan naik ke atas ke batasan kesalahan induk terdekat. Ini berarti file `error.js` akan menangani kesalahan untuk semua segmen anak yang bersarang. Antarmuka kesalahan yang lebih atau kurang terperinci dapat dicapai dengan menempatkan file `error.js` pada level yang berbeda dalam folder bersarang dari suatu rute.
+- Error akan naik ke atas ke batasan kesalahan induk terdekat. Ini berarti file `error.js` akan menangani kesalahan untuk semua segmen anak yang bersarang. Antarmuka kesalahan yang lebih atau kurang terperinci dapat dicapai dengan menempatkan file `error.js` pada level yang berbeda dalam folder bersarang dari suatu rute.
 - Batasan `error.js` **tidak** akan menangani kesalahan yang dilempar dalam komponen `layout.js` dalam segmen yang **sama** karena batasan kesalahan bersarang **di dalam** komponen tata letak tersebut.
 
-### Menangani Kesalahan dalam Tata Letak
+### Menangani Error dalam Tata Letak
 
 Batasan `error.js` **tidak** menangkap kesalahan yang dilempar dalam komponen `layout.js` atau `template.js` dari **segmen yang sama**. Hierarchy ini [sengaja](#nested-routes) menjaga UI penting yang dibagikan antara rute saudara (seperti navigasi) tetap terlihat dan berfungsi saat terjadi kesalahan.
 
@@ -119,7 +119,7 @@ Untuk menangani kesalahan dalam tata letak atau template tertentu, tempatkan fil
 
 Untuk menangani kesalahan dalam tata letak atau template akar, gunakan variasi dari `error.js` yang disebut `global-error.js`.
 
-### Menangani Kesalahan dalam Tata Letak Akar
+### Menangani Error dalam Tata Letak Akar
 
 Batas akar `app/error.js` **tidak** akan menangani kesalahan yang dilempar dalam komponen akar `app/layout.js` atau `app/template.js`.
 
@@ -150,11 +150,11 @@ export default function GlobalError({
 }
 ```
 
-### Penanganan Kesalahan Server
+### Penanganan Error Server
 
 Jika terjadi kesalahan dalam Server Component, Next.js akan meneruskan objek `Error` (yang telah dihilangkan informasi kesalahan sensitifnya saat produksi) ke file `error.js` terdekat sebagai prop `error`.
 
-#### Menyelamatkan Informasi Kesalahan Sensitif
+#### Menyelamatkan Informasi Error Sensitif
 
 Selama produksi, objek `Error` yang diteruskan ke klien hanya mencakup properti `message` dan `digest` yang bersifat generik.
 

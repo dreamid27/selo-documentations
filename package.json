@@ -9,15 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shuding/nextra-docs-template.git"
+    "url": "git+https://github.com/dreamid27/selo-documentations.git"
   },
   "author": "Shu Ding <g@shud.in>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/shuding/nextra-docs-template/issues"
+    "url": "https://github.com/dreamid27/selo-documentations/issues"
   },
-  "homepage": "https://github.com/shuding/nextra-docs-template#readme",
+  "homepage": "https://github.com/dreamid27/selo-documentations#readme",
   "dependencies": {
+    "@phosphor-icons/react": "^2.0.13",
     "next": "^13.0.6",
     "nextra": "latest",
     "nextra-theme-docs": "latest",

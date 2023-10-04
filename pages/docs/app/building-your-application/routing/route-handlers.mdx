@@ -1,0 +1,432 @@
+import Image from '../../../../../components/image';
+import { CheckCircle, XCircle } from '@phosphor-icons/react';
+
+# Penanganan Rute (Route Handlers)
+
+Pengendali Rute memungkinkan Anda untuk membuat pengendali permintaan khusus untuk rute tertentu dengan menggunakan API Web [Request](https://developer.mozilla.org/docs/Web/API/Request) dan [Response](https://developer.mozilla.org/docs/Web/API/Response).
+
+<Image
+  alt="Route.js Special File"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-special-file.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Froute-special-file.png&w=1920&q=75&dpl=dpl_Ger8NpcX6PH2VRPrBsQNBqk6weAN"
+  width="1600"
+  height="444"
+/>
+
+> **Perlu diketahui**: Route Handlers hanya tersedia di dalam direktori `app`. Mereka setara dengan [API Routes](/docs/pages/building-your-application/routing/api-routes) di dalam direktori `pages`, yang berarti Anda **tidak** perlu menggunakan API Routes dan Route Handlers bersama-sama.
+
+## Konvensi
+
+Route Handlers didefinisikan dalam file [`route.js|ts`](/docs/app/api-reference/file-conventions/route) di dalam direktori `app`:
+
+```ts filename="app/api/route.ts" switcher
+export async function GET(request: Request) {}
+```
+
+Route Handlers dapat bersarang di dalam direktori `app`, mirip dengan `page.js` dan `layout.js`. Namun, **tidak boleh** ada file `route.js` pada tingkat segmen rute yang sama dengan `page.js`.
+
+### Metode HTTP yang Didukung
+
+Berikut adalah [metode HTTP](https://developer.mozilla.org/docs/Web/HTTP/Methods) yang didukung: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, dan `OPTIONS`. Jika metode yang tidak didukung dipanggil, Next.js akan mengembalikan respons `405 Method Not Allowed`.
+
+### Perluasan API `NextRequest` dan `NextResponse`
+
+Selain mendukung [Request](https://developer.mozilla.org/docs/Web/API/Request) dan [Response](https://developer.mozilla.org/docs/Web/API/Response) bawaan, Next.js memperluasnya dengan [`NextRequest`](/docs/app/api-reference/functions/next-request) dan [`NextResponse`](/docs/app/api-reference/functions/next-response) untuk menyediakan helper yang nyaman untuk penggunaan lanjutan.
+
+## Perilaku
+
+### Penyimpanan Cache
+
+Route Handlers secara default disimpan dalam cache ketika menggunakan metode `GET` dengan objek `Response`.
+
+```ts filename="app/items/route.ts" switcher
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  });
+  const data = await res.json();
+
+  return Response.json({ data });
+}
+```
+
+> **Peringatan TypeScript:** `Response.json()` hanya valid mulai dari TypeScript 5.2. Jika Anda menggunakan versi TypeScript yang lebih rendah, Anda dapat menggunakan [`NextResponse.json()`](/docs/app/api-reference/functions/next-response#json) untuk respons berjenis data.
+
+### Menyisihkan dari Penyimpanan Cache
+
+Anda dapat menyisihkan dari penyimpanan cache dengan:
+
+- Menggunakan objek `Request` dengan metode `GET`.
+- Menggunakan salah satu metode HTTP lainnya.
+- Menggunakan [Fungsi Dinamis](#fungsi-dinamis) seperti `cookies` dan `headers`.
+- [Opsi Konfigurasi Segmen](#opsi-konfigurasi-segmen) secara manual menentukan mode dinamis.
+
+Misalnya:
+
+```ts filename="app/products/api/route.ts" switcher
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const res = await fetch(`https://data.mongodb-api.com/product/${id}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+  });
+  const product = await res.json();
+
+  return Response.json({ product });
+}
+```
+
+Secara serupa, metode `POST` akan menyebabkan Route Handler dievaluasi secara dinamis.
+
+```ts filename="app/items/route.ts" switcher
+export async function POST() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.DATA_API_KEY,
+    },
+    body: JSON.stringify({ time: new Date().toISOString() }),
+  });
+
+  const data = await res.json();
+
+  return Response.json(data);
+}
+```
+
+> **Perlu diketahui**: Seperti API Routes, Route Handlers dapat digunakan untuk kasus seperti penanganan pengiriman formulir. Abstraksi baru untuk [menangani formulir dan mutasi](/docs/app/building-your-application/data-fetching/forms-and-mutations) yang terintegrasi dengan React sedang dalam pengembangan.
+
+### Resolusi Rute
+
+Anda dapat mempertimbangkan `route` sebagai primitif perutean tingkat terendah.
+
+- Mereka **tidak** berpartisipasi dalam tata letak atau navigasi sisi klien seperti `page`.
+- **Tidak boleh** ada file `route.js` pada rute yang sama dengan `page.js`.
+
+| Halaman              | Rute               | Hasil                                                        |
+| -------------------- | ------------------ | ------------------------------------------------------------ |
+| `app/page.js`        | `app/route.js`     | <XCircle size={18} color="red" weight="fill" /> Konflik      |
+| `app/page.js`        | `app/api/route.js` | <CheckCircle size={18} color="green"  weight="fill" /> Valid |
+| `app/[user]/page.js` | `app/api/route.js` | <CheckCircle size={18} color="green" weight="fill" /> Valid  |
+
+Setiap file `route.js` atau `page.js` mengambil alih semua kata kerja HTTP untuk rute tersebut.
+
+```jsx filename="app/page.js"
+export default function Page() {
+  return <h1>Hello, Next.js!</h1>;
+}
+
+// ❌ Conflict
+// `app/route.js`
+export async function POST(request) {}
+```
+
+## Contoh
+
+Contoh berikut menunjukkan bagaimana menggabungkan Route Handlers dengan API dan fitur Next.js lainnya.
+
+### Memvalidasi Ulang Data yang Disimpan di Cache
+
+Anda dapat [memvalidasi ulang data yang disimpan di cache](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#revalidating-data) menggunakan opsi [`next.revalidate`](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#revalidating-data):
+
+```ts filename="app/items/route.ts" switcher
+export async function GET() {
+  const res = await fetch('https://data.mongodb-api.com/...', {
+    next: { revalidate: 60 }, // Revalidate every 60 seconds
+  });
+  const data = await res.json();
+
+  return Response.json(data);
+}
+```
+
+Atau, Anda dapat menggunakan opsi konfigurasi segmen [`revalidate`](/docs/app/api-reference/file-conventions/route-segment-config#revalidate):
+
+```ts
+export const revalidate = 60;
+```
+
+### Fungsi Dinamis
+
+Route Handlers dapat digunakan dengan fungsi dinamis dari Next.js, seperti [`cookies`](/docs/app/api-reference/functions/cookies) dan [`headers`](/docs/app/api-reference/functions/headers).
+
+#### Cookies
+
+Anda dapat membaca cookie dengan [`cookies`](/docs/app/api-reference/functions/cookies) dari `next/headers`. Fungsi server ini dapat dipanggil langsung dalam Route Handler, atau bersarang di dalam fungsi lain.
+
+Instance `cookies` ini hanya untuk bacaan. Untuk mengatur cookie, Anda perlu mengembalikan objek `Response` baru dengan header [`Set-Cookie`](https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie).
+
+```ts filename="app/api/route.ts" switcher
+import { cookies } from 'next/headers';
+
+export async function GET(request: Request) {
+  const cookieStore = cookies();
+  const token = cookieStore.get('token');
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { 'Set-Cookie': `token=${token.value}` },
+  });
+}
+```
+
+Atau, Anda dapat menggunakan abstraksi di atas API Web yang mendasarinya untuk membaca cookie ([`NextRequest`](/docs/app/api-reference/functions/next-request)):
+
+```ts filename="app/api/route.ts" switcher
+import { type NextRequest } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get('token');
+}
+```
+
+#### Headers
+
+Anda dapat membaca header dengan [`headers`](/docs/app/api-reference/functions/headers) dari `next/headers`. Fungsi server ini dapat dipanggil langsung dalam Route Handler, atau bersarang di dalam fungsi lain.
+
+Instance `headers` ini hanya untuk bacaan. Untuk mengatur header, Anda perlu mengembalikan objek `Response` baru dengan header baru.
+
+```ts filename="app/api/route.ts" switcher
+import { headers } from 'next/headers';
+
+export async function GET(request: Request) {
+  const headersList = headers();
+  const referer = headersList.get('referer');
+
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: { referer: referer },
+  });
+}
+```
+
+Atau, Anda dapat menggunakan abstraksi di atas API Web yang mendasarinya untuk membaca header ([`NextRequest`](/docs/app/api-reference/functions/next-request)):
+
+```ts filename="app/api/route.ts" switcher
+import { type NextRequest } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+}
+```
+
+### Pengalihan
+
+```ts filename="app/api/route.ts" switcher
+import { redirect } from 'next/navigation';
+
+export async function GET(request: Request) {
+  redirect('https://nextjs.org/');
+}
+```
+
+### Segmen Rute Dinamis
+
+> Kami sarankan membaca halaman [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes) sebelum melanjutkan.
+
+Route Handlers dapat menggunakan [Segmen Dinamis](/docs/app/building-your-application/routing/dynamic-routes) untuk membuat penanganan permintaan dari data dinamis.
+
+```ts filename="app/items/[slug]/route.ts" switcher
+export async function GET(
+  request: Request,
+  { params }: { params: { slug: string } }
+) {
+  const slug = params.slug; // 'a', 'b', or 'c'
+}
+```
+
+| Rute                        | URL Contoh | `params`        |
+| --------------------------- | ---------- | --------------- |
+| `app/items/[slug]/route.js` | `/items/a` | `{ slug: 'a' }` |
+| `app/items/[slug]/route.js` | `/items/b` | `{ slug: 'b' }` |
+| `app/items/[slug]/route.js` | `/items/c` | `{ slug: 'c' }` |
+
+### Parameter Permintaan URL
+
+Objek permintaan yang diteruskan ke Route Handler adalah instance `NextRequest`, yang memiliki [beberapa metode kemudahan tambahan](/docs/app/api-reference/functions/next-request#nexturl), termasuk untuk mengelola parameter permintaan lebih mudah.
+
+```ts filename="app/api/search/route.ts" switcher
+import { type NextRequest } from 'next/server';
+
+export function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const query = searchParams.get('query');
+  // query is "hello" for /api/search?query=hello
+}
+```
+
+### Streaming
+
+Streaming biasanya digunakan dalam kombinasi dengan Model Bahasa Besar (LLM), seperti OpenAI, untuk konten yang dihasilkan oleh AI. Pelajari lebih lanjut tentang [AI SDK](https://sdk.vercel.ai/docs).
+
+```ts filename="app/api/chat/route.ts" switcher
+import { Configuration, OpenAIApi } from 'openai-edge';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+
+export const runtime = 'edge';
+
+const apiConfig = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
+
+const openai = new OpenAIApi(apiConfig);
+
+export async function POST(req: Request) {
+  // Extract the `messages` from the body of the request
+  const { messages } = await req.json();
+
+  // Request the OpenAI API for the response based on the prompt
+  const response = await openai.createChatCompletion({
+    model: 'gpt-3.5-turbo',
+    stream: true,
+    messages: messages,
+    max_tokens: 500,
+    temperature: 0.7,
+    top_p: 1,
+    frequency_penalty: 1,
+    presence_penalty: 1,
+  });
+
+  // Convert the response into a friendly text-stream
+  const stream = OpenAIStream(response);
+
+  // Respond with the stream
+  return new StreamingTextResponse(stream);
+}
+```
+
+Abstraksi ini menggunakan API Web untuk membuat aliran. Anda juga dapat menggunakan API Web yang mendasarinya secara langsung.
+
+```ts filename="app/api/route.ts" switcher
+// https://developer.mozilla.org/docs/Web/API/ReadableStream#convert_async_iterator_to_stream
+function iteratorToStream(iterator: any) {
+  return new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await iterator.next();
+
+      if (done) {
+        controller.close();
+      } else {
+        controller.enqueue(value);
+      }
+    },
+  });
+}
+
+function sleep(time: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, time);
+  });
+}
+
+const encoder = new TextEncoder();
+
+async function* makeIterator() {
+  yield encoder.encode('<p>One</p>');
+  await sleep(200);
+  yield encoder.encode('<p>Two</p>');
+  await sleep(200);
+  yield encoder.encode('<p>Three</p>');
+}
+
+export async function GET() {
+  const iterator = makeIterator();
+  const stream = iteratorToStream(iterator);
+
+  return new Response(stream);
+}
+```
+
+### Tubuh Permintaan
+
+Anda dapat membaca tubuh permintaan `Request` menggunakan metode standar API Web:
+
+```ts filename="app/items/route.ts" switcher
+export async function POST(request: Request) {
+  const res = await request.json();
+  return Response.json({ res });
+}
+```
+
+### FormData Tubuh Permintaan
+
+Anda dapat membaca `FormData` menggunakan fungsi `request.formData()`:
+
+```ts filename="app/items/route.ts" switcher
+export async function POST(request: Request) {
+  const formData = await request.formData();
+  const name = formData.get('name');
+  const email = formData.get('email');
+  return Response.json({ name, email });
+}
+```
+
+Karena data `formData` semuanya berupa string, Anda mungkin ingin menggunakan [`zod-form-data`](https://www.npmjs.com/zod-form-data) untuk memvalidasi permintaan dan mengambil data dalam format yang Anda inginkan (misalnya, `number`).
+
+### CORS
+
+Anda dapat mengatur header CORS pada `Response` menggunakan metode standar API Web:
+
+```ts filename="app/api/route.ts" switcher
+export async function GET(request: Request) {
+  return new Response('Hello, Next.js!', {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+```
+
+### Runtimes Edge dan Node.js
+
+Route Handlers memiliki API Web isomorfik untuk mendukung kedua runtime Edge dan Node.js dengan mulus, termasuk dukungan untuk streaming. Karena Route Handlers menggunakan [konfigurasi segmen rute yang sama](/docs/app/api-reference/file-conventions/route-segment-config) dengan Pages dan Layouts, mereka mendukung fitur yang ditunggu-tunggu seperti Route Handlers yang [diperbarui secara statis](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#revalidating-data).
+
+Anda dapat menggunakan opsi konfigurasi segmen `runtime` untuk menentukan runtime:
+
+```ts
+export const runtime = 'edge'; // 'nodejs' is the default
+```
+
+### Respons Non-UI
+
+Anda dapat menggunakan Route Handlers untuk mengembalikan konten non-UI. Perhatikan bahwa [`sitemap.xml`](/docs/app/api-reference/file-conventions/metadata/sitemap#generate-a-sitemap), [`robots.txt`](/docs/app/api-reference/file-conventions/metadata/robots#generate-a-robots-file), [`app icons`](/docs/app/api-reference/file-conventions/metadata/app-icons#generate-icons-using-code-js-ts-tsx), dan [gambar open graph](/docs/app/api-reference/file-conventions/metadata/opengraph-image) semuanya memiliki dukungan bawaan.
+
+```ts filename="app/rss.xml/route.ts" switcher
+export async function GET() {
+  return new Response(`<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+
+<channel>
+  <title>Next.js Documentation</title>
+  <link>https://nextjs.org/docs</link>
+  <description>The React Framework for the Web</description>
+</channel>
+
+</rss>`);
+}
+```
+
+### Opsi Konfigurasi Segmen
+
+Route Handlers menggunakan [konfigurasi segmen rute yang sama](/docs/app/api-reference/file-conventions/route-segment-config) dengan halaman dan tata letak.
+
+```ts filename="app/items/route.ts" switcher
+export const dynamic = 'auto';
+export const dynamicParams = true;
+export const revalidate = false;
+export const fetchCache = 'auto';
+export const runtime = 'nodejs';
+export const preferredRegion = 'auto';
+```
+
+Lihat [referensi API](/docs/app/api-reference/file-conventions/route-segment-config) untuk detail lebih lanjut.

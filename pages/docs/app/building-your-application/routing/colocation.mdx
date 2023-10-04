@@ -1,0 +1,136 @@
+import Image from '../../../../../components/image';
+
+# Organisasi Proyek dan Penempatan File
+
+Selain dari [konvensi folder dan file routing](/docs/getting-started/project-structure#app-routing-conventions), Next.js adalah **tanpa pendapat** tentang bagaimana Anda mengatur dan menempatkan file proyek Anda.
+
+Halaman ini berbagi perilaku default dan fitur yang dapat Anda gunakan untuk mengorganisir proyek Anda.
+
+- [Penempatan yang Aman secara Default](#penempatan-yang-aman-secara-default)
+- [Fitur Organisasi Proyek](#fitur-organisasi-proyek)
+- [Strategi Organisasi Proyek](#strategi-organisasi-proyek)
+
+## Penempatan yang Aman secara Default
+
+Di dalam direktori `app`, [hierarki folder bersarang](/docs/app/building-your-application/routing#route-segments) menentukan struktur rute.
+
+Setiap folder mewakili segmen rute yang dipetakan ke segmen yang sesuai dalam jalur URL.
+
+Namun, meskipun struktur rute ditentukan melalui folder, sebuah rute **tidak dapat diakses secara publik** kecuali file `page.js` atau `route.js` ditambahkan ke segmen rute.
+
+<Image
+  alt="Diagram yang menunjukkan bahwa rute tidak dapat diakses secara publik kecuali file page.js atau route.js ditambahkan ke segmen rute."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-not-routable.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-not-routable.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  width="1600"
+  height="444"
+/>
+
+Dan, bahkan ketika sebuah rute telah diakses secara publik, hanya **konten yang dikembalikan** oleh `page.js` atau `route.js` yang dikirimkan ke klien.
+
+<Image
+  alt="Diagram yang menunjukkan bagaimana file page.js dan route.js membuat rute dapat diakses secara publik."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-routable.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-routable.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  width="1600"
+  height="444"
+/>
+
+Ini berarti bahwa **file proyek** dapat **aman secara bersamaan** di dalam segmen rute di direktori `app` tanpa secara tidak sengaja menjadi rute.
+
+<Image
+  alt="Diagram yang menunjukkan bagaimana file page.js dan route.js membuat rute dapat diakses secara publik."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-colocation.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-colocation.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx"
+  width="1600"
+  height="444"
+/>
+
+> **Berguna untuk diketahui**:
+>
+> - Ini berbeda dari direktori `pages`, di mana setiap file di dalam `pages` dianggap sebagai rute.
+> - Meskipun Anda **dapat** menempatkan file proyek Anda di dalam `app`, Anda tidak **harus** melakukannya. Jika Anda lebih suka, Anda dapat [menyimpannya di luar direktori `app`](#menyimpan-file-proyek-di-luar-app).
+
+## Fitur Organisasi Proyek
+
+Next.js menyediakan beberapa fitur untuk membantu Anda mengorganisir proyek Anda.
+
+### Folder Pribadi
+
+Folder pribadi dapat dibuat dengan memberi awalan folder dengan garis bawah: `_folderName`
+
+Ini menunjukkan bahwa folder tersebut adalah detail implementasi pribadi dan tidak boleh dipertimbangkan oleh sistem routing, sehingga **mengeluarkan folder dan semua subfoldernya** dari routing.
+
+![Struktur folder contoh menggunakan folder pribadi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-private-folders.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)
+
+Karena file di direktori `app` dapat [ditempatkan secara aman secara default](#penempatan-yang-aman-secara-default), folder pribadi tidak diperlukan untuk penempatan bersama. Namun, mereka dapat berguna untuk:
+
+- Memisahkan logika UI dari logika routing.
+- Mengorganisir file internal secara konsisten di seluruh proyek dan ekosistem Next.js.
+- Mengurutkan dan mengelompokkan file dalam editor kode.
+- Menghindari konflik nama potensial dengan konvensi file Next.js yang mungkin ada di masa depan.
+
+> **Berguna untuk diketahui**
+>
+> - Meskipun bukan konvensi kerangka kerja, Anda juga dapat mempertimbangkan menandai file di luar folder pribadi sebagai "pribadi" dengan pola garis bawah yang sama.
+> - Anda dapat membuat segmen URL yang dimulai dengan garis bawah dengan memberi awalan nama folder dengan `%5F` (bentuk URL-encoded dari garis bawah): `%5FfolderName`.
+> - Jika Anda tidak menggunakan folder pribadi, akan berguna untuk mengetahui [konvensi file khusus Next.js](/docs/getting-started/project-structure#routing-files) untuk mencegah konflik nama yang tidak diinginkan.
+
+### Kelompok Rute
+
+Kelompok rute dapat dibuat dengan membungkus folder dalam tanda kurung: `(namaFolder)`
+
+Ini menunjukkan bahwa folder tersebut digunakan untuk tujuan organisasi dan **tidak harus disertakan** dalam jalur URL rute.
+
+![Struktur folder contoh menggunakan kelompok rute](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-route-groups.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)
+
+Kelompok rute berguna untuk:
+
+- [Mengorganisir rute ke dalam kelompok](/docs/app/building-your-application/routing/route-groups#organize-routes-without-affecting-the-url-path) misalnya berdasarkan bagian situs, tujuan, atau tim.
+- Memungkinkan layout bersarang di tingkat segmen rute yang sama:
+  - [Membuat beberapa layout bersarang di tingkat segmen yang sama, termasuk beberapa layout root](/docs/app/building-your-application/routing/route-groups#creating-multiple-root-layouts)
+  - [Menambahkan layout ke subset rute dalam segmen umum](/docs/app/building-your-application/routing/route-groups#opting-specific-segments-into-a-layout)
+
+### Direktori `src`
+
+Next.js mendukung penyimpanan kode aplikasi (termasuk `app`) di dalam direktori [`src` yang bersifat opsional](/docs/app/building-your-application/configuring/src-directory). Ini memisahkan kode aplikasi dari file konfigurasi proyek yang sebagian besar berada di akar proyek.
+
+![Struktur folder contoh dengan direktori `src`](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-src-directory.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)
+
+### Aliases Path Modul
+
+Next.js mendukung [Aliases Path Modul](/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases) yang memudahkan membaca dan memelihara impor di seluruh file proyek yang bersarang secara mendalam.
+
+```jsx nama file="app/dashboard/settings/analytics/page.js"
+// sebelumnya
+import { Button } from '../../../components/button';
+
+// setelahnya
+import { Button } from '@/components/button';
+```
+
+## Strategi Organisasi Proyek
+
+Tidak ada cara yang "benar" atau "salah" ketika Anda mengorganisir file dan folder Anda sendiri dalam proyek Next.js.
+
+Bagian berikut ini mencantumkan gambaran umum sangat tingkat tinggi dari strategi umum. Intinya adalah memilih strategi yang sesuai untuk Anda dan tim Anda dan tetap konsisten di seluruh proyek.
+
+> **Berguna untuk diketahui**: Dalam contoh-contoh kami di bawah ini, kami menggunakan folder `components` dan `lib` sebagai penanda umum, namun penamaan tersebut tidak memiliki signifikansi khusus dalam kerangka kerja dan proyek Anda mungkin menggunakan folder lain seperti `ui`, `utils`, `hooks`, `styles`, dll.
+
+### Simpan file proyek di luar `app`
+
+Strategi ini menyimpan semua kode aplikasi dalam folder bersama di **akar proyek Anda** dan menjaga direktori `app` murni untuk tujuan routing.
+
+![Struktur folder contoh dengan file proyek di luar app](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-project-root.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)
+
+### Simpan file proyek di dalam folder tingkat atas di dalam `app`
+
+Strategi ini menyimpan semua kode aplikasi dalam folder bersama di **folder tingkat atas direktori `app`**.
+
+![Struktur folder contoh dengan file proyek di dalam app](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-app-root.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)
+
+### Pisahkan file proyek berdasarkan fitur atau rute
+
+Strategi ini menyimpan kode aplikasi bersama secara global di direktori `app` dan **membagi** kode aplikasi yang lebih spesifik ke dalam segmen rute yang menggunakannya.
+
+![Struktur folder contoh dengan file proyek dibagi berdasarkan fitur atau rute](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-app-root-split.png&w=1920&q=75&dpl=dpl_6NEGrryYzadM18NQBaMhtUNBSoKx)

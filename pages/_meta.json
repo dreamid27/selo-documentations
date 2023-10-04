@@ -3,20 +3,18 @@
     "title": "Beranda",
     "type": "page"
   },
-  "docs": "Docs",
   "about": {
     "title": "About",
     "type": "page"
   },
-  "docs_link": {
-    "title": "Dokumentasi",
-    "type": "page",
-    "href": "/docs"
+  "docs": {
+    "title": "Dokumentasi NextJS",
+    "type": "page"
   },
   "contact": {
-    "title": "Contact ↗",
+    "title": "Kontak Saya↗",
     "type": "page",
-    "href": "https://twitter.com/shuding_",
+    "href": "https://twitter.com/muhamadal_faris",
     "newWindow": true
   }
 }

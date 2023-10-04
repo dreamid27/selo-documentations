@@ -5,5 +5,11 @@
   "route-groups": "Grup Route",
   "dynamic-routes": "Rute Dinamis",
   "loading-ui-and-streaming": "Antarmuka Pemuatan dan Streaming",
-  "error-handling": "Penanganan Error"
+  "error-handling": "Penanganan Error",
+  "parallel-routes": "Rute-rute Paralel",
+  "intercepting-routes": "Intercepting Routes (Menyelusuri Rute-rute)",
+  "route-handlers": "Penanganan Rute (Route Handlers)",
+  "middleware": "Middleware",
+  "colocation": "Organisasi Proyek dan Penempatan File",
+  "internationalization": "Internasionalisasi"
 }

@@ -34,12 +34,12 @@ Secara default, komponen di dalam `app` adalah [React Server Components](/docs/a
 
 > **Rekomendasi:** Lihat halaman [Server](/docs/app/building-your-application/rendering/server-components) jika Anda baru mengenal Server Components.
 
-## Peran Folder dan Berkas
+## Peran Folder dan File
 
-Next.js menggunakan router berbasis sistem berkas di mana:
+Next.js menggunakan router berbasis sistem file di mana:
 
-- **Folder** digunakan untuk mendefinisikan rute. Sebuah rute adalah satu jalur dari folder bersarang, mengikuti hierarki sistem berkas dari **folder akar** ke folder **daun terakhir** yang mencakup berkas `page.js`. Lihat [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes).
-- **Berkas** digunakan untuk membuat UI yang ditampilkan untuk segmen rute. Lihat [berkas khusus](#file-conventions).
+- **Folder** digunakan untuk mendefinisikan rute. Sebuah rute adalah satu jalur dari folder bersarang, mengikuti hierarki sistem file dari **folder akar** ke folder **daun terakhir** yang mencakup file `page.js`. Lihat [Mendefinisikan Rute](/docs/app/building-your-application/routing/defining-routes).
+- **File** digunakan untuk membuat UI yang ditampilkan untuk segmen rute. Lihat [file khusus](#file-conventions).
 
 ## Segmen Rute
 
@@ -57,9 +57,9 @@ Rute `/dashboard/settings` terdiri dari tiga segmen:
 - `dashboard` (Segmen)
 - `settings` (Segmen Daun)
 
-## Konvensi Berkas
+## Konvensi File
 
-Next.js menyediakan serangkaian berkas khusus untuk membuat UI dengan perilaku tertentu dalam rute bersarang:
+Next.js menyediakan serangkaian file khusus untuk membuat UI dengan perilaku tertentu dalam rute bersarang:
 
 |                                                                                       |                                                                                                                 |
 | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -68,16 +68,16 @@ Next.js menyediakan serangkaian berkas khusus untuk membuat UI dengan perilaku t
 | [`loading`](/docs/app/building-your-application/routing/loading-ui-and-streaming)     | UI pemuatan untuk segmen dan anak-anaknya                                                                       |
 | [`not-found`](/docs/app/api-reference/file-conventions/not-found)                     | UI tidak ditemukan untuk segmen dan anak-anaknya                                                                |
 | [`error`](/docs/app/building-your-application/routing/error-handling)                 | UI kesalahan untuk segmen dan anak-anaknya                                                                      |
-| [`global-error`](/docs/app/building-your-application/routing/error-handling)          | UI Kesalahan Global                                                                                             |
+| [`global-error`](/docs/app/building-your-application/routing/error-handling)          | UI Error Global                                                                                                 |
 | [`route`](/docs/app/building-your-application/routing/route-handlers)                 | Titik akhir API sisi server                                                                                     |
 | [`template`](/docs/app/building-your-application/routing/pages-and-layouts#templates) | UI Tata Letak yang diperbarui khusus                                                                            |
 | [`default`](/docs/app/api-reference/file-conventions/default)                         | UI cadangan untuk [Rute Paralel (Parallel Routes)](/docs/app/building-your-application/routing/parallel-routes) |
 
-> **Penting untuk diketahui**: Ekstensi berkas `.js`, `.jsx`, atau `.tsx` dapat digunakan untuk berkas khusus.
+> **Penting untuk diketahui**: Ekstensi file `.js`, `.jsx`, atau `.tsx` dapat digunakan untuk file khusus.
 
 ## Hirarki Komponen
 
-Komponen-komponen React yang didefinisikan dalam berkas-berkas khusus dari segmen rute dirender dalam hirarki tertentu:
+Komponen-komponen React yang didefinisikan dalam file-file khusus dari segmen rute dirender dalam hirarki tertentu:
 
 - `layout.js`
 - `template.js`
@@ -86,19 +86,19 @@ Komponen-komponen React yang didefinisikan dalam berkas-berkas khusus dari segme
 - `not-found.js` (Batasan kesalahan React)
 - `page.js` atau `layout.js` yang bersarang
 
-![Hirarki Komponen untuk Konvensi Berkas](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffile-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+![Hirarki Komponen untuk Konvensi File](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffile-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
 
 Dalam rute bersarang, komponen-komponen dari segmen akan bersarang **di dalam** komponen-komponen dari segmen induk.
 
-![Hirarki Komponen untuk Konvensi Berkas Bersarang](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-file-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+![Hirarki Komponen untuk Konvensi File Bersarang](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fnested-file-conventions-component-hierarchy.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
 
 ## Kolkasi (Colocation)
 
-Selain berkas-berkas khusus, Anda memiliki opsi untuk meletakkan berkas-berkas Anda sendiri (misalnya, komponen, gaya, uji, dll) di dalam folder-folder dalam direktori `app`.
+Selain file-file khusus, Anda memiliki opsi untuk meletakkan file-file Anda sendiri (misalnya, komponen, gaya, uji, dll) di dalam folder-folder dalam direktori `app`.
 
 Hal ini karena sementara folder-foder menentukan rute-rute, hanya konten yang dikembalikan oleh `page.js` atau `route.js` yang dapat diakses secara publik.
 
-![Contoh Struktur Folder dengan Berkas Kolkasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-colocation.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
+![Contoh Struktur Folder dengan File Kolkasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-colocation.png&w=1920&q=75&dpl=dpl_JAMnhWMXXnjUMASoC6DujN1XhoEg)
 
 Pelajari lebih lanjut tentang [Organisasi Proyek dan Kolkasi (Project Organization and Colocation)](/docs/app/building-your-application/routing/colocation).
 

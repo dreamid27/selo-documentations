@@ -1,0 +1,149 @@
+# Internasionalisasi
+
+Next.js memungkinkan Anda untuk mengkonfigurasi routing dan rendering konten untuk mendukung beberapa bahasa. Membuat situs Anda adaptif untuk berbagai bahasa mencakup konten terjemahan (lokalisasi) dan rute internasional.
+
+## Terminologi
+
+- **Lokal:** Sebuah pengenal untuk set bahasa dan preferensi pemformatan. Ini biasanya mencakup bahasa pilihan pengguna dan mungkin wilayah geografis mereka.
+  - `en-US`: Bahasa Inggris seperti yang digunakan di Amerika Serikat
+  - `nl-NL`: Bahasa Belanda seperti yang digunakan di Belanda
+  - `nl`: Bahasa Belanda, tanpa wilayah tertentu
+
+## Gambaran Routing
+
+Disarankan untuk menggunakan preferensi bahasa pengguna dalam browser untuk memilih lokal mana yang akan digunakan. Mengubah bahasa pilihan Anda akan memodifikasi header `Accept-Language` yang masuk ke aplikasi Anda.
+
+Sebagai contoh, dengan menggunakan pustaka-pustaka berikut, Anda dapat melihat pada permintaan masuk untuk menentukan lokal mana yang akan dipilih, berdasarkan header `Headers`, lokal yang Anda rencanakan untuk didukung, dan lokal default.
+
+```js filename="middleware.js"
+import { match } from '@formatjs/intl-localematcher';
+import Negotiator from 'negotiator';
+
+let headers = { 'accept-language': 'en-US,en;q=0.5' };
+let languages = new Negotiator({ headers }).languages();
+let locales = ['en-US', 'nl-NL', 'nl'];
+let defaultLocale = 'en-US';
+
+match(languages, locales, defaultLocale); // -> 'en-US'
+```
+
+Routing dapat diinternasionalisasi baik melalui sub-pat (seperti `/fr/products`) atau domain (`my-site.fr/products`). Dengan informasi ini, Anda sekarang dapat mengarahkan pengguna berdasarkan lokal di dalam [Middleware](/docs/app/building-your-application/routing/middleware).
+
+```js filename="middleware.js"
+
+let locales = ['en-US', 'nl-NL', 'nl']
+
+// Dapatkan lokal yang diinginkan, serupa dengan yang di atas atau menggunakan pustaka lain
+function getLocale(request) { ... }
+
+export function middleware(request) {
+  // Periksa apakah ada lokal yang didukung dalam path
+  const { pathname } = request.nextUrl
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+
+  if (pathnameHasLocale) return
+
+  // Redirect jika tidak ada lokal
+  const locale = getLocale(request)
+  request.nextUrl.pathname = `/${locale}${pathname}`
+  // misalnya permintaan masuk adalah /products
+  // URL baru sekarang adalah /en-US/products
+  return Response.redirect(request.nextUrl)
+}
+
+export const config = {
+  matcher: [
+    // Lewati semua path internal (_next)
+    '/((?!_next).*)',
+    // Opsional: hanya jalankan pada root (/) URL
+    // '/'
+  ],
+}
+```
+
+Terakhir, pastikan semua file khusus di dalam `app/` disarangkan di bawah `app/[lang]`. Ini memungkinkan router Next.js untuk menangani dinamis berbagai lokal dalam rute, dan meneruskan parameter `lang` ke setiap tata letak dan halaman. Sebagai contoh:
+
+```jsx filename="app/[lang]/page.js"
+// Sekarang Anda memiliki akses ke lokal saat ini
+// misalnya /en-US/products -> `lang` adalah "en-US"
+export default async function Page({ params: { lang } }) {
+  return ...
+}
+```
+
+Layout root juga dapat disarangkan di dalam folder baru (misalnya `app/[lang]/layout.js`).
+
+## Lokalisasi
+
+Mengubah konten yang ditampilkan berdasarkan preferensi lokal pengguna, atau lokalitas, bukan sesuatu yang spesifik untuk Next.js. Pola yang dijelaskan di bawah ini akan berfungsi sama dengan aplikasi web apa pun.
+
+Mari kita asumsikan kita ingin mendukung konten dalam bahasa Inggris dan Belanda di dalam aplikasi kami. Kami mungkin akan menjaga dua "kamus" yang berbeda, yang merupakan objek yang memberi kami pemetaan dari beberapa kunci ke string yang lokal. Sebagai contoh:
+
+```json filename="dictionaries/en.json"
+{
+  "products": {
+    "cart": "Tambahkan ke Keranjang"
+  }
+}
+```
+
+```json filename="dictionaries/nl.json"
+{
+  "products": {
+    "cart": "Toevoegen aan Winkelwagen"
+  }
+}
+```
+
+Kemudian kita dapat membuat fungsi `getDictionary` untuk memuat terjemahan untuk lokal yang diminta:
+
+```jsx filename="app/[lang]/dictionaries.js"
+import 'server-only';
+
+const dictionaries = {
+  en: () => import('./dictionaries/en.json').then((module) => module.default),
+  nl: () => import('./dictionaries/nl.json').then((module) => module.default),
+};
+
+export const getDictionary = async (locale) => dictionaries[locale]();
+```
+
+Dengan bahasa yang saat ini dipilih, kita dapat mengambil kamus di dalam tata letak atau halaman.
+
+```jsx filename="app/[lang]/page.js"
+import { getDictionary } from './dictionaries';
+
+export default async function Page({ params: { lang } }) {
+  const dict = await getDictionary(lang); // en
+  return <button>{dict.products.cart}</button>; // Tambahkan ke Keranjang
+}
+```
+
+Karena semua tata letak dan halaman dalam direktori `app/` default ke [Komponen Server](/docs/app/building-your-application/rendering/server-components), kita tidak perlu khawatir tentang ukuran file terjemahan memengaruhi ukuran bundel JavaScript sisi klien kita. Kode ini akan **hanya berjalan di server**, dan hanya HTML yang dihasilkan yang akan dikirim ke browser.
+
+## Generasi Statis
+
+Untuk menghasilkan rute statis untuk sekumpulan lokal tertentu, kita dapat menggunakan `generateStaticParams` dengan halaman atau tata letak apa pun. Ini bisa global, misalnya, di tata letak root:
+
+```jsx filename="app/[lang]/layout.js"
+export async function generateStaticParams() {
+  return [{ lang: 'en-US' }, { lang: 'de' }];
+}
+
+export default function Root({ children, params }) {
+  return (
+    <html lang={params.lang}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Sumber Daya
+
+- [Routing dan Terjemahan i18n Minimal](https://github.com/vercel/next.js/tree/canary/examples/app-dir-i18n-routing)
+- [`next-intl`](https://next-intl-docs.vercel.app/docs/next-13)
+- [`next-international`](https://github.com/QuiiBz/next-international)
+- [`next-i18n-router`](https://github.com/i18nexus/next-i18n-router)

@@ -1,0 +1,313 @@
+---
+title: OpenTelemetry
+description: Pelajari cara menginstrumentasi aplikasi Next.js Anda dengan OpenTelemetry.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# OpenTelemetry
+
+> **Baik untuk diketahui**: Fitur ini **eksperimental**, Anda perlu secara eksplisit mengaktifkannya dengan menyediakan `experimental.instrumentationHook = true;` di `next.config.js` Anda.
+
+Observabilitas sangat penting untuk memahami dan mengoptimalkan perilaku dan kinerja aplikasi Next.js Anda.
+
+Seiring aplikasi menjadi lebih kompleks, menjadi semakin sulit untuk mengidentifikasi dan mendiagnosis masalah yang mungkin muncul. Dengan memanfaatkan alat observabilitas, seperti logging dan metrik, para pengembang dapat mendapatkan wawasan tentang perilaku aplikasi mereka dan mengidentifikasi area yang dapat dioptimalkan. Dengan observabilitas, para pengembang dapat secara proaktif mengatasi masalah sebelum menjadi masalah besar dan memberikan pengalaman pengguna yang lebih baik. Oleh karena itu, sangat disarankan untuk menggunakan observabilitas dalam aplikasi Next.js Anda untuk meningkatkan kinerja, mengoptimalkan sumber daya, dan meningkatkan pengalaman pengguna.
+
+Kami merekomendasikan menggunakan OpenTelemetry untuk menginstrumentasi aplikasi Anda.
+Ini adalah cara yang platform-agnostik untuk menginstrumen aplikasi yang memungkinkan Anda mengubah penyedia observabilitas Anda tanpa mengubah kode Anda. Baca [Dokumentasi Resmi OpenTelemetry](https://opentelemetry.io/docs/) untuk informasi lebih lanjut tentang OpenTelemetry dan cara kerjanya.
+
+Dokumentasi ini menggunakan istilah seperti _Span_, _Trace_, atau _Exporter_ sepanjang dokumen ini, yang semuanya dapat ditemukan dalam [Pendahuluan Observabilitas OpenTelemetry](https://opentelemetry.io/docs/concepts/observability-primer/).
+
+Next.js mendukung instrumen OpenTelemetry secara otomatis, yang berarti kami telah menginstrumen Next.js itu sendiri.
+Ketika Anda mengaktifkan OpenTelemetry, kami akan secara otomatis membungkus semua kode Anda seperti `getStaticProps` dalam _span_ dengan atribut yang membantu.
+
+> **Baik untuk diketahui**: Kami saat ini hanya mendukung binding OpenTelemetry pada fungsi serverless.
+> Kami tidak menyediakan untuk kode `edge` atau sisi klien.
+
+## Memulai
+
+OpenTelemetry adalah hal yang dapat diperluas tetapi mengatur dengan benar dapat cukup berlebihan.
+Itulah mengapa kami telah menyiapkan paket `@vercel/otel` yang membantu Anda memulai dengan cepat.
+Ini tidak dapat diperluas dan Anda harus mengonfigurasi OpenTelemetry secara manual jika Anda perlu menyesuaikan setup Anda.
+
+### Menggunakan `@vercel/otel`
+
+Untuk memulai, Anda harus menginstal `@vercel/otel`:
+
+```bash filename="Terminal"
+npm install @vercel/otel
+```
+
+Selanjutnya, buat file [`instrumentation.ts`](/docs/app/building-your-application/optimizing/instrumentation) (atau `.js`) kustom di **direktori root** proyek (atau di dalam folder `src` jika menggunakan satu):
+
+```ts filename="your-project/instrumentation.ts" switcher
+import { registerOTel } from '@vercel/otel';
+
+export function register() {
+  registerOTel('next-app');
+}
+```
+
+```js filename="your-project/instrumentation.js" switcher
+import { registerOTel } from '@vercel/otel';
+
+export function register() {
+  registerOTel('next-app');
+}
+```
+
+> **Baik untuk diketahui**
+>
+> - File `instrumentation` harus berada di root proyek Anda dan tidak di dalam direktori `app` atau `pages`. Jika Anda menggunakan folder `src`, maka letakkan file di dalam `src` bersama `pages` dan `app`.
+> - Jika Anda menggunakan opsi konfigurasi [`pageExtensions`](/docs/app/api-reference/next-config-js/pageExtensions) untuk menambahkan akhiran, Anda juga perlu memperbarui nama file `instrumentation` agar sesuai.
+> - Kami telah membuat contoh dasar [with-opentelemetry](https://github.com/vercel/next.js/tree/canary/examples/with-opentelemetry) yang dapat Anda gunakan.
+
+### Konfigurasi Manual OpenTelemetry
+
+Jika wrapper kami `@vercel/otel` tidak sesuai dengan kebutuhan Anda, Anda dapat mengonfigurasi OpenTelemetry secara manual.
+
+Pertama, Anda perlu menginstal paket OpenTelemetry:
+
+```bash filename="Terminal"
+npm install @opentelemetry/sdk-node @opentelemetry/resources @opentelemetry/semantic-conventions @opentelemetry/sdk-trace-node @opentelemetry/exporter-trace-otlp-http
+```
+
+Sekarang Anda dapat menginisialisasi `NodeSDK` di `instrumentation.ts` Anda.
+API OpenTelemetry tidak kompatibel dengan runtime edge, jadi Anda perlu memastikan bahwa Anda mengimpornya hanya ketika `process.env.NEXT_RUNTIME === 'nodejs'`. Kami merekomendasikan membuat file baru `instrumentation.node.ts` yang Anda impor secara bersyarat hanya saat menggunakan node:
+
+```ts filename="instrumentation.ts" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation.node.ts');
+  }
+}
+```
+
+```js filename="instrumentation.js" switcher
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./instrumentation.node.js');
+  }
+}
+```
+
+```ts filename="instrumentation.node.ts" switcher
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node';
+
+const sdk = new NodeSDK({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'next-app',
+  }),
+  spanProcessor: new SimpleSpanProcessor(new OTLPTraceExporter()),
+});
+sdk.start();
+```
+
+```js filename="instrumentation.node.js" switcher
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { Resource } from '@opentelemetry/resources';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node';
+
+const sdk = new NodeSDK({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: 'next-app',
+  }),
+  spanProcessor: new SimpleSpanProcessor(new OTLPTraceExporter()),
+});
+sdk.start();
+```
+
+Melakukan ini setara dengan menggunakan `@vercel/otel`, tetapi memungkinkan untuk mengubah dan memperluas. Misalnya, Anda dapat menggunakan `@opentelemetry/exporter-trace-otlp-grpc` sebagai gantinya `@opentelemetry/exporter-trace-otlp-http` atau Anda dapat menentukan atribut sumber daya lebih lanjut.
+
+## Menguji instrumen Anda
+
+Anda memerlukan kolektor OpenTelemetry dengan backend yang kompatibel untuk menguji trace OpenTelemetry secara lokal.
+Kami merekomendasikan menggunakan [lingkungan pengembangan OpenTelemetry kami](https://github.com/vercel/opentelemetry-collector-dev-setup).
+
+Jika semuanya berjalan dengan baik, Anda harus dapat melihat root server span yang diberi label `GET /requested/pathname`.
+Semua span lain dari trace tertentu akan bersarang di bawahnya.
+
+Next.js melacak lebih banyak span daripada yang dikeluarkan secara default.
+Untuk melihat lebih banyak span, Anda harus mengatur `NEXT_OTEL_VERBOSE=1`.
+
+## Penyebaran
+
+### Menggunakan OpenTelemetry Collector
+
+Ketika Anda mendeploy dengan OpenTelemetry Collector, Anda dapat menggunakan `@vercel/otel`.
+Ini akan berfungsi baik di Vercel maupun saat di-hosting sendiri.
+
+#### Menerapkan di Vercel
+
+Kami memastikan bahwa OpenTelemetry berfungsi dengan baik di Vercel.
+
+Ikuti [dokumentasi Vercel](https://vercel.com/docs/concepts/observability/otel-overview/quickstart) untuk menghubungkan proyek Anda ke penyedia observabilitas.
+
+#### Self-hosting
+
+Menerapkan ke platform lain juga mudah. Anda perlu menjalankan OpenTelemetry Collector Anda sendiri untuk menerima dan memproses data telemetri dari aplikasi Next.js Anda.
+
+Untuk melakukannya, ikuti panduan [Panduan Memulai OpenTelemetry Collector](https://opentelemetry.io/docs/collector/getting-started/), yang akan membimbing Anda dalam mengatur kolektor dan mengonfigurasinya untuk menerima data dari aplikasi Next.js Anda.
+
+Setelah Anda memiliki kolektor Anda berjalan, Anda dapat mendeploy aplikasi Next.js Anda ke platform pilihan Anda sesuai dengan panduan penyebaran masing-masing.
+
+### Eksportir Kustom
+
+Kami merekomendasikan menggunakan OpenTelemetry Collector.
+Jika itu tidak mungkin di platform Anda, Anda dapat menggunakan eksportir OpenTelemetry kustom dengan [konfigurasi OpenTelemetry manual](/docs/pages/building-your-application/optimizing/open-telemetry#manual-opentelemetry-configuration)
+
+## Span Kustom
+
+Anda dapat menambahkan span kustom dengan [API OpenTelemetry](https://opentelemetry.io/docs/instrumentation/js/instrumentation).
+
+```bash filename="Terminal"
+npm install @opentelemetry/api
+```
+
+Contoh berikut menunjukkan sebuah fungsi yang mengambil bintang GitHub dan menambahkan span kustom `fetchGithubStars` untuk melacak hasil permintaan pengambilan:
+
+```ts
+import { trace } from '@opentelemetry/api';
+
+export async function fetchGithubStars() {
+  return await trace
+    .getTracer('nextjs-example')
+    .startActiveSpan('fetchGithubStars', async (span) => {
+      try {
+        return await getValue();
+      } finally {
+        span.end();
+      }
+    });
+}
+```
+
+Fungsi `register` akan dieksekusi sebelum kode Anda berjalan dalam lingkungan baru.
+Anda dapat mulai membuat span baru, dan mereka seharusnya ditambahkan dengan benar ke trace yang diekspor.
+
+## Span Default di Next.js
+
+Next.js secara otomatis menginstrumen beberapa span untuk memberikan wawasan yang berguna tentang kinerja aplikasi Anda.
+
+Atribut pada span mengikuti [konvensi semantik OpenTelemetry](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/). Kami juga menambahkan beberapa atribut kustom di bawah namespace `next`:
+
+- `next.span_name` - duplikat nama span
+- `next.span_type` - setiap jenis span memiliki pengidentifikasi unik
+- `next.route` - Pola rute permintaan (mis., `/[param]/user`).
+- `next.page`
+  - Ini adalah nilai internal yang digunakan oleh router aplikasi.
+  - Anda dapat memikirkannya sebagai rute ke file khusus (seperti `page.ts`, `layout.ts`, `loading.ts`, dan lain-lain)
+  - Ini dapat digunakan sebagai pengidentifikasi unik hanya ketika dipasangkan dengan `next.route` karena `/layout` dapat digunakan untuk mengidentifikasi baik `/(groupA)/layout.ts` dan `/(groupB)/layout.ts`
+
+### `[http.method] [next.route]`
+
+- `next.span_type`: `BaseServer.handleRequest`
+
+Span ini mewakili span root untuk setiap permintaan masuk ke aplikasi Next.js Anda. Ini melacak metode HTTP, rute, target, dan kode status permintaan.
+
+Atribut:
+
+- [Atribut HTTP umum](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#common-attributes)
+  - `http.method`
+  - `http.status_code`
+- [Atribut HTTP Server](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-server-semantic-conventions)
+  - `http.route`
+  - `http.target`
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `render route (app) [next.route]`
+
+- `next.span_type`: `AppRender.getBodyResult`.
+
+Span ini mewakili proses merender rute dalam router aplikasi.
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `fetch [http.method] [http.url]`
+
+- `next.span_type`: `AppRender.fetch`
+
+Span ini mewakili permintaan fetch yang dieksekusi dalam kode Anda.
+
+Atribut:
+
+- [Atribut HTTP umum](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#common-attributes)
+  - `http.method`
+- [Atribut HTTP Klien](https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/http/#http-client)
+  - `http.url`
+  - `net.peer.name`
+  - `net.peer.port` (hanya jika ditentukan)
+- `next.span_name`
+- `next.span_type`
+
+### `executing api route (app) [next.route]`
+
+- `next.span_type`: `AppRouteRouteHandlers.runHandler`.
+
+Span ini mewakili eksekusi pengendali rute API dalam router aplikasi.
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `getServerSideProps [next.route]`
+
+- `next.span_type`: `Render.getServerSideProps`.
+
+Span ini mewakili eksekusi `getServerSideProps` untuk rute tertentu.
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `getStaticProps [next.route]`
+
+- `next.span_type`: `Render.getStaticProps`.
+
+Span ini mewakili eksekusi `getStaticProps` untuk rute tertentu.
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `render route (pages) [next.route]`
+
+- `next.span_type`: `Render.renderDocument`.
+
+Span ini mewakili proses merender dokumen untuk rute tertentu.
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.route`
+
+### `generateMetadata [next.page]`
+
+- `next.span_type`: `ResolveMetadata.generateMetadata`.
+
+Span ini mewakili proses menghasilkan metadata untuk halaman tertentu (satu rute dapat memiliki beberapa span seperti ini).
+
+Atribut:
+
+- `next.span_name`
+- `next.span_type`
+- `next.page`

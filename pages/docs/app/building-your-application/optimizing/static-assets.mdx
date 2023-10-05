@@ -1,0 +1,27 @@
+---
+title: Aset Statis
+description: Next.js memungkinkan Anda untuk menyajikan file statis, seperti gambar, dalam direktori publik. Anda dapat mempelajari cara kerjanya di sini.
+---
+
+# Aset Statis
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js dapat menyajikan file statis, seperti gambar, dalam folder yang disebut `public` di direktori utama. File dalam `public` kemudian dapat dirujuk oleh kode Anda mulai dari URL dasar (`/`).
+
+Sebagai contoh, jika Anda menambahkan `me.png` di dalam `public`, kode berikut akan mengakses gambar tersebut:
+
+```jsx filename="Avatar.js"
+import Image from 'next/image';
+
+export function Avatar() {
+  return <Image src="/me.png" alt="me" width="64" height="64" />;
+}
+```
+
+Untuk file metadata statis, seperti `robots.txt`, `favicon.ico`, dll, Anda harus menggunakan [file metadata khusus](/docs/app/api-reference/file-conventions/metadata) di dalam folder `app`.
+
+> Baik untuk diketahui:
+>
+> - Direktori harus dinamai `public`. Nama tersebut tidak dapat diubah dan merupakan satu-satunya direktori yang digunakan untuk menyajikan aset statis.
+> - Hanya aset yang berada dalam direktori `public` pada [waktu pembangunan](/docs/app/api-reference/next-cli#build) yang akan disajikan oleh Next.js. File yang ditambahkan pada saat permintaan tidak akan tersedia. Kami merekomendasikan menggunakan layanan pihak ketiga seperti [AWS S3](https://aws.amazon.com/s3/) untuk penyimpanan file yang persisten.

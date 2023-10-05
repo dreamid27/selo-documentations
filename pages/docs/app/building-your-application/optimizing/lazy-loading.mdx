@@ -1,0 +1,162 @@
+---
+title: Lazy Loading
+description: Muat malas pustaka yang diimpor dan Komponen React untuk meningkatkan kinerja pemuatan aplikasi Anda.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Lazy Loading
+
+[Lazy loading](https://developer.mozilla.org/docs/Web/Performance/Lazy_loading) di Next.js membantu meningkatkan kinerja pemuatan awal aplikasi dengan mengurangi jumlah JavaScript yang diperlukan untuk merender sebuah rute.
+
+Ini memungkinkan Anda menunda pemuatan **Komponen Klien** dan pustaka yang diimpor, dan hanya menyertakan mereka dalam bundel klien saat dibutuhkan. Sebagai contoh, Anda mungkin ingin menunda pemuatan modal hingga pengguna mengkliknya untuk membukanya.
+
+Ada dua cara Anda dapat menerapkan pemuatan malas di Next.js:
+
+1. Menggunakan [Impor Dinamis](#nextdynamic) dengan `next/dynamic`
+2. Menggunakan [`React.lazy()`](https://react.dev/reference/react/lazy) dengan [Suspense](https://react.dev/reference/react/Suspense)
+
+Secara default, Komponen Server secara otomatis [pemisahan kode](https://developer.mozilla.org/docs/Glossary/Code_splitting), dan Anda dapat menggunakan [streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming) untuk secara progresif mengirimkan potongan-potongan UI dari server ke klien. Lazy loading berlaku untuk Komponen Klien.
+
+## `next/dynamic`
+
+`next/dynamic` adalah komposit [`React.lazy()`](https://react.dev/reference/react/lazy) dan [Suspense](https://react.dev/reference/react/Suspense). Ini berperilaku sama di direktori `app` dan `pages` untuk memungkinkan migrasi bertahap.
+
+## Contoh
+
+### Mengimpor Komponen Klien
+
+```jsx filename="app/page.js"
+'use client';
+
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Komponen Klien:
+const ComponentA = dynamic(() => import('../components/A'));
+const ComponentB = dynamic(() => import('../components/B'));
+const ComponentC = dynamic(() => import('../components/C'), { ssr: false });
+
+export default function ClientComponentExample() {
+  const [showMore, setShowMore] = useState(false);
+
+  return (
+    <div>
+      {/* Dimuat segera, tetapi dalam bundel klien yang terpisah */}
+      <ComponentA />
+
+      {/* Dimuat saat diperlukan, hanya saat/saat kondisi terpenuhi */}
+      {showMore && <ComponentB />}
+      <button onClick={() => setShowMore(!showMore)}>Toggle</button>
+
+      {/* Dimuat hanya di sisi klien */}
+      <ComponentC />
+    </div>
+  );
+}
+```
+
+### Melewati SSR
+
+Ketika menggunakan `React.lazy()` dan Suspense, Komponen Klien akan secara default dipre-render (SSR).
+
+Jika Anda ingin menonaktifkan pemutaran sebelumnya untuk Komponen Klien, Anda dapat menggunakan opsi `ssr` yang diatur ke `false`:
+
+```jsx
+const ComponentC = dynamic(() => import('../components/C'), { ssr: false });
+```
+
+### Mengimpor Komponen Server
+
+Jika Anda mengimpor secara dinamis Komponen Server, hanya Komponen Klien yang menjadi anak Komponen Server yang akan dimuat malas - bukan Komponen Server itu sendiri.
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic';
+
+// Komponen Server:
+const ServerComponent = dynamic(() => import('../components/ServerComponent'));
+
+export default function ServerComponentExample() {
+  return (
+    <div>
+      <ServerComponent />
+    </div>
+  );
+}
+```
+
+### Memuat Pustaka Eksternal
+
+Pustaka eksternal dapat dimuat sesuai permintaan menggunakan fungsi [`import()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/import). Contoh ini menggunakan pustaka eksternal `fuse.js` untuk pencarian kabur. Modul ini hanya dimuat di sisi klien setelah pengguna mengetik di input pencarian.
+
+```jsx filename="app/page.js"
+'use client';
+
+import { useState } from 'react';
+
+const names = ['Tim', 'Joe', 'Bel', 'Lee'];
+
+export default function Page() {
+  const [results, setResults] = useState();
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Cari"
+        onChange={async (e) => {
+          const { value } = e.currentTarget;
+          // Muat fuse.js secara dinamis
+          const Fuse = (await import('fuse.js')).default;
+          const fuse = new Fuse(names);
+
+          setResults(fuse.search(value));
+        }}
+      />
+      <pre>Hasil: {JSON.stringify(results, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### Menambahkan komponen pemuatan kustom
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic';
+
+const WithCustomLoading = dynamic(
+  () => import('../components/WithCustomLoading'),
+  {
+    loading: () => <p>Loading...</p>,
+  }
+);
+
+export default function Page() {
+  return (
+    <div>
+      {/* The loading component will be rendered while  <WithCustomLoading/> is loading */}
+      <WithCustomLoading />
+    </div>
+  );
+}
+```
+
+### Mengimpor Ekspor Nama
+
+Untuk mengimpor secara dinamis ekspor bernama, Anda dapat mengembalikannya dari Promise yang dikembalikan oleh fungsi [`import()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/import):
+
+```jsx filename="components/hello.js"
+'use client';
+
+export function Hello() {
+  return <p>Halo!</p>;
+}
+```
+
+```jsx filename="app/page.js"
+import dynamic from 'next/dynamic';
+
+const ClientComponent = dynamic(() =>
+  import('../components/hello').then((mod) => mod.Hello)
+);
+```

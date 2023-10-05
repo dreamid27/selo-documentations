@@ -1,5 +1,11 @@
 {
-  "images": "Optimasi Gambar",
-  "fonts": "Optimasi Fonts",
-  "scripts": "Optimasi Scripts"
+  "images": "Gambar",
+  "fonts": "Fonts",
+  "scripts": "Scripts",
+  "metadata": "Metadata",
+  "static-assets": "Aset Statis",
+  "lazy-loading": "Lazy Loading",
+  "analytics": "Analitik",
+  "open-telemetry": "OpenTelemetry",
+  "instrumentation": "Instrumentasi"
 }

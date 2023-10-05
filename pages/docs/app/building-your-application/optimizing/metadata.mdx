@@ -1,0 +1,369 @@
+---
+title: Metadata
+description: Gunakan Metadata API untuk mendefinisikan metadata dalam tata letak atau halaman apa pun.
+related:
+  description: Lihat semua opsi Metadata API.
+  links:
+    - app/api-reference/functions/generate-metadata
+    - app/api-reference/file-conventions/metadata
+---
+
+# Metadata
+
+Next.js memiliki Metadata API yang dapat digunakan untuk mendefinisikan metadata aplikasi Anda (misalnya, tag `meta` dan `link` di dalam elemen `head` HTML Anda) untuk meningkatkan SEO dan kemampuan berbagi web.
+
+Ada dua cara Anda dapat menambahkan metadata ke aplikasi Anda:
+
+- **Metadata berdasarkan Konfigurasi**: Ekspor objek metadata statis [`metadata`](/docs/app/api-reference/functions/generate-metadata#metadata-object) atau fungsi dinamis [`generateMetadata`](/docs/app/api-reference/functions/generate-metadata#generatemetadata-function) dalam file `layout.js` atau `page.js`.
+- **Metadata berdasarkan File**: Tambahkan file-file khusus statis atau yang dibuat secara dinamis ke segmen rute.
+
+Dengan kedua opsi ini, Next.js akan secara otomatis menghasilkan elemen-elemen `<head>` yang relevan untuk halaman-halaman Anda. Anda juga dapat membuat gambar OG dinamis menggunakan konstruktor [`ImageResponse`](/docs/app/api-reference/functions/image-response).
+
+## Metadata Statis
+
+Untuk mendefinisikan metadata statis, ekspor objek [`Metadata`](/docs/app/api-reference/functions/generate-metadata#metadata-object) dari file `layout.js` atau file `page.js` yang statis.
+
+```tsx filename="layout.tsx / page.tsx" switcher
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '...',
+  description: '...',
+};
+
+export default function Page() {}
+```
+
+```jsx filename="layout.js / page.js" switcher
+export const metadata = {
+  title: '...',
+  description: '...',
+};
+
+export default function Page() {}
+```
+
+Untuk semua opsi yang tersedia, lihat [API Reference](/docs/app/api-reference/functions/generate-metadata).
+
+## Metadata Dinamis
+
+Anda dapat menggunakan fungsi `generateMetadata` untuk `mengambil` metadata yang memerlukan nilai dinamis.
+
+```tsx filename="app/products/[id]/page.tsx" switcher
+import type { Metadata, ResolvingMetadata } from 'next';
+
+type Props = {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // baca parameter rute
+  const id = params.id;
+
+  // ambil data
+  const product = await fetch(`https://.../${id}`).then((res) => res.json());
+
+  // secara opsional, akses dan perluas (daripada menggantikan) metadata induk
+  const previousImages = (await parent).openGraph?.images || [];
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  };
+}
+
+export default function Page({ params, searchParams }: Props) {}
+```
+
+```jsx filename="app/products/[id]/page.js" switcher
+export async function generateMetadata({ params, searchParams }, parent) {
+  // baca parameter rute
+  const id = params.id;
+
+  // ambil data
+  const product = await fetch(`https://.../${id}`).then((res) => res.json());
+
+  // secara opsional, akses dan perluas (daripada menggantikan) metadata induk
+  const previousImages = (await parent).openGraph?.images || [];
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  };
+}
+
+export default function Page({ params, searchParams }) {}
+```
+
+Untuk semua parameter yang tersedia, lihat [API Reference](/docs/app/api-reference/functions/generate-metadata).
+
+> **Baik untuk diketahui**:
+>
+> - Kedua metadata statis dan dinamis melalui `generateMetadata` **hanya didukung dalam Komponen Server**.
+> - Permintaan `fetch` secara otomatis [memoisasi](/docs/app/building-your-application/caching#request-memoization) untuk data yang sama di seluruh `generateMetadata`, `generateStaticParams`, Tata Letak, Halaman, dan Komponen Server. Anda dapat menggunakan [cache React](/docs/app/building-your-application/caching#request-memoization) jika `fetch` tidak tersedia.
+> - Next.js akan menunggu pengambilan data di dalam `generateMetadata` selesai sebelum mengalirkan UI ke klien. Ini menjamin bagian pertama dari [respon yang di-streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming) mencakup tag-tag `<head>`.
+
+## Metadata berdasarkan File
+
+File-file khusus ini tersedia untuk metadata:
+
+- [favicon.ico, apple-icon.jpg, dan icon.jpg](/docs/app/api-reference/file-conventions/metadata/app-icons)
+- [opengraph-image.jpg dan twitter-image.jpg](/docs/app/api-reference/file-conventions/metadata/opengraph-image)
+- [robots.txt](/docs/app/api-reference/file-conventions/metadata/robots)
+- [sitemap.xml](/docs/app/api-reference/file-conventions/metadata/sitemap)
+
+Anda dapat menggunakan ini untuk metadata statis, atau Anda dapat menghasilkan file-file ini secara program dengan kode.
+
+Untuk implementasi dan contoh, lihat API Reference [Metadata Files](/docs/app/api-reference/functions/generate-metadata) dan [Dynamic Image Generation](#dynamic-image-generation).
+
+## Perilaku
+
+Metadata berdasarkan file memiliki prioritas yang lebih tinggi dan akan menggantikan metadata berdasarkan konfigurasi apa pun.
+
+### Bidang Standar
+
+Ada dua tag `meta` default yang selalu ditambahkan bahkan jika suatu rute tidak mendefinisikan metadata:
+
+- Tag [charset meta](https://developer.mozilla.org/docs/Web/HTML/Element/meta#attr-charset) mengatur pengkodean karakter untuk situs web.
+- Tag [viewport meta](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag) mengatur lebar dan skala viewport untuk situs web agar sesuai dengan berbagai perangkat.
+
+```html
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+> **Baik untuk diketahui**: Anda dapat mengganti tag [`viewport`](/docs/app/api-reference/functions/generate-metadata#viewport) meta default.
+
+### Urutan
+
+Metadata dievaluasi secara berurutan, dimulai dari segmen akar ke segmen yang paling dekat dengan segmen `page.js` terakhir. Sebagai contoh:
+
+1. `app/layout.tsx` (Tata Letak Akar)
+2. `app/blog/layout.tsx` (Tata Letak Blog Terselubung)
+3. `app/blog/[slug]/page.tsx` (Halaman Blog)
+
+### Penggabungan
+
+Mengikuti [urutan evaluasi](#urutan), objek Metadata yang diekspor dari segmen-segmen ganda dalam rute yang sama **digeruk secara dangkal** bersama untuk membentuk hasil metadata akhir dari suatu rute. Kunci-kunci duplikat **digantikan** berdasarkan urutan mereka.
+
+Ini berarti metadata dengan bidang bersarang seperti [`openGraph`](/docs/app/api-reference/functions/generate-metadata#opengraph) dan [`robots`](/docs/app/api-reference/functions/generate-metadata#robots) yang didefinisikan dalam segmen awal **ditimpa** oleh segmen terakhir yang mendefinisikan mereka.
+
+#### Menimpa bidang
+
+```jsx filename="app/layout.js"
+export const metadata = {
+  title: 'Acme',
+  openGraph: {
+    title: 'Acme',
+    description: 'Acme is a...',
+  },
+};
+```
+
+```jsx filename="app/blog/page.js"
+export const metadata = {
+  title: 'Blog',
+  openGraph: {
+    title: 'Blog',
+  },
+};
+
+// Output:
+// <title>Blog</title>
+// <meta property="og:title" content="Blog" />
+```
+
+Pada contoh di atas:
+
+- `title` dari `app/layout.js` **digantikan** oleh `title` di `app/blog/page.js`.
+- Semua bidang `openGraph` dari `app/layout.js` **digantikan** di `app/blog/page.js` karena `app/blog/page.js` mengatur metadata `openGraph`. Perhatikan ketiadaan `openGraph.description`.
+
+Jika Anda ingin membagikan beberapa bidang bersarang antara segmen sambil menimpa yang lain, Anda dapat menariknya ke dalam variabel terpisah:
+
+```jsx filename="app/shared-metadata.js"
+export const openGraphImage = { images: ['http://...'] };
+```
+
+```jsx filename="app/page.js"
+import { openGraphImage } from './shared-metadata';
+
+export const metadata = {
+  openGraph: {
+    ...openGraphImage,
+    title: 'Home',
+  },
+};
+```
+
+```jsx filename="app/about/page.js"
+import { openGraphImage } from '../shared-metadata';
+
+export const metadata = {
+  openGraph: {
+    ...openGraphImage,
+    title: 'About',
+  },
+};
+```
+
+Pada contoh di atas, gambar OG dibagikan antara `app/layout.js` dan `app/about/page.js` sementara judulnya berbeda.
+
+#### Mewarisi bidang
+
+```jsx filename="app/layout.js"
+export const metadata = {
+  title: 'Acme',
+  openGraph: {
+    title: 'Acme',
+    description: 'Acme is a...',
+  },
+};
+```
+
+```jsx filename="app/about/page.js"
+export const metadata = {
+  title: 'About',
+};
+
+// Output:
+// <title>About</title>
+// <meta property="og:title" content="Acme" />
+// <meta property="og:description" content="Acme is a..." />
+```
+
+**Catatan**
+
+- `title` dari `app/layout.js` **digantikan** oleh `title` di `app/about/page.js`.
+- Semua bidang `openGraph` dari `app/layout.js` **diwarisi** di `app/about/page.js` karena `app/about/page.js` tidak mengatur metadata `openGraph`.
+
+## Generasi Gambar Dinamis
+
+Konstruktor `ImageResponse` memungkinkan Anda untuk menghasilkan gambar dinamis menggunakan JSX dan CSS. Ini berguna untuk membuat gambar media sosial seperti gambar Open Graph, kartu Twitter, dan banyak lagi.
+
+`ImageResponse` menggunakan [Edge Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes#edge-runtime), dan Next.js secara otomatis menambahkan header yang benar ke gambar yang di-cache di tepi, membantu meningkatkan kinerja dan mengurangi perhitungan ulang.
+
+Untuk menggunakannya, Anda dapat mengimpor `ImageResponse` dari `next/server`:
+
+```jsx filename="app/about/route.js"
+import { ImageResponse } from 'next/server';
+
+export const runtime = 'edge';
+
+export async function GET() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          textAlign: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Hello world!
+      </div>
+    ),
+    {
+      width: 1200,
+      height: 600,
+    }
+  );
+}
+```
+
+`ImageResponse` berintegrasi dengan baik dengan API Next.js lainnya, termasuk [Route Handlers](/docs/app/building-your-application/routing/route-handlers) dan Metadata berbasis file. Sebagai contoh, Anda dapat menggunakan `ImageResponse` dalam file `opengraph-image.tsx` untuk menghasilkan gambar Open Graph pada waktu kompilasi atau secara dinamis pada waktu permintaan.
+
+`ImageResponse` mendukung properti CSS umum termasuk flexbox dan penempatan absolut, font kustom, pembungkus teks, pemusatan, dan gambar bersarang. [Lihat daftar lengkap properti CSS yang didukung](/docs/app/api-reference/functions/image-response).
+
+> **Baik untuk diketahui**:
+>
+> - Contoh-contoh tersedia di [Vercel OG Playground](https://og-playground.vercel.app/).
+> - `ImageResponse` menggunakan [@vercel/og](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation), [Satori](https://github.com/vercel/satori), dan Resvg untuk mengonversi HTML dan CSS menjadi PNG.
+> - Hanya Runtime Edge yang didukung. Runtime Node.js default tidak akan berfungsi.
+> - Hanya flexbox dan subset properti CSS yang didukung. Tata letak yang lebih canggih (misalnya, `display: grid`) tidak akan berfungsi.
+> - Ukuran bundel maksimum `500KB`. Ukuran bundel mencakup JSX, CSS, font, gambar, dan semua aset lainnya. Jika Anda melebihi batas tersebut, pertimbangkan untuk mengurangi ukuran aset atau pengambilan pada waktu kompilasi.
+> - Hanya format font `ttf`, `otf`, dan `woff` yang didukung. Untuk memaksimalkan kecepatan analisis font, direkomendasikan menggunakan `ttf` atau `otf` daripada `woff`.
+
+## JSON-LD
+
+[JSON-LD](https://json-ld.org/) adalah format data terstruktur yang dapat digunakan oleh mesin pencari untuk memahami konten Anda. Misalnya, Anda dapat menggunakannya untuk menggambarkan orang, acara, organisasi, film, buku, resep, dan banyak jenis entitas lainnya.
+
+Rekomendasi saat ini kami untuk JSON-LD adalah merender data terstruktur sebagai tag `<script>` dalam komponen `layout.js` atau `page.js` Anda. Misalnya:
+
+```tsx filename="app/products/[id]/page.tsx" switcher
+export default async function Page({ params }) {
+  const product = await getProduct(params.id);
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image,
+    description: product.description,
+  };
+
+  return (
+    <section>
+      {/* Tambahkan JSON-LD ke halaman Anda */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* ... */}
+    </section>
+  );
+}
+```
+
+```jsx filename="app/products/[id]/page.js" switcher
+export default async function Page({ params }) {
+  const product = await getProduct(params.id);
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image,
+    description: product.description,
+  };
+
+  return (
+    <section>
+      {/* Tambahkan JSON-LD ke halaman Anda */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {/* ... */}
+    </section>
+  );
+}
+```
+
+Anda dapat memvalidasi dan menguji data terstruktur Anda dengan [Rich Results Test](https://search.google.com/test/rich-results) untuk Google atau [Schema Markup Validator](https://validator.schema.org/) yang umum.
+
+Anda dapat mengetikkan JSON-LD Anda dengan TypeScript menggunakan paket komunitas seperti [`schema-dts`](https://www.npmjs.com/package/schema-dts):
+
+```tsx
+import { Product, WithContext } from 'schema-dts';
+
+const jsonLd: WithContext<Product> = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Next.js Sticker',
+  image: 'https://nextjs.org/imgs/sticker.png',
+  description: 'Dynamic at the speed of static.',
+};
+```

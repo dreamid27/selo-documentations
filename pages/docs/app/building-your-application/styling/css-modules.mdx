@@ -1,0 +1,138 @@
+---
+title: Modul CSS
+description: Gaya Aplikasi Next.js Anda dengan Modul CSS.
+---
+
+# Modul CSS
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js memiliki dukungan bawaan untuk Modul CSS menggunakan ekstensi `.module.css`.
+
+Modul CSS secara lokal mengikatkan CSS dengan otomatis membuat nama kelas yang unik. Ini memungkinkan Anda menggunakan nama kelas yang sama dalam file yang berbeda tanpa khawatir tentang tabrakan. Perilaku ini menjadikan Modul CSS sebagai cara ideal untuk menyertakan CSS tingkat komponen.
+
+## Contoh
+
+Modul CSS dapat diimpor ke dalam file apa pun di dalam direktori `app`:
+
+```sx filename="app/dashboard/layout.tsx" switcher
+import styles from './styles.module.css';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return <section className={styles.dashboard}>{children}</section>;
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+import styles from './styles.module.css';
+
+export default function DashboardLayout({ children }) {
+  return <section className={styles.dashboard}>{children}</section>;
+}
+```
+
+```css filename="app/dashboard/styles.module.css"
+.dashboard {
+  padding: 24px;
+}
+```
+
+Modul CSS adalah _fitur opsional_ dan **hanya diaktifkan untuk file dengan ekstensi `.module.css`**.
+Lembar gaya `<link>` biasa dan file CSS global masih didukung.
+
+Dalam produksi, semua file Modul CSS akan secara otomatis digabungkan menjadi file `.css` yang **diminimalkan dan dibagi kode**.
+File-file `.css` ini mewakili jalur eksekusi panas dalam aplikasi Anda, memastikan jumlah CSS minimal yang dimuat untuk aplikasi Anda untuk melukis.
+
+## Gaya Global
+
+Gaya global dapat diimpor ke dalam tata letak, halaman, atau komponen apa pun di dalam direktori `app`.
+
+> **Baik untuk diketahui**: Ini berbeda dari direktori `pages`, di mana Anda hanya dapat mengimpor gaya global di dalam file `_app.js`.
+
+Sebagai contoh, pertimbangkan stylesheet bernama `app/global.css`:
+
+```css
+body {
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+```
+
+Di dalam tata letak utama (`app/layout.js`), impor stylesheet `global.css` untuk menerapkan gaya ke setiap rute dalam aplikasi Anda:
+
+```sx filename="app/layout.tsx" switcher
+// Gaya ini berlaku untuk setiap rute dalam aplikasi
+import './global.css';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+// Gaya ini berlaku untuk setiap rute dalam aplikasi
+import './global.css';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Stylesheet Eksternal
+
+Stylesheet yang diterbitkan oleh paket eksternal dapat diimpor di mana saja dalam direktori `app`, termasuk komponen yang berdekatan:
+
+```sx filename="app/layout.tsx" switcher
+import 'bootstrap/dist/css/bootstrap.css';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode,
+}) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import 'bootstrap/dist/css/bootstrap.css';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  );
+}
+```
+
+> **Baik untuk diketahui**: Stylesheet eksternal harus diimpor langsung dari paket npm atau diunduh dan ditempatkan bersama kode sumber Anda. Anda tidak dapat menggunakan `<link rel="stylesheet" />`.
+
+## Fitur Tambahan
+
+Next.js menyertakan fitur tambahan untuk meningkatkan pengalaman penulisan penambahan gaya:
+
+- Saat berjalan secara lokal dengan `next dev`, stylesheet lokal (baik global maupun Modul CSS) akan memanfaatkan [Fast Refresh](/docs/architecture/fast-refresh) untuk langsung mencerminkan perubahan saat penyuntingan disimpan.
+- Saat membangun untuk produksi dengan `next build`, file CSS akan digabungkan menjadi file `.css` yang lebih sedikit dan diminimalkan untuk mengurangi jumlah permintaan jaringan yang diperlukan untuk mengambil gaya.
+- Jika Anda menonaktifkan JavaScript, gaya tetap akan dimuat dalam build produksi (`next start`). Namun, JavaScript tetap diperlukan untuk `next dev` agar dapat mengaktifkan [Fast Refresh](/docs/architecture/fast-refresh).

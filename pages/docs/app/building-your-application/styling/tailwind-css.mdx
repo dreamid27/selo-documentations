@@ -1,0 +1,117 @@
+---
+title: Tailwind CSS
+description: Gaya Aplikasi Next.js Anda dengan Tailwind CSS.
+---
+
+# Tailwind CSS
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+[Tailwind CSS](https://tailwindcss.com/) adalah kerangka kerja CSS berorientasi pada utilitas yang bekerja sangat baik dengan Next.js.
+
+## Memasang Tailwind
+
+Pasang paket-paket Tailwind CSS dan jalankan perintah `init` untuk menghasilkan kedua file `tailwind.config.js` dan `postcss.config.js`:
+
+```bash filename="Terminal"
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+## Mengonfigurasi Tailwind
+
+Di dalam `tailwind.config.js`, tambahkan jalur ke file-file yang akan menggunakan nama kelas Tailwind CSS:
+
+```js filename="tailwind.config.js"
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}', // Perhatikan penambahan direktori `app`.
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+
+    // Atau jika menggunakan direktori `src`:
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+```
+
+Anda tidak perlu memodifikasi `postcss.config.js`.
+
+## Mengimpor Gaya
+
+Tambahkan [direktif Tailwind CSS](https://tailwindcss.com/docs/functions-and-directives#directives) yang akan digunakan Tailwind untuk menyuntikkan gaya yang dihasilkannya ke [Stylesheet Global](/docs/app/building-your-application/styling/css-modules#global-styles) di aplikasi Anda, misalnya:
+
+```css filename="app/globals.css"
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+Di dalam [tata letak utama](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required) (`app/layout.tsx`), impor stylesheet `globals.css` untuk menerapkan gaya ke setiap rute dalam aplikasi Anda.
+
+```tsx filename="app/layout.tsx" switcher
+import type { Metadata } from 'next';
+
+// Gaya ini berlaku untuk setiap rute dalam aplikasi
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'Buat Aplikasi Next',
+  description: 'Dibuat oleh create next app',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+// Gaya ini berlaku untuk setiap rute dalam aplikasi
+import './globals.css';
+
+export const metadata = {
+  title: 'Buat Aplikasi Next',
+  description: 'Dibuat oleh create next app',
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Menggunakan Kelas-Kelas
+
+Setelah memasang Tailwind CSS dan menambahkan gaya global, Anda dapat menggunakan kelas utilitas Tailwind dalam aplikasi Anda.
+
+```tsx filename="app/page.tsx" switcher
+export default function Page() {
+  return <h1 className="text-3xl font-bold underline">Halo, Next.js!</h1>;
+}
+```
+
+```jsx filename="app/page.js" switcher
+export default function Page() {
+  return <h1 className="text-3xl font-bold underline">Halo, Next.js!</h1>;
+}
+```
+
+## Penggunaan dengan Turbopack
+
+Mulai dari Next.js 13.1, Tailwind CSS dan PostCSS didukung dengan [Turbopack](https://turbo.build/pack/docs/features/css#tailwind-css).

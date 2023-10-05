@@ -1,0 +1,63 @@
+---
+title: Sass
+description: Gaya aplikasi Next.js Anda menggunakan Sass.
+---
+
+# Sass
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js memiliki dukungan bawaan untuk Sass menggunakan ekstensi `.scss` dan `.sass`. Anda dapat menggunakan Sass tingkat komponen melalui Modul CSS dan ekstensi `.module.scss` atau `.module.sass`.
+
+Pertama, instal [`sass`](https://github.com/sass/sass):
+
+```bash filename="Terminal"
+npm install --save-dev sass
+```
+
+> **Baik untuk diketahui**:
+>
+> Sass mendukung [dua sintaksis yang berbeda](https://sass-lang.com/documentation/syntax), masing-masing dengan ekstensi mereka sendiri.
+> Ekstensi `.scss` mengharuskan Anda menggunakan [sintaksis SCSS](https://sass-lang.com/documentation/syntax#scss),
+> sedangkan ekstensi `.sass` mengharuskan Anda menggunakan [Sintaksis Indented ("Sass")](https://sass-lang.com/documentation/syntax#the-indented-syntax).
+>
+> Jika Anda tidak yakin harus memilih yang mana, mulailah dengan ekstensi `.scss` yang merupakan superset dari CSS, dan tidak mengharuskan Anda mempelajari
+> Sintaksis Indented ("Sass").
+
+### Menyesuaikan Opsi Sass
+
+Jika Anda ingin mengonfigurasi kompilator Sass, gunakan `sassOptions` dalam `next.config.js`.
+
+```js filename="next.config.js"
+const path = require('path');
+
+module.exports = {
+  sassOptions: {
+    includePaths: [path.join(__dirname, 'styles')],
+  },
+};
+```
+
+### Variabel Sass
+
+Next.js mendukung variabel Sass yang diekspor dari file Modul CSS.
+
+Misalnya, menggunakan variabel Sass `primaryColor` yang diekspor:
+
+```scss filename="app/variables.module.scss"
+$primary-color: #64ff00;
+
+:export {
+  primaryColor: $primary-color;
+}
+```
+
+```jsx filename="app/page.js"
+// sesuai dengan root URL `/`
+
+import variables from './variables.module.scss';
+
+export default function Page() {
+  return <h1 style={{ color: variables.primaryColor }}>Hello, Next.js!</h1>;
+}
+```

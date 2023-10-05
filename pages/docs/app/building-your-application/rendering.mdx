@@ -52,8 +52,12 @@ Anda dapat menggunakan konvensi React `"use client"` untuk menentukan batas ini.
 
 ## Membangun Aplikasi Hybrid
 
-Ketika bekerja dalam lingkungan ini, berguna untuk memikirkan aliran kode dalam aplikasi Anda sebagai **unidireksional**. Dengan kata lain, selama respons, kode aplikasi Anda mengalir ke satu arah: dari server ke client.
+Saat bekerja dalam lingkungan semacam ini, sangat membantu untuk mempertimbangkan aliran kode dalam aplikasi Anda sebagai sesuatu yang **berarah tunggal**. Dengan kata lain, selama sebuah respons, aliran kode aplikasi Anda mengalir dalam satu arah: dari server ke klien.
 
-Jika Anda perlu mengakses server dari client, Anda mengirimkan permintaan **baru** ke server daripada menggunakan ulang permintaan yang sama. Ini membuat lebih mudah untuk memahami di mana merender komponen Anda dan di mana menempatkan Batas Jaringan.
+{/* Diagram: Aliran Respons */}
 
-Dalam praktiknya
+Jika Anda perlu mengakses server dari klien, Anda mengirimkan permintaan yang **baru** ke server daripada menggunakan permintaan yang sama. Hal ini memudahkan pemahaman tentang di mana merender komponen Anda dan di mana menempatkan Batasan Jaringan.
+
+Dalam praktiknya, model ini mendorong para pengembang untuk memikirkan apa yang ingin mereka jalankan di server terlebih dahulu, sebelum mengirimkan hasilnya ke klien dan menjadikan aplikasi menjadi interaktif.
+
+Konsep ini akan menjadi lebih jelas ketika kita melihat bagaimana Anda dapat [menggabungkan komponen klien dan server](/docs/app/building-your-application/rendering/composition-patterns) dalam pohon komponen yang sama.

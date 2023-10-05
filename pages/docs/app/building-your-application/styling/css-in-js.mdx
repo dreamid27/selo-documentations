@@ -1,0 +1,234 @@
+---
+title: CSS-in-JS
+description: Gunakan pustaka CSS-in-JS dengan Next.js
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+> **Peringatan:** Pustaka CSS-in-JS yang memerlukan JavaScript runtime saat ini tidak didukung dalam Komponen Server. Menggunakan CSS-in-JS dengan fitur React terbaru seperti Komponen Server dan Streaming memerlukan dukungan penulis pustaka untuk versi terbaru React, termasuk [concurrent rendering](https://react.dev/blog/2022/03/29/react-v18#what-is-concurrent-react).
+>
+> Kami bekerja sama dengan tim React untuk API hulu untuk menangani aset CSS dan JavaScript dengan dukungan untuk Komponen Server React dan arsitektur streaming.
+
+Pustaka-pustaka berikut didukung dalam Komponen Klien di direktori `app` (berdasarkan urutan abjad):
+
+- [`kuma-ui`](https://kuma-ui.com)
+- [`@mui/material`](https://mui.com/material-ui/guides/next-js-app-router/)
+- [`pandacss`](https://panda-css.com)
+- [`styled-jsx`](#styled-jsx)
+- [`styled-components`](#styled-components)
+- [`style9`](https://github.com/johanholmerin/style9)
+- [`tamagui`](https://tamagui.dev/docs/guides/next-js#server-components)
+- [`tss-react`](https://tss-react.dev/)
+- [`vanilla-extract`](https://github.com/vercel/next.js/tree/canary/examples/with-vanilla-extract)
+
+Berikut adalah yang saat ini sedang bekerja pada dukungan:
+
+- [`emotion`](https://github.com/emotion-js/emotion/issues/2928)
+
+> **Baik untuk diketahui**: Kami sedang menguji berbagai pustaka CSS-in-JS dan akan menambahkan lebih banyak contoh untuk pustaka yang mendukung fitur React 18 dan/atau direktori `app`.
+
+Jika Anda ingin menggaya Komponen Server, kami merekomendasikan menggunakan [Modul CSS](/docs/app/building-your-application/styling/css-modules) atau solusi lain yang menghasilkan file CSS, seperti PostCSS atau [Tailwind CSS](/docs/app/building-your-application/styling/tailwind-css).
+
+## Mengonfigurasi CSS-in-JS di `app`
+
+Mengonfigurasi CSS-in-JS adalah proses tiga langkah yang melibatkan:
+
+1. **Registri gaya** untuk mengumpulkan semua aturan CSS dalam render.
+2. Hook `useServerInsertedHTML` baru untuk menyuntikkan aturan sebelum konten apa pun yang mungkin menggunakannya.
+3. Komponen Klien yang membungkus aplikasi Anda dengan registri gaya selama rendering sisi server awal.
+
+### `styled-jsx`
+
+Menggunakan `styled-jsx` dalam Komponen Klien memerlukan penggunaan `v5.1.0`. Pertama, buat registri baru:
+
+```tsx filename="app/registry.tsx" switcher
+'use client';
+
+import React, { useState } from 'react';
+import { useServerInsertedHTML } from 'next/navigation';
+import { StyleRegistry, createStyleRegistry } from 'styled-jsx';
+
+export default function StyledJsxRegistry({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Hanya membuat stylesheet sekali dengan lazy initial state
+  // x-ref: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
+  const [jsxStyleRegistry] = useState(() => createStyleRegistry());
+
+  useServerInsertedHTML(() => {
+    const styles = jsxStyleRegistry.styles();
+    jsxStyleRegistry.flush();
+    return <>{styles}</>;
+  });
+
+  return <StyleRegistry registry={jsxStyleRegistry}>{children}</StyleRegistry>;
+}
+```
+
+```jsx filename="app/registry.js" switcher
+'use client';
+
+import React, { useState } from 'react';
+import { useServerInsertedHTML } from 'next/navigation';
+import { StyleRegistry, createStyleRegistry } from 'styled-jsx';
+
+export default function StyledJsxRegistry({ children }) {
+  // Hanya membuat stylesheet sekali dengan lazy initial state
+  // x-ref: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
+  const [jsxStyleRegistry] = useState(() => createStyleRegistry());
+
+  useServerInsertedHTML(() => {
+    const styles = jsxStyleRegistry.styles();
+    jsxStyleRegistry.flush();
+    return <>{styles}</>;
+  });
+
+  return <StyleRegistry registry={jsxStyleRegistry}>{children}</StyleRegistry>;
+}
+```
+
+Kemudian, bungkus [tata letak utama](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required) Anda dengan registri:
+
+```tsx filename="app/layout.tsx" switcher
+import StyledJsxRegistry from './registry';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html>
+      <body>
+        <StyledJsxRegistry>{children}</StyledJsxRegistry>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import StyledJsxRegistry from './registry';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <StyledJsxRegistry>{children}</StyledJsxRegistry>
+      </body>
+    </html>
+  );
+}
+```
+
+[Lihat contoh di sini](https://github.com/vercel/app-playground/tree/main/app/styling/styled-jsx).
+
+### Styled Components
+
+Berikut adalah contoh konfigurasi `styled-components@6` atau yang lebih baru:
+
+Pertama, gunakan API `styled-components` untuk membuat komponen registri global untuk mengumpulkan semua aturan gaya CSS yang dihasilkan selama render, dan fungsi untuk mengembalikan aturan tersebut. Kemudian gunakan hook `useServerInsertedHTML` untuk menyuntikkan gaya yang dikumpulkan dalam registri ke tag HTML `<head>` dalam tata letak utama.
+
+```tsx filename="lib/registry.tsx" switcher
+'use client';
+
+import React, { useState } from 'react';
+import { useServerInsertedHTML } from 'next/navigation';
+import { ServerStyleSheet, StyleSheetManager } from 'styled-components';
+
+export default function StyledComponentsRegistry({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Hanya membuat stylesheet sekali dengan lazy initial state
+  // x-ref: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
+  const [styledComponentsStyleSheet] = useState(() => new ServerStyleSheet());
+
+  useServerInsertedHTML(() => {
+    const styles = styledComponentsStyleSheet.getStyleElement();
+    styledComponentsStyleSheet.instance.clearTag();
+    return <>{styles}</>;
+  });
+
+  if (typeof window !== 'undefined') return <>{children}</>;
+
+  return (
+    <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>
+      {children}
+    </StyleSheetManager>
+  );
+}
+```
+
+```jsx filename="lib/registry.js" switcher
+'use client';
+
+import React, { useState } from 'react';
+import { useServerInsertedHTML } from 'next/navigation';
+import { ServerStyleSheet, StyleSheetManager } from 'styled-components';
+
+export default function StyledComponentsRegistry({ children }) {
+  // Hanya membuat stylesheet sekali dengan lazy initial state
+  // x-ref: https://reactjs.org/docs/hooks-reference.html#lazy-initial-state
+  const [styledComponentsStyleSheet] = useState(() => new ServerStyleSheet());
+
+  useServerInsertedHTML(() => {
+    const styles = styledComponentsStyleSheet.getStyleElement();
+    styledComponentsStyleSheet.instance.clearTag();
+    return <>{styles}</>;
+  });
+
+  if (typeof window !== 'undefined') return <>{children}</>;
+
+  return (
+    <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>
+      {children}
+    </StyleSheetManager>
+  );
+}
+```
+
+Bungkus `children` tata letak utama dengan komponen registri gaya:
+
+```tsx filename="app/layout.tsx" switcher
+import StyledComponentsRegistry from './lib/registry';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html>
+      <body>
+        <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import StyledComponentsRegistry from './lib/registry';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+      </body>
+    </html>
+  );
+}
+```
+
+[Lihat contoh di sini](https://github.com/vercel/app-playground/tree/main/app/styling/styled-components).
+
+> **Baik untuk diketahui**:
+>
+> - Selama rendering sisi server, gaya akan diekstrak ke registri global dan di-flush ke dalam tag HTML `<head>` Anda. Ini memastikan aturan gaya ditempatkan sebelum konten apa pun yang mungkin menggunakannya. Di masa depan, kami mungkin akan menggunakan fitur React yang akan datang untuk menentukan di mana harus menyuntikkan gaya.
+> - Selama streaming, gaya dari setiap chunk akan dikumpulkan dan ditambahkan ke gaya yang ada. Setelah hidrasi sisi klien selesai, `styled-components` akan mengambil alih seperti biasa dan menyuntikkan gaya dinamis lebih lanjut.
+> - Kami dengan sengaja menggunakan Komponen Klien pada tingkat atas pohon untuk registri gaya karena lebih efisien untuk mengekstrak aturan CSS dengan cara ini. Ini menghindari regenerasi gaya pada rendering sisi server berikutnya, dan mencegahnya dikirim dalam payload Komponen Server.

@@ -1,0 +1,369 @@
+# Pengambilan Data, Penyimpanan Cache, dan Revalidasi
+
+Pengambilan data adalah bagian inti dari setiap aplikasi. Halaman ini akan menjelaskan bagaimana Anda dapat mengambil, menyimpan cache, dan melakukan revalidasi data di React dan Next.js.
+
+Ada empat cara Anda dapat mengambil data:
+
+1. [Pada server, dengan `fetch`](#mengambil-data-pada-server-dengan-fetch)
+2. [Pada server, dengan pustaka pihak ketiga](#mengambil-data-pada-server-dengan-pustaka-pihak-ketiga)
+3. [Pada sisi klien, melalui Pengendali Rute](#mengambil-data-pada-sisi-klien-dengan-pengendali-rute)
+4. [Pada sisi klien, dengan pustaka pihak ketiga](#mengambil-data-pada-sisi-klien-dengan-pustaka-pihak-ketiga).
+
+## Mengambil Data pada Server dengan `fetch`
+
+Next.js memperluas native [`fetch` Web API](https://developer.mozilla.org/docs/Web/API/Fetch_API) untuk memungkinkan Anda mengkonfigurasi perilaku [penyimpanan cache](#penyimpanan-cache) dan [revalidasi](#revalidasi-data) untuk setiap permintaan `fetch` pada server. React memperluas `fetch` untuk secara otomatis [memoisasi](/docs/app/building-your-application/data-fetching/patterns#fetching-data-where-its-needed) permintaan `fetch` saat merender pohon komponen React.
+
+Anda dapat menggunakan `fetch` dengan [`async`/`await` di Komponen Server](https://github.com/acdlite/rfcs/blob/first-class-promises/text/0000-first-class-support-for-promises.md), di [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers), dan di [Tindakan Server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+Contohnya:
+
+```tsx filename="app/page.tsx" switcher
+async function getData() {
+  const res = await fetch('https://api.example.com/...');
+  // Nilai kembalian *tidak* diserialkan
+  // Anda dapat mengembalikan Tanggal, Peta, Set, dll.
+
+  if (!res.ok) {
+    // Ini akan mengaktifkan Batas Kesalahan `error.js` terdekat
+    throw new Error('Gagal mengambil data');
+  }
+
+  return res.json();
+}
+
+export default async function Page() {
+  const data = await getData();
+
+  return <main></main>;
+}
+```
+
+```jsx filename="app/page.js" switcher
+async function getData() {
+  const res = await fetch('https://api.example.com/...');
+  // Nilai kembalian *tidak* diserialkan
+  // Anda dapat mengembalikan Tanggal, Peta, Set, dll.
+
+  if (!res.ok) {
+    // Ini akan mengaktifkan Batas Kesalahan `error.js` terdekat
+    throw new Error('Gagal mengambil data');
+  }
+
+  return res.json();
+}
+
+export default async function Page() {
+  const data = await getData();
+
+  return <main></main>;
+}
+```
+
+> **Bagus untuk diketahui**:
+>
+> - Next.js menyediakan fungsi-fungsi yang berguna saat mengambil data di Komponen Server seperti [`cookies`](/docs/app/api-reference/functions/cookies) dan [`headers`](/docs/app/api-reference/functions/headers). Ini akan menyebabkan rute di-render secara dinamis karena mengandalkan informasi waktu permintaan.
+> - Pada pengendali Rute, permintaan `fetch` tidak memoisasi karena Pengendali Rute bukan bagian dari pohon komponen React.
+> - Untuk menggunakan `async`/`await` dalam Komponen Server dengan TypeScript, Anda perlu menggunakan TypeScript `5.1.3` atau yang lebih tinggi dan `@types/react` `18.2.8` atau yang lebih tinggi.
+
+### Penyimpanan Cache Data
+
+Penyimpanan cache menyimpan data sehingga tidak perlu diambil ulang dari sumber data pada setiap permintaan.
+
+Secara default, Next.js secara otomatis menyimpan cache nilai yang dikembalikan oleh `fetch` dalam [Penyimpanan Data](/docs/app/building-your-application/caching#data-cache) pada server. Ini berarti data dapat diambil saat waktu pembangunan atau waktu permintaan, disimpan dalam cache, dan digunakan kembali pada setiap permintaan data.
+
+```js
+// 'force-cache' adalah default, dan dapat dihilangkan
+fetch('https://...', { cache: 'force-cache' });
+```
+
+Permintaan `fetch` yang menggunakan metode `POST` juga secara otomatis disimpan dalam cache. Kecuali jika berada dalam [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) yang menggunakan metode `POST`, maka permintaan tersebut tidak akan disimpan dalam cache.
+
+> **Apa itu Penyimpanan Data?**
+>
+> Penyimpanan Data adalah [cache HTTP](https://developer.mozilla.org/docs/Web/HTTP/Caching) yang persisten. Tergantung pada platform Anda, cache dapat secara otomatis diperluas dan [dibagikan di beberapa wilayah](https://vercel.com/docs/infrastructure/data-cache).
+
+Pelajari lebih lanjut tentang [Penyimpanan Data](/docs/app/building-your-application/caching#data-cache).
+
+### Revalidasi Data
+
+Revalidasi adalah proses membersihkan Penyimpanan Data dan mengambil kembali data terbaru. Ini berguna ketika data Anda berubah dan Anda ingin memastikan Anda menampilkan informasi terbaru.
+
+Data yang sudah disimpan dalam cache dapat divalidasi kembali dengan dua cara:
+
+- **Revalidasi berbasis waktu**: Otomatis memvalidasi data setelah sejumlah waktu tertentu telah berlalu. Ini berguna untuk data yang jarang berubah dan kebaruan tidak terlalu penting.
+- **Revalidasi berdasarkan permintaan**: Memvalidasi data secara manual berdasarkan suatu peristiwa (misalnya, pengiriman formulir). Revalidasi berdasarkan permintaan dapat menggunakan pendekatan berbasis tag atau berbasis jalur untuk memvalidasi kelompok data sekaligus. Ini berguna saat Anda ingin memastikan data terbaru ditampilkan sesegera mungkin (misalnya, ketika konten dari CMS tanpa kepala Anda diperbarui).
+
+#### Revalidasi Berbasis Waktu
+
+Untuk melakukan revalidasi data pada interval waktu tertentu, Anda dapat menggunakan opsi `next.revalidate` dari `fetch` untuk mengatur masa cache dari sumber daya (dalam detik).
+
+```js
+fetch('https://...', { next: { revalidate: 3600 } });
+```
+
+Sebagai alternatif, untuk mevalidasi semua permintaan `fetch` dalam segmen rute, Anda dapat menggunakan [Opsi Konfigurasi Segmen](/docs/app/api-reference/file-conventions/route-segment-config).
+
+```jsx filename="layout.js / page.js"
+export const revalidate = 3600; // melakukan revalidasi setiap jam
+```
+
+Jika Anda memiliki beberapa permintaan `fetch` dalam rute yang dirender secara statis, dan masing-masing memiliki frekuensi revalidasi yang berbeda, waktu terendah akan digunakan untuk semua permintaan. Untuk rute yang dirender secara dinamis, setiap permintaan `fetch` akan divalidasi kembali secara independen.
+
+Pelajari lebih lanjut tentang [revalidasi berbasis waktu](/docs/app/building-your-application/caching#time-based-revalidation).
+
+#### Revalidasi Berdasarkan Permintaan
+
+Data dapat divalidasi kembali berdasarkan permintaan melalui jalur ([`revalidatePath`](/docs/app/api-reference/functions/revalidatePath)) atau berdasarkan tag cache ([`revalidateTag`](/docs/app/api-reference/functions/revalidateTag)) di dalam Pengendali Rute atau Tindakan Server.
+
+Next.js memiliki sistem penandaan cache untuk menghapus permintaan `fetch` di seluruh rute.
+
+1. Saat menggunakan `fetch`, Anda memiliki opsi untuk menambahkan entri cache dengan satu atau lebih tag.
+2. Kemudian, Anda dapat memanggil `revalidateTag` untuk memvalidasi ulang semua entri yang terkait dengan tag tersebut.
+
+Sebagai contoh, permintaan `fetch` berikut menambahkan tag cache `koleksi`:
+
+```tsx filename="app/page.tsx" switcher
+export default async function Page() {
+  const res = await fetch('https://...', { next: { tags: ['koleksi'] } });
+  const data = await res.json();
+  // ...
+}
+```
+
+```jsx filename="app/page.js" switcher
+export default async function Page() {
+  const res = await fetch('https://...', { next: { tags: ['koleksi'] } });
+  const data = await res.json();
+  // ...
+}
+```
+
+Jika menggunakan Pengendali Rute, Anda harus membuat token rahasia yang hanya diketahui oleh aplikasi Next.js Anda. Token rahasia ini akan digunakan untuk mencegah upaya validasi ulang yang tidak sah. Sebagai contoh, Anda dapat mengakses rute (baik secara manual atau dengan webhook) dengan struktur URL berikut:
+
+```bash filename="URL"
+https://<your-site.com>/api/revalidate?tag=koleksi&secret=<token>
+```
+
+```ts filename="app/api/revalidate/route.ts" switcher
+import { NextRequest } from 'next/server';
+import { revalidateTag } from 'next/cache';
+
+// misalnya webhook ke `your-website.com/api/revalidate?tag=koleksi&secret=<token>`
+export async function POST(request: NextRequest) {
+  const secret = request.nextUrl.searchParams.get('secret');
+  const tag = request.nextUrl.searchParams.get('tag');
+
+  if (secret !== process.env.MY_SECRET_TOKEN) {
+    return Response.json({ message: 'Rahasia tidak valid' }, { status: 401 });
+  }
+
+  if (!tag) {
+    return Response.json({ message: 'Param tag hilang' }, { status: 400 });
+  }
+
+  revalidateTag(tag);
+
+  return Response.json({ revalidated: true, now: Date.now() });
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+import { revalidateTag } from 'next/cache';
+
+// misalnya webhook ke `your-website.com/api/revalidate?tag=koleksi&secret=<token>`
+export async function POST(request) {
+  const secret = request.nextUrl.searchParams.get('secret');
+  const tag = request.nextUrl.searchParams.get('tag');
+
+  if (secret !== process.env.MY_SECRET_TOKEN) {
+    return Response.json({ message: 'Rahasia tidak valid' }, { status: 401 });
+  }
+
+  if (!tag) {
+    return Response.json({ message: 'Param tag hilang' }, { status: 400 });
+  }
+
+  revalidateTag(tag);
+
+  return Response.json({ revalidated: true, now: Date.now() });
+}
+```
+
+Sebagai alternatif, Anda dapat menggunakan [`revalidatePath`](/docs/app/api-reference/functions/revalidatePath) untuk memvalidasi semua data yang terkait dengan suatu jalur.
+
+```ts filename="app/api/revalidate/route.ts" switcher
+import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
+
+export async function POST(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path');
+
+  if (!path) {
+    return Response.json({ message: 'Param jalur hilang' }, { status: 400 });
+  }
+
+  revalidatePath(path);
+
+  return Response.json({ revalidated: true, now: Date.now() });
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+import { revalidatePath } from 'next/cache';
+
+export async function POST(request) {
+  const path = request.nextUrl.searchParams.get('path');
+
+  if (!path) {
+    return Response.json({ message: 'Param jalur hilang' }, { status: 400 });
+  }
+
+  revalidatePath(path);
+
+  return Response.json({ revalidated: true, now: Date.now() });
+}
+```
+
+Pelajari lebih lanjut tentang [revalidasi berdasarkan permintaan](/docs/app/building-your-application/caching#on-demand-revalidation).
+
+#### Penanganan Kesalahan dan Revalidasi
+
+Jika terjadi kesalahan saat mencoba memvalidasi ulang data, data yang telah berhasil dihasilkan sebelumnya akan terus disajikan dari cache. Pada permintaan selanjutnya, Next.js akan mencoba kembali memvalidasi data.
+
+### Menonaktifkan Penyimpanan Data
+
+Permintaan `fetch` **tidak** akan disimpan dalam cache jika:
+
+- Opsi `cache: 'no-store'` ditambahkan pada permintaan `fetch`.
+- Opsi `revalidate: 0` ditambahkan pada permintaan `fetch` individu.
+- Permintaan `fetch` berada dalam Pengendali Router yang menggunakan metode `POST`.
+- Permintaan `fetch` dilakukan setelah penggunaan `headers` atau `cookies`.
+- Opsi segmen rute `const dynamic = 'force-dynamic'` digunakan.
+- Opsi segmen rute `fetchCache` dikonfigurasi untuk melewati cache secara default.
+- Permintaan `fetch` menggunakan header `Authorization` atau `Cookie` dan ada permintaan tanpa cache di atasnya dalam pohon komponen.
+
+#### Permintaan `fetch` Individu
+
+Untuk menonaktifkan penyimpanan cache untuk permintaan `fetch` individu, Anda dapat mengatur opsi `cache` dalam `fetch` menjadi `'no-store'`. Ini akan mengambil data secara dinamis, pada setiap permintaan.
+
+```js filename="layout.js / page.js"
+fetch('https://...', { cache: 'no-store' });
+```
+
+Lihat semua opsi `cache` yang tersedia dalam [referensi API `fetch`](/docs/app/api-reference/functions/fetch).
+
+#### Permintaan `fetch` Ganda
+
+Jika Anda memiliki beberapa permintaan `fetch` dalam segmen rute (misalnya, Layout atau Page), Anda dapat mengkonfigurasi perilaku penyimpanan cache dari semua permintaan data dalam segmen menggunakan [Opsi Konfigurasi Segmen](/docs/app/api-reference/file-conventions/route-segment-config).
+
+Sebagai contoh, dengan menggunakan `const dynamic = 'force-dynamic'`, semua data akan diambil pada saat permintaan, dan segmen akan dirender secara dinamis.
+
+```js filename="layout.js / page.js"
+// Tambahkan
+export const dynamic = 'force-dynamic';
+```
+
+Terdapat daftar panjang opsi Konfigurasi Segmen, memberikan Anda kontrol yang sangat halus terhadap perilaku statis dan dinamis dari segmen rute. Lihat [referensi API](/docs/app/api-reference/file-conventions/route-segment-config) untuk informasi lebih lanjut.
+
+## Mengambil Data pada Server dengan Pustaka Pihak Ketiga
+
+Dalam kasus di mana Anda menggunakan pustaka pihak ketiga yang tidak mendukung atau mengekspos `fetch` (misalnya, basis data, CMS, atau klien ORM), Anda dapat mengkonfigurasi perilaku penyimpanan cache dan revalidasi permintaan tersebut menggunakan [Opsi Konfigurasi Segmen Rute](/docs/app/api-reference/file-conventions/route-segment-config) dan fungsi `cache` React.
+
+Apakah data akan disimpan dalam cache atau tidak akan tergantung pada apakah segmen rute tersebut [dirender secara statis atau dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies). Jika segmen tersebut statis (default), hasil permintaan akan disimpan dalam cache dan divalidasi ulang sebagai bagian dari segmen rute. Jika segmen tersebut dinamis, hasil permintaan _tidak_ akan disimpan dalam cache dan akan diambil kembali pada setiap permintaan saat segmen tersebut dirender.
+
+> **Bagus untuk diketahui**:
+>
+> Next.js sedang mengerjakan API, `unstable_cache`, untuk mengkonfigurasi perilaku penyimpanan cache dan revalidasi permintaan pihak ketiga secara individual.
+
+### Contoh
+
+Pada contoh di bawah ini:
+
+- Opsi `revalidate` diatur ke `3600`, yang berarti data akan disimpan dalam cache dan divalidasi ulang paling lama setiap jam.
+- Fungsi `cache` React digunakan untuk [memoisasi](/docs/app/building-your-application/caching#request-memoization) permintaan data.
+
+```ts filename="utils/get-item.ts" switcher
+import { cache } from 'react';
+
+export const revalidate = 3600; // memvalidasi data paling lama setiap jam
+
+export const getItem = cache(async (id: string) => {
+  const item = await db.item.findUnique({ id });
+  return item;
+});
+```
+
+```js filename="utils/get-item.js" switcher
+import { cache } from 'react';
+
+export const revalidate = 3600; // memvalidasi data paling lama setiap jam
+
+export const getItem = cache(async (id) => {
+  const item = await db.item.findUnique({ id });
+  return item;
+});
+```
+
+Meskipun fungsi `getItem` dipanggil dua kali, hanya satu query yang akan dilakukan ke basis data.
+
+```tsx filename="app/item/layout.tsx" switcher
+import { getItem } from '@/utils/get-item';
+
+export default async function Layout({
+  params: { id },
+}: {
+  params: { id: string };
+}) {
+  const item = await getItem(id);
+  // ...
+}
+```
+
+```jsx filename="app/item/layout.js" switcher
+import { getItem } from '@/utils/get-item';
+
+export default async function Layout({ params: { id } }) {
+  const item = await getItem(id);
+  // ...
+}
+```
+
+```tsx filename="app/item/[id]/page.tsx" switcher
+import { getItem } from '@/utils/get-item';
+
+export default async function Page({
+  params: { id },
+}: {
+  params: { id: string };
+}) {
+  const item = await getItem(id);
+  // ...
+}
+```
+
+```jsx filename="app/item/[id]/page.js" switcher
+import { getItem } from '@/utils/get-item';
+
+export default async function Page({ params: { id } }) {
+  const item = await getItem(id);
+  // ...
+}
+```
+
+## Mengambil Data pada Klien dengan Pengendali Rute
+
+Jika Anda perlu mengambil data dalam komponen klien, Anda dapat memanggil [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) dari klien. Pengendali Rute dieksekusi di server dan mengembalikan data ke klien. Ini berguna saat Anda tidak ingin mengungkapkan informasi sensitif kepada klien, seperti token API.
+
+Lihat dokumentasi [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) untuk contoh.
+
+> **Komponen Server dan Pengendali Rute**
+>
+> Karena Komponen Server merender di server, Anda tidak perlu memanggil Pengendali Rute dari Komponen Server untuk mengambil data. Sebaliknya, Anda dapat mengambil data langsung di dalam Komponen Server.
+
+## Mengambil Data pada Klien dengan Pustaka Pihak Ketiga
+
+Anda juga dapat mengambil data pada klien menggunakan pustaka pihak ketiga seperti [SWR](https://swr.vercel.app/) atau [React Query](https://tanstack.com/query/latest). Pustaka-pustaka ini menyediakan API mereka sendiri untuk memoisasi permintaan, penyimpanan cache, revalidasi, dan mutasi data.
+
+> **API Mendatang**:
+>
+> `use` adalah fungsi React yang **menerima dan menangani promise** yang dikembalikan oleh sebuah fungsi. Mengelilingi `fetch` dengan `use` saat ini **tidak** disarankan dalam Komponen Klien dan dapat memicu beberapa re-renders. Pelajari lebih lanjut tentang `use` dalam [RFC React](https://github.com/acdlite/rfcs/blob/first-class-promises/text/0000-first-class-support-for-promises.md#usepromise).

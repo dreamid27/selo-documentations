@@ -1,0 +1,310 @@
+# Pola Pengambilan Data
+
+Terdapat beberapa pola yang direkomendasikan dan praktik terbaik dalam pengambilan data pada aplikasi berbasis React dan Next.js. Halaman ini akan menguraikan beberapa pola yang umum dan teknik penerapannya.
+
+### Pengambilan Data pada Server
+
+Jika memungkinkan, kami merekomendasikan pengambilan data pada server. Ini memungkinkan Anda untuk:
+
+- Memiliki akses langsung ke sumber daya data backend (misalnya, basis data).
+- Menjaga aplikasi Anda lebih aman dengan mencegah informasi sensitif, seperti token akses dan kunci API, terpapar ke klien.
+- Mengambil data dan merender dalam lingkungan yang sama. Ini mengurangi komunikasi bolak-balik antara klien dan server, serta [kerja pada utas utama](https://vercel.com/blog/how-react-18-improves-application-performance) pada klien.
+- Melakukan beberapa pengambilan data dengan satu perjalanan daripada beberapa permintaan individual di klien.
+- Mengurangi air terjun klien-server [paralel dan sekuen](#pengambilan-data-paralel-dan-sequential).
+- Bergantung pada wilayah Anda, pengambilan data juga dapat terjadi lebih dekat dengan sumber data Anda, mengurangi laten dan meningkatkan performa.
+
+Anda dapat mengambil data pada server menggunakan Komponen Server, [Penangan Rute](/docs/app/building-your-application/routing/route-handlers), dan [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+### Pengambilan Data di Tempat yang Dibutuhkan
+
+Jika Anda perlu menggunakan data yang sama (misalnya, pengguna saat ini) dalam beberapa komponen dalam pohon, Anda tidak perlu mengambil data secara global, atau meneruskan props antara komponen. Sebaliknya, Anda dapat menggunakan `fetch` atau `cache` React di komponen yang memerlukan data tanpa perlu khawatir tentang dampak kinerja dari membuat permintaan ganda untuk data yang sama.
+
+Hal ini dimungkinkan karena permintaan `fetch` secara otomatis memoisasi. Pelajari lebih lanjut tentang [memoisasi permintaan](/docs/app/building-your-application/caching#memoisasi-permintaan)
+
+> **Bagus untuk diketahui**: Ini juga berlaku untuk tata letak (layouts), karena tidak mungkin untuk mengirimkan data antara tata letak induk dan anak-anaknya.
+
+### Streaming
+
+Streaming dan [Suspense](https://react.dev/reference/react/Suspense) adalah fitur-fitur React yang memungkinkan Anda untuk secara progresif merender dan secara bertahap mengalirkan unit-unit yang dirender dari UI ke klien.
+
+Dengan Komponen Server dan [tata letak bertingkat](/docs/app/building-your-application/routing/pages-and-layouts), Anda dapat langsung merender bagian dari halaman yang tidak memerlukan data khusus, dan menampilkan [keadaan loading](/docs/app/building-your-application/routing/loading-ui-and-streaming) untuk bagian halaman yang mengambil data. Ini berarti pengguna tidak perlu menunggu seluruh halaman selesai dimuat sebelum mereka dapat mulai berinteraksi dengan halaman tersebut.
+
+[Gambar
+alt="Rendering Server dengan Streaming"
+srcLight="/docs/light/server-rendering-with-streaming.png"
+srcDark="/docs/dark/server-rendering-with-streaming.png"
+width="1600"
+height="785"
+/>
+
+Untuk mempelajari lebih lanjut tentang Streaming dan Suspense, lihat [UI Loading](/docs/app/building-your-application/routing/loading-ui-and-streaming) dan [Streaming dan Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense) pages.
+
+### Pengambilan Data Paralel dan Sekuensial
+
+Ketika mengambil data di dalam komponen React, Anda perlu memahami dua pola pengambilan data: Paralel dan Sekuensial.
+
+[Gambar
+alt="Sequential and Parallel Data Fetching"
+srcLight="/docs/light/sequential-parallel-data-fetching.png"
+srcDark="/docs/dark/sequential-parallel-data-fetching.png"
+width="1600"
+height="525"
+/>
+
+- Dengan **pengambilan data sekuen**, permintaan dalam rute saling bergantung dan oleh karena itu menciptakan air terjun. Mungkin ada kasus di mana Anda menginginkan pola ini karena satu pengambilan data bergantung pada hasil dari yang lain, atau Anda ingin kondisi dipenuhi sebelum pengambilan berikutnya untuk menghemat sumber daya. Namun, perilaku ini juga bisa tidak disengaja dan menyebabkan waktu pemuatan yang lebih lama.
+- Dengan **pengambilan data paralel**, permintaan dalam rute diinisiasi dengan cepat dan akan memuat data secara bersamaan. Ini mengurangi air terjun klien-server dan waktu total yang dibutuhkan untuk memuat data.
+
+#### Pengambilan Data Sekuensial
+
+Jika Anda memiliki komponen bertingkat, dan setiap komponen mengambil data sendiri, maka pengambilan data akan terjadi secara berurutan jika permintaan data tersebut berbeda (hal ini tidak berlaku untuk permintaan data yang sama karena mereka secara otomatis [memoisasi](/docs/app/building-your-application/caching#memoisasi-permintaan)).
+
+Sebagai contoh, komponen `Playlists` hanya akan mulai mengambil data setelah komponen `Artist` selesai mengambil data karena `Playlists` bergantung pada prop `artistID`:
+
+```tsx filename="app/artist/page.tsx" switcher
+// ...
+
+async function Playlists({ artistID }: { artistID: string }) {
+  // Tunggu daftar putar
+  const playlists = await getArtistPlaylists(artistID);
+
+  return (
+    <ul>
+      {playlists.map((playlist) => (
+        <li key={playlist.id}>{playlist.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default async function Page({
+  params: { username },
+}: {
+  params: { username: string };
+}) {
+  // Tunggu artis
+  const artist = await getArtist(username);
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Playlists artistID={artist.id} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+```jsx filename="app/artist/page.js" switcher
+// ...
+
+async function Playlists({ artistID }) {
+  // Tunggu daftar putar
+  const playlists = await getArtistPlaylists(artistID);
+
+  return (
+    <ul>
+      {playlists.map((playlist) => (
+        <li key={playlist.id}>{playlist.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+export default async function Page({ params: { username } }) {
+  // Tunggu artis
+  const artist = await getArtist(username);
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Playlists artistID={artist.id} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+Dalam kasus seperti ini, Anda dapat menggunakan [`loading.js`](/docs/app/building-your-application/routing/loading-ui-and-streaming) (untuk segmen rute) atau [React `<Suspense>`](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense) (untuk komponen bertingkat) untuk menampilkan keadaan loading instan sementara React mengalirkan hasil.
+
+Ini akan mencegah seluruh rute terblokir oleh pengambilan data, dan pengguna akan dapat berinteraksi dengan bagian halaman yang tidak terblokir.
+
+> **Permintaan Data yang Memblokir:**
+>
+> Pendekatan alternatif untuk mencegah air terjun adalah dengan mengambil data secara global, di akar aplikasi Anda, tetapi ini akan memblokir penggambaran untuk semua segmen rute di bawahnya sampai data selesai dimuat. Ini dapat dijelaskan sebagai pengambilan data "semua atau tidak sama sekali". Entah Anda memiliki seluruh data untuk halaman atau aplikasi Anda, atau tidak ada.
+>
+> Permintaan pengambilan data dengan `await` akan memblokir penggambaran dan pengambilan data untuk seluruh pohon di bawahnya, kecuali mereka dibungkus dalam batasan `<Suspense>` atau `loading.js` digunakan. Alternatif lain adalah menggunakan [pengambilan data paralel](#pengambilan-data-paralel) atau pola [preload](#preloading-data).
+
+#### Pengambilan Data Paralel
+
+Untuk mengambil data secara paralel, Anda dapat dengan cepat menginisiasi permintaan dengan mendefinisikannya di luar komponen yang menggunakan data tersebut, kemudian memanggilnya dari dalam komponen. Ini menghemat waktu dengan menginisiasi kedua permintaan secara paralel, namun pengguna tidak akan melihat hasil yang dirender sampai kedua promise selesai.
+
+Dalam contoh di bawah, fungsi `getArtist` dan `getArtistAlbums` didefinisikan di luar komponen `Page`, kemudian dipanggil di dalam komponen tersebut, dan kita menunggu kedua promise selesai:
+
+```tsx filename="app/artist/[username]/page.tsx" switcher
+import Albums from './albums';
+
+async function getArtist(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}`);
+  return res.json();
+}
+
+async function getArtistAlbums(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}/albums`);
+  return res.json();
+}
+
+export default async function Page({
+  params: { username },
+}: {
+  params: { username: string };
+}) {
+  // Mulai memuat kedua data sekaligus
+  const artistData = getArtist(username);
+  const albumsData = getArtistAlbums(username);
+
+  // Tunggu kedua promise selesai
+  const [artist, albums] = await Promise.all([artistData, albumsData]);
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Albums list={albums}></Albums>
+    </>
+  );
+}
+```
+
+```jsx filename="app/artist/[username]/page.js" switcher
+import Albums from './albums';
+
+async function getArtist(username) {
+  const res = await fetch(`https://api.example.com/artist/${username}`);
+  return res.json();
+}
+
+async function getArtistAlbums(username) {
+  const res = await fetch(`https://api.example.com/artist/${username}/albums`);
+  return res.json();
+}
+
+export default async function Page({ params: { username } }) {
+  // Mulai memuat kedua data sekaligus
+  const artistData = getArtist(username);
+  const albumsData = getArtistAlbums(username);
+
+  // Tunggu kedua promise selesai
+  const [artist, albums] = await Promise.all([artistData, albumsData]);
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <Albums list={albums}></Albums>
+    </>
+  );
+}
+```
+
+Untuk meningkatkan pengalaman pengguna, Anda dapat menambahkan [Batas Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming) untuk memecah pekerjaan penggambaran dan menampilkan bagian dari hasil sesegera mungkin.
+
+### Memuat Data Terlebih Dahulu
+
+Cara lain untuk mencegah terjadinya air terjun adalah dengan menggunakan pola preload. Anda dapat membuat fungsi `preload` secara opsional untuk lebih mengoptimalkan pengambilan data secara paralel. Dengan pendekatan ini, Anda tidak perlu melewatkan janji (promises) sebagai props. Fungsi `preload` juga dapat memiliki nama apa pun karena ini adalah suatu pola, bukan sebuah API.
+
+````tsx filename="komponen/Item.tsx" switcher
+import { dapatkanItem } from '@/utils/dapatkan-item';
+
+export const preload = (id: string) => {
+  // void mengevaluasi ekspresi yang diberikan dan mengembalikan undefined
+  // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/void
+  void dapatkanItem(id);
+};
+export default async function Item({ id }: { id: string }) {
+  const hasil = await dapatkanItem(id);
+  // ...
+}
+```;
+
+```jsx filename="komponen/Item.js" switcher
+import { dapatkanItem } from '@/utils/dapatkan-item';
+
+export const preload = (id) => {
+  // void mengevaluasi ekspresi yang diberikan dan mengembalikan undefined
+  // https://developer.mozilla.org/docs/Web/JavaScript/Reference/Operators/void
+  void dapatkanItem(id);
+};
+export default async function Item({ id }) {
+  const hasil = await dapatkanItem(id);
+  // ...
+}
+```;
+
+```tsx filename="app/item/[id]/halaman.tsx" switcher
+import Item, { preload, periksaKetersediaan } from '@/komponen/Item';
+
+export default async function Halaman({
+  params: { id },
+}: {
+  params: { id: string };
+}) {
+  // memulai pengambilan data item
+  preload(id);
+  // melakukan tugas asinkron lainnya
+  const ketersediaan = await periksaKetersediaan();
+
+return ketersediaan ? <Item id={id} /> : null;
+}
+````
+
+```jsx filename="app/item/[id]/halaman.js" switcher
+import Item, { preload, periksaKetersediaan } from '@/komponen/Item';
+
+export default async function Halaman({ params: { id } }) {
+  // memulai pengambilan data item
+  preload(id);
+  // melakukan tugas asinkron lainnya
+  const ketersediaan = await periksaKetersediaan();
+
+  return ketersediaan ? <Item id={id} /> : null;
+}
+```
+
+### Menggunakan React `cache`, `server-only`, dan Pola Preload
+
+Anda dapat menggabungkan fungsi `cache`, pola `preload`, dan paket `server-only` untuk membuat utilitas pengambilan data yang dapat digunakan di seluruh aplikasi Anda.
+
+````ts filename="utils/dapatkan-item.ts" switcher
+import { cache } from 'react';
+import 'server-only';
+
+export const preload = (id: string) => {
+  void dapatkanItem(id);
+};
+
+export const dapatkanItem = cache(async (id: string) => {
+  // ...
+});
+```;
+
+```js filename="utils/dapatkan-item.js" switcher
+import { cache } from 'react';
+import 'server-only';
+
+export const preload = (id) => {
+  void dapatkanItem(id);
+};
+
+export const dapatkanItem = cache(async (id) => {
+  // ...
+});
+```;
+
+Dengan pendekatan ini, Anda dapat mengambil data dengan cepat, menyimpan respons ke dalam cache, dan menjamin bahwa pengambilan data ini [hanya terjadi di server](/docs/app/building-your-application/rendering/composition-patterns#menghindari-kode-hanya-di-server-di-lingkungan-klien).
+
+Ekspor dari `utils/dapatkan-item` dapat digunakan oleh Tata Letak (Layouts), Halaman (Pages), atau komponen lainnya untuk memberi mereka kontrol atas kapan data item diambil.
+
+> **Bagus untuk diketahui:**
+>
+> - Kami merekomendasikan menggunakan paket [`server-only`](/docs/app/building-your-application/rendering/composition-patterns#menghindari-kode-hanya-di-server-di-lingkungan-klien) untuk memastikan bahwa fungsi pengambilan data di server tidak pernah digunakan di sisi klien.
+````

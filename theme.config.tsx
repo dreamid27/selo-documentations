@@ -2,7 +2,7 @@ import React from 'react';
 import { DocsThemeConfig } from 'nextra-theme-docs';
 
 const config: DocsThemeConfig = {
-  logo: <span>My Project</span>,
+  logo: <span>SELOin: Dokumentasi Bahasa Indonesia</span>,
   project: {
     link: 'https://github.com/dreamid27/selo-documentations',
   },

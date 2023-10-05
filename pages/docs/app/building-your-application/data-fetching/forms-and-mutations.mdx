@@ -1,0 +1,520 @@
+# Formulir dan Mutasi
+
+Formulir memungkinkan Anda untuk membuat dan memperbarui data dalam aplikasi web. Next.js menyediakan cara yang kuat untuk menangani pengiriman formulir dan mutasi data menggunakan **Tindakan Server**.
+
+<details>
+  <summary>Contoh-contoh</summary>
+
+- [Formulir dengan Status Pemuatan & Kesalahan](https://github.com/vercel/next.js/tree/canary/examples/next-forms)
+
+</details>
+
+## Bagaimana Tindakan Server Bekerja
+
+Dengan Tindakan Server, Anda tidak perlu membuat titik akhir API secara manual. Sebaliknya, Anda mendefinisikan fungsi server asinkron yang dapat dipanggil langsung dari komponen Anda.
+
+> **🎥 Tonton:** Pelajari lebih lanjut tentang formulir dan mutasi dengan App Router → [YouTube (10 menit)](https://youtu.be/dDpZfOQBMaU?si=cJZHlUu_jFhCzHUg).
+
+Tindakan Server dapat didefinisikan dalam Komponen Server atau dipanggil dari Komponen Klien. Menyusun tindakan dalam Komponen Server memungkinkan formulir berfungsi tanpa JavaScript, memberikan peningkatan progresif.
+
+Aktifkan Tindakan Server dalam file `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    serverActions: true,
+  },
+};
+```
+
+> **Bagus untuk diketahui:**
+>
+> - Formulir yang memanggil Tindakan Server dari Komponen Server dapat berfungsi tanpa JavaScript.
+> - Formulir yang memanggil Tindakan Server dari Komponen Klien akan mengantre pengiriman jika JavaScript belum dimuat, dengan prioritas hidrasi klien.
+> - Tindakan Server mewarisi [runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes) dari halaman atau tata letak yang digunakan.
+> - Tindakan Server berfungsi dengan rute sepenuhnya statis (termasuk pengambilan data dengan ISR).
+
+## Revalidasi Data yang Sudah Dicache
+
+Tindakan Server terintegrasi dengan arsitektur [penyimpanan cache dan revalidasi](/docs/app/building-your-application/caching) Next.js. Ketika formulir dikirimkan, Tindakan Server dapat memperbarui data yang dicache dan merevalidasi kunci cache yang seharusnya berubah.
+
+Tidak seperti aplikasi tradisional yang dibatasi satu formulir per rute, Tindakan Server memungkinkan adanya beberapa tindakan per rute. Selain itu, browser tidak perlu diperbarui saat pengiriman formulir. Dalam satu putaran jaringan tunggal, Next.js dapat mengembalikan baik UI yang diperbarui maupun data yang diperbarui.
+
+Lihat contoh di bawah untuk [merevalidasi data dari Tindakan Server](#merevalidasi-data).
+
+## Contoh
+
+### Formulir Hanya Server
+
+Untuk membuat formulir hanya server, tentukan Tindakan Server dalam Komponen Server. Tindakan dapat didefinisikan secara langsung dengan direktif `"use server"` di bagian atas fungsi, atau dalam file terpisah dengan direktif di bagian atas file.
+
+```tsx filename="app/page.tsx" switcher
+export default function Page() {
+  async function create(formData: FormData) {
+    'use server';
+
+    // memutasi data
+    // merevalidasi cache
+  }
+
+  return <form action={create}>...</form>;
+}
+```
+
+```jsx filename="app/page.jsx" switcher
+export default function Page() {
+  async function create(formData) {
+    'use server';
+
+    // memutasi data
+    // merevalidasi cache
+  }
+
+  return <form action={create}>...</form>;
+}
+```
+
+> **Bagus untuk diketahui**: `<form action={create}>` mengambil jenis data [FormData](https://developer.mozilla.org/docs/Web/API/FormData/FormData). Pada contoh di atas, FormData yang dikirimkan melalui elemen HTML [`form`](https://developer.mozilla.org/docs/Web/HTML/Element/form) dapat diakses dalam tindakan server `create`.
+
+### Merevalidasi Data
+
+Tindakan Server memungkinkan Anda untuk menghapus [Cache Next.js](/docs/app/building-your-application/caching) sesuai kebutuhan. Anda dapat menghapus seluruh segmen rute dengan [`revalidatePath`](/docs/app/api-reference/functions/revalidatePath):
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+export default async function submit() {
+  await submitForm();
+  revalidatePath('/');
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+export default async function submit() {
+  await submitForm();
+  revalidatePath('/');
+}
+```
+
+Atau menghapus pengambilan data tertentu dengan tag cache menggunakan [`revalidateTag`](/docs/app/api-reference/functions/revalidateTag):
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { revalidateTag } from 'next/cache';
+
+export default async function submit() {
+  await addPost();
+  revalidateTag('posts');
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+import { revalidateTag } from 'next/cache';
+
+export default async function submit() {
+  await addPost();
+  revalidateTag('posts');
+}
+```
+
+### Pengalihan
+
+Jika Anda ingin mengalihkan pengguna ke rute yang berbeda setelah penyelesaian Tindakan Server, Anda dapat menggunakan [`redirect`](/docs/app/api-reference/functions/redirect) dan URL absolut atau relatif apa pun:
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { redirect } from 'next/navigation';
+import { revalidateTag } from 'next/cache';
+
+export default async function submit() {
+  const id = await addPost();
+  revalidateTag('posts'); // Perbarui posting yang telah di-cache
+  redirect(`/post/${id}`); // Navigasi ke rute baru
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+import { redirect } from 'next/navigation';
+import { revalidateTag } from 'next/cache';
+
+export default async function submit() {
+  const id = await addPost();
+  revalidateTag('posts'); // Perbarui posting yang telah di-cache
+  redirect(`/post/${id}`); // Navigasi ke rute baru
+}
+```
+
+### Validasi Formulir
+
+Kami merekomendasikan menggunakan validasi HTML seperti `required` dan `type="email"` untuk validasi formulir dasar.
+
+Untuk validasi server yang lebih canggih, gunakan pustaka validasi skema seperti [zod](https://zod.dev/) untuk memvalidasi struktur data formulir yang diparsing:
+
+```tsx filename="app/actions.ts" switcher
+import { z } from 'zod';
+
+const schema = z.object({
+  // ...
+});
+
+export default async function submit(formData: FormData) {
+  const parsed = schema.parse({
+    id: formData.get('id'),
+  });
+  // ...
+}
+```
+
+```jsx filename="app/actions.js" switcher
+import { z } from 'zod';
+
+const schema = z.object({
+  // ...
+});
+
+export default async function submit(formData) {
+  const parsed = schema.parse({
+    id: formData.get('id'),
+  });
+  // ...
+}
+```
+
+### Menampilkan Status Loading
+
+Gunakan hook `useFormStatus` untuk menampilkan status loading saat formulir sedang disubmit di server. Hook `useFormStatus` hanya dapat digunakan sebagai anak elemen `form` yang menggunakan Tindakan Server.
+
+Sebagai contoh, tombol submit berikut:
+
+```tsx filename="app/submit-button.tsx" switcher
+'use client';
+
+import { experimental_useFormStatus as useFormStatus } from 'react-dom';
+
+export function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" aria-disabled={pending}>
+      Tambahkan
+    </button>
+  );
+}
+```
+
+```jsx filename="app/submit-button.jsx" switcher
+'use client';
+
+import { experimental_useFormStatus as useFormStatus } from 'react-dom';
+
+export function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" aria-disabled={pending}>
+      Tambahkan
+    </button>
+  );
+}
+```
+
+`<SubmitButton />` kemudian dapat digunakan dalam sebuah formulir dengan Tindakan Server:
+
+```tsx filename="app/page.tsx" switcher
+import { SubmitButton } from '@/app/submit-button'
+
+export default async function Home() {
+  return (
+    <form action={...}>
+      <input type="text" name="field-name" />
+      <SubmitButton />
+    </form>
+  )
+}
+```
+
+```jsx filename="app/page.jsx" switcher
+import { SubmitButton } from '@/app/submit-button'
+
+export default async function Home() {
+  return (
+    <form action={...}>
+      <input type="text" name="field-name" />
+      <SubmitButton />
+    </form>
+  )
+}
+```
+
+### Penanganan Kesalahan
+
+Tindakan Server juga dapat mengembalikan [objek yang dapat diserialisasi](https://developer.mozilla.org/docs/Glossary/Serialization). Sebagai contoh, Tindakan Server Anda mungkin menangani kesalahan saat membuat item baru:
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+export async function createTodo(prevState: any, formData: FormData) {
+  try {
+    await createItem(formData.get('todo'));
+    return revalidatePath('/');
+  } catch (e) {
+    return { message: 'Gagal membuat' };
+  }
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+export async function createTodo(prevState, formData) {
+  try {
+    await createItem(formData.get('todo'));
+    return revalidatePath('/');
+  } catch (e) {
+    return { message: 'Gagal membuat' };
+  }
+}
+```
+
+Kemudian, dari Komponen Klien, Anda dapat membaca nilai ini dan menampilkan pesan kesalahan.
+
+```tsx filename="app/add-form.tsx" switcher
+'use client';
+
+import { experimental_useFormState as useFormState } from 'react-dom';
+import { experimental_useFormStatus as useFormStatus } from 'react-dom';
+import { createTodo } from '@/app/actions';
+
+const initialState = {
+  message: null,
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" aria-disabled={pending}>
+      Tambahkan
+    </button>
+  );
+}
+
+export function AddForm() {
+  const [state, formAction] = useFormState(createTodo, initialState);
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="todo">Masukkan Tugas</label>
+      <input type="text" id="todo" name="todo" required />
+      <SubmitButton />
+      <p aria-live="polite" className="sr-only">
+        {state?.message}
+      </p>
+    </form>
+  );
+}
+```
+
+```jsx filename="app/add-form.jsx" switcher
+'use client';
+
+import { experimental_useFormState as useFormState } from 'react-dom';
+import { experimental_useFormStatus as useFormStatus } from 'react-dom';
+import { createTodo } from '@/app/actions';
+
+const initialState = {
+  message: null,
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" aria-disabled={pending}>
+      Tambahkan
+    </button>
+  );
+}
+
+export function AddForm() {
+  const [state, formAction] = useFormState(createTodo, initialState);
+
+  return (
+    <form action={formAction}>
+      <label htmlFor="todo">Masukkan Tugas</label>
+      <input type="text" id="todo" name="todo" required />
+      <SubmitButton />
+      <p aria-live="polite" className="sr-only">
+        {state?.message}
+      </p>
+    </form>
+  );
+}
+```
+
+### Pembaruan Optimis
+
+Gunakan `useOptimistic` untuk memperbarui UI secara optimis sebelum Tindakan Server selesai, daripada menunggu respons:
+
+```tsx filename="app/page.tsx" switcher
+'use client';
+
+import { experimental_useOptimistic as useOptimistic } from 'react';
+import { send } from './actions';
+
+type Message = {
+  message: string;
+};
+
+export function Thread({ messages }: { messages: Message[] }) {
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic<Message[]>(
+    messages,
+    (state: Message[], newMessage: string) => [
+      ...state,
+      { message: newMessage },
+    ]
+  );
+
+  return (
+    <div>
+      {optimisticMessages.map((m, k) => (
+        <div key={k}>{m.message}</div>
+      ))}
+      <form
+        action={async (formData: FormData) => {
+          const message = formData.get('message');
+          addOptimisticMessage(message);
+          await send(message);
+        }}
+      >
+        <input type="text" name="message" />
+        <button type="submit">Kirim</button>
+      </form>
+    </div>
+  );
+}
+```
+
+```jsx filename="app/page.jsx" switcher
+'use client';
+
+import { experimental_useOptimistic as useOptimistic } from 'react';
+import { send } from './actions';
+
+export function Thread({ messages }) {
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+    messages,
+    (state, newMessage) => [...state, { message: newMessage }]
+  );
+
+  return (
+    <div>
+      {optimisticMessages.map((m) => (
+        <div>{m.message}</div>
+      ))}
+      <form
+        action={async (formData) => {
+          const message = formData.get('message');
+          addOptimisticMessage(message);
+          await send(message);
+        }}
+      >
+        <input type="text" name="message" />
+        <button type="submit">Kirim</button>
+      </form>
+    </div>
+  );
+}
+```
+
+### Pengaturan Cookies
+
+Anda dapat mengatur cookies di dalam Tindakan Server menggunakan fungsi [`cookies`](/docs/app/api-reference/functions/cookies):
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { cookies } from 'next/headers';
+
+export async function create() {
+  const cart = await createCart();
+  cookies().set('cartId', cart.id);
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+import { cookies } from 'next/headers';
+
+export async function create() {
+  const cart = await createCart();
+  cookies().set('cartId', cart.id);
+}
+```
+
+### Membaca Cookies
+
+Anda dapat membaca cookies di dalam Tindakan Server menggunakan fungsi [`cookies`](/docs/app/api-reference/functions/cookies):
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { cookies } from 'next/headers';
+
+export async function read() {
+  const auth = cookies().get('authorization')?.value;
+  // ...
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server';
+
+import { cookies } from 'next/headers';
+
+export async function read() {
+  const auth = cookies().get('authorization')?.value;
+  // ...
+}
+```
+
+### Menghapus Cookies
+
+Anda dapat menghapus cookies di dalam Tindakan Server menggunakan fungsi [`cookies`](/docs/app/api-reference/functions/cookies):
+
+```ts filename="app/actions.ts" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete() {
+  cookies().delete('name')
+  // ...
+}
+```
+
+```js filename="app/actions.js" switcher
+'use server'
+
+import { cookies } from 'next/headers'
+
+export async function delete() {
+  cookies().delete('name')
+  // ...
+}
+```
+
+Lihat [contoh tambahan](/docs/app/api-reference/functions/cookies#deleting-cookies) untuk menghapus cookies dari Tindakan Server.

@@ -1,0 +1,307 @@
+---
+title: Optimisasi Gambar
+nav_title: Gambar
+description: Optimalkan gambar Anda dengan komponen `next/image` bawaan.
+related:
+  title: Referensi API
+  description: Pelajari lebih lanjut tentang API next/image.
+  links:
+    - app/api-reference/components/image
+---
+
+import Image from '../../../../../components/image';
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Optimasi Gambar
+
+<details>
+  <summary>Contoh</summary>
+
+- [Komponen Gambar](https://github.com/vercel/next.js/tree/canary/examples/image-component)
+
+</details>
+
+Menurut [Web Almanac](https://almanac.httparchive.org), gambar merupakan bagian besar dari [berat halaman](https://almanac.httparchive.org/en/2022/page-weight#content-type-and-file-formats) situs web biasa dan dapat memiliki dampak yang signifikan pada [kinerja LCP](https://almanac.httparchive.org/en/2022/performance#lcp-image-optimization) situs web Anda.
+
+Komponen Gambar Next.js memperluas elemen HTML `<img>` dengan fitur untuk optimasi gambar otomatis:
+
+- **Optimasi Ukuran:** Otomatis melayani gambar yang benar-benar berukuran sesuai untuk setiap perangkat, menggunakan format gambar modern seperti WebP dan AVIF.
+- **Stabilitas Visual:** Mencegah [geseran tata letak](/learn/seo/web-performance/cls) secara otomatis ketika gambar sedang dimuat.
+- **Pemuatan Halaman Lebih Cepat:** Gambar hanya dimuat ketika masuk ke dalam viewport menggunakan lazy loading bawaan browser, dengan pilihan tempat tumpu blur.
+- **Fleksibilitas Aset:** Pengubah ukuran gambar sesuai permintaan, bahkan untuk gambar yang disimpan di server jarak jauh
+
+> **🎥 Tonton:** Pelajari lebih lanjut tentang cara menggunakan `next/image` → [YouTube (9 menit)](https://youtu.be/IU_qq_c_lKA).
+
+## Penggunaan
+
+```js
+import Image from 'next/image';
+```
+
+Anda kemudian dapat menentukan `src` untuk gambar Anda (baik lokal maupun jarak jauh).
+
+### Gambar Lokal
+
+Untuk menggunakan gambar lokal, `import` file gambar `.jpg`, `.png`, atau `.webp` Anda.
+
+Next.js akan [secara otomatis menentukan](#ukuran-gambar) `lebar` dan `tinggi` gambar Anda berdasarkan file yang diimpor. Nilai-nilai ini digunakan untuk mencegah [Cumulative Layout Shift](https://nextjs.org/learn/seo/web-performance/cls) saat gambar Anda dimuat.
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+import profilePic from './me.png';
+
+export default function Page() {
+  return (
+    <Image
+      src={profilePic}
+      alt="Gambar penulis"
+      // width={500} disediakan secara otomatis
+      // height={500} disediakan secara otomatis
+      // blurDataURL="data:..." disediakan secara otomatis
+      // placeholder="blur" // Pilihan tempat tumpu sambil dimuat
+    />
+  );
+}
+```
+
+> **Peringatan:** Dynamic `await import()` atau `require()` tidak _didukung_. `import` harus statis sehingga dapat dianalisis pada waktu kompilasi.
+
+### Gambar Jarak Jauh
+
+Untuk menggunakan gambar jarak jauh, properti `src` harus berupa string URL.
+
+Karena Next.js tidak memiliki akses ke file jarak jauh selama proses pembangunan, Anda perlu menyediakan properti [`width`](/docs/app/api-reference/components/image#width), [`height`](/docs/app/api-reference/components/image#height), dan opsional [`blurDataURL`](/docs/app/api-reference/components/image#blurdataurl) secara manual.
+
+Atribut `width` dan `height` digunakan untuk memperkirakan rasio aspek gambar yang benar dan menghindari pergeseran tata letak saat gambar dimuat. `lebar` dan `tinggi` _tidak_ menentukan ukuran gambar yang dihasilkan. Pelajari lebih lanjut tentang [Pengaturan Ukuran Gambar](#ukuran-gambar).
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+
+export default function Page() {
+  return (
+    <Image
+      src="https://s3.amazonaws.com/my-bucket/profile.png"
+      alt="Gambar penulis"
+      width={500}
+      height={500}
+    />
+  );
+}
+```
+
+Untuk memungkinkan optimasi gambar dengan aman, tentukan daftar pola URL yang didukung di `next.config.js`. Jadilah sejelas mungkin untuk mencegah penggunaan berbahaya. Misalnya, konfigurasi berikut hanya akan mengizinkan gambar dari bucket AWS S3 tertentu:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/my-bucket/**',
+      },
+    ],
+  },
+};
+```
+
+Pelajari lebih lanjut tentang konfigurasi [`remotePatterns`](/docs/app/api-reference/components/image#remotepatterns). Jika Anda ingin menggunakan URL relatif untuk `src` gambar, gunakan [`loader`](/docs/app/api-reference/components/image#loader).
+
+### Domain
+
+Terkadang Anda mungkin ingin mengoptimalkan gambar jarak jauh, tetapi masih menggunakan API Optimasi Gambar Next.js bawaan. Untuk melakukannya, biarkan `loader` pada pengaturan defaultnya dan masukkan URL absolut untuk properti Gambar `src`.
+
+Untuk melindungi aplikasi Anda dari pengguna berbahaya, Anda harus mendefinisikan daftar nama host jarak jauh yang Anda maksudkan untuk digunakan dengan komponen `next/image`.
+
+> Pelajari lebih lanjut tentang konfigurasi [`remotePatterns`](/docs/app/api-reference/components/image#remotepatterns).
+
+### Loader
+
+Perhatikan bahwa dalam [contoh sebelumnya](#gambar-lokal), URL parsial (`"/me.png"`) disediakan untuk gambar lokal. Ini mungkin karena arsitektur loader.
+
+Sebuah loader adalah fungsi yang menghasilkan URL untuk gambar Anda. Ini mengubah `src` yang disediakan, dan menghasilkan banyak URL untuk meminta gambar pada ukuran yang berbeda. Beberapa URL ini digunakan dalam generasi [srcset](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset) otomatis, sehingga pengunjung situs Anda akan disajikan gambar yang sesuai dengan ukuran viewport mereka.
+
+Loader default untuk aplikasi Next.js menggunakan API Optimasi Gambar bawaan, yang mengoptimalkan gambar dari mana saja di web, dan kemudian menyajikannya langsung dari server web Next.js. Jika Anda ingin menyajikan gambar langsung dari CDN atau server gambar, Anda dapat menulis fungsi loader sendiri dengan beberapa baris kode JavaScript.
+
+Anda dapat menentukan loader per-gambar dengan prop [`loader`](/docs/app/api-reference/components/image#loader), atau di tingkat aplikasi dengan konfigurasi [`loaderFile`](/docs/app/api-reference/components/image#loaderfile).
+
+## Prioritas
+
+Anda harus menambahkan properti `priority` ke gambar yang akan menjadi elemen [Largest Contentful Paint (LCP)](https://web.dev/lcp/#what-elements-are-considered) untuk setiap halaman. Melakukannya memungkinkan Next.js untuk secara khusus memprioritaskan gambar untuk dimuat (misalnya, melalui tag preload atau petunjuk prioritas), yang menghasilkan peningkatan yang berarti pada LCP.
+
+Elemen LCP biasanya merupakan gambar atau blok teks terbesar yang terlihat dalam viewport halaman. Ketika Anda menjalankan `next dev`, Anda akan melihat peringatan konsol jika elemen LCP adalah `<Image>` tanpa properti `priority`.
+
+Setelah Anda mengidentifikasi gambar LCP, Anda dapat menambahkan properti seperti ini:
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+import profilePic from '../public/me.png';
+
+export default function Page() {
+  return <Image src={profilePic} alt="Gambar penulis" priority />;
+}
+```
+
+Selengkapnya tentang prioritas dapat dilihat di [dokumentasi komponen `next/image`](/docs/app/api-reference/components/image#priority).
+
+## Pengaturan Ukuran Gambar
+
+Salah satu cara gambar paling umum merusak kinerja adalah melalui _pergeseran tata letak_, di mana gambar mendorong elemen lain di halaman saat dimuat. Masalah kinerja ini sangat mengganggu pengguna sehingga memiliki Core Web Vital sendiri, yang disebut [Cumulative Layout Shift](https://web.dev/cls/). Cara menghindari pergeseran tata letak berdasarkan gambar adalah dengan [selalu mengukur gambar Anda](https://web.dev/optimize-cls/#images-without-dimensions). Ini memungkinkan browser untuk mereservasi ruang yang cukup untuk gambar sebelum dimuat.
+
+Karena `next/image` dirancang untuk menjamin hasil kinerja yang baik, tidak dapat digunakan dengan cara yang akan berkontribusi pada pergeseran tata letak, dan **harus** diukur dalam satu dari tiga cara berikut:
+
+1. Secara otomatis, menggunakan [import statis](#gambar-lokal)
+2. Secara eksplisit, dengan menyertakan properti [`lebar`](/docs/app/api-reference/components/image#width) dan [`tinggi`](/docs/app/api-reference/components/image#height)
+3. Secara implisit, dengan menggunakan [fill](/docs/app/api-reference/components/image#fill) yang menyebabkan gambar memperluas untuk mengisi elemen induknya.
+
+> **Bagaimana jika saya tidak tahu ukuran gambar saya?**
+>
+> Jika Anda mengakses gambar dari sumber tanpa pengetahuan tentang ukuran gambar, ada beberapa hal yang dapat Anda lakukan:
+>
+> **Gunakan `fill`**
+>
+> Properti [`fill`](/docs/app/api-reference/components/image#fill) memungkinkan gambar Anda diukur oleh elemen induknya. Pertimbangkan menggunakan CSS untuk memberikan ruang pada halaman bagi elemen induk gambar sepanjang prop [`sizes`](/docs/app/api-reference/components/image#sizes) untuk mencocokkan titik pemutusan kueri media apa pun. Anda juga dapat menggunakan [`object-fit`](https://developer.mozilla.org/docs/Web/CSS/object-fit) dengan `fill`, `contain`, atau `cover`, dan [`object-position`](https://developer.mozilla.org/docs/Web/CSS/object-position) untuk mendefinisikan bagaimana gambar harus mengisi ruang tersebut.
+>
+> **Normalisasi gambar Anda**
+>
+> Jika Anda menyajikan gambar dari sumber yang Anda kendalikan, pertimbangkan untuk memodifikasi pipeline gambar Anda untuk mengukur ulang gambar ke ukuran tertentu.
+>
+> **Ubah panggilan API Anda**
+>
+> Jika aplikasi Anda mengambil URL gambar menggunakan panggilan API (seperti ke CMS), Anda mungkin dapat memodifikasi panggilan API untuk mengembalikan dimensi gambar bersama dengan URL.
+
+Jika tidak ada dari metode yang disarankan berfungsi untuk mengukur gambar Anda, komponen `next/image` dirancang untuk bekerja dengan baik pada halaman bersamaan dengan elemen `<img>` standar.
+
+## Penyusunan Tampilan
+
+Penyusunan komponen Gambar mirip dengan penyusunan elemen `<img>` biasa, tetapi ada beberapa pedoman yang perlu diingat:
+
+- Gunakan `className` atau `style`, bukan `styled-jsx`.
+  - Dalam kebanyakan kasus, kami merekomendasikan menggunakan prop `className`. Ini bisa berupa [CSS Module yang diimpor](/docs/app/building-your-application/styling/css-modules), [stylesheet global](/docs/app/building-your-application/styling/css-modules#global-styles), dll.
+  - Anda juga dapat menggunakan prop `style` untuk menetapkan gaya inline.
+  - Anda tidak dapat menggunakan [styled-jsx](/docs/app/building-your-application/styling/css-in-js) karena bersifat terbatas pada komponen saat ini (kecuali Anda menandai gaya sebagai `global`).
+- Saat menggunakan `fill`, elemen induk harus memiliki `position: relative`
+  - Ini diperlukan untuk merender elemen gambar dengan benar dalam mode tata letak tersebut.
+- Saat menggunakan `fill`, elemen induk harus memiliki `display: block`
+  - Ini adalah nilai default untuk elemen `<div>`, tetapi harus dijelaskan sebaliknya.
+
+## Contoh
+
+### Responsif
+
+<Image
+  alt="Gambar responsif yang mengisi lebar dan tinggi kontainer induknya"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fresponsive-image.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fresponsive-image.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  width="1600"
+  height="629"
+/>
+
+```jsx
+import Image from 'next/image';
+import mountains from '../public/mountains.jpg';
+
+export default function Responsive() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <Image
+        alt="Gunung"
+        // Mengimpor gambar akan
+        // secara otomatis menetapkan lebar dan tinggi
+        src={mountains}
+        sizes="100vw"
+        // Membuat gambar tampil full lebar
+        style={{
+          width: '100%',
+          height: 'auto',
+        }}
+      />
+    </div>
+  );
+}
+```
+
+### Isi Kontainer
+
+<Image
+  alt="Kisi gambar mengisi lebar kontainer induk"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffill-container.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffill-container.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  width="1600"
+  height="529"
+/>
+
+```jsx
+import Image from 'next/image';
+import mountains from '../public/mountains.jpg';
+
+export default function Fill() {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridGap: '8px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, auto))',
+      }}
+    >
+      <div style={{ position: 'relative', height: '400px' }}>
+        <Image
+          alt="Gunung"
+          src={mountains}
+          fill
+          sizes="(min-width: 808px) 50vw, 100vw"
+          style={{
+            objectFit: 'cover', // cover, contain, none
+          }}
+        />
+      </div>
+      {/* Dan lebih banyak gambar dalam kisi... */}
+    </div>
+  );
+}
+```
+
+### Gambar Latar
+
+<Image
+  alt="Gambar latar yang mengambil lebar dan tinggi penuh halaman"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fbackground-image.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fbackground-image.png&w=3840&q=75&dpl=dpl_54Z22JDFYFYTT3AVvPS1Q6f12tZ9"
+  width="1600"
+  height="427"
+/>
+
+```jsx
+import Image from 'next/image';
+import mountains from '../public/mountains.jpg';
+
+export default function Background() {
+  return (
+    <Image
+      alt="Gunung"
+      src={mountains}
+      placeholder="blur"
+      quality={100}
+      fill
+      sizes="100vw"
+      style={{
+        objectFit: 'cover',
+      }}
+    />
+  );
+}
+```
+
+Untuk contoh penggunaan komponen Gambar dengan berbagai gaya, lihat [Demo Komponen Gambar](https://image-component.nextjs.gallery).
+
+## Properti Lain
+
+[**Lihat semua properti yang tersedia untuk komponen `next/image`.**](/docs/app/api-reference/components/image)
+
+## Konfigurasi
+
+Komponen `next/image` dan API Optimasi Gambar Next.js dapat dikonfigurasi di [file `next.config.js`](/docs/app/api-reference/next-config-js). Konfigurasi ini memungkinkan Anda [mengaktifkan gambar jarak jauh](/docs/app/api-reference/components/image#remotepatterns), [menentukan breakpoint gambar kustom](/docs/app/api-reference/components/image#devicesizes), [mengubah perilaku caching](/docs/app/api-reference/components/image#caching-behavior) dan lainnya.
+
+[Baca dokumentasi konfigurasi gambar lengkap untuk informasi lebih lanjut.](/docs/app/api-reference/components/image#configuration-options)

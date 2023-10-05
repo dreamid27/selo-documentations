@@ -11,7 +11,7 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: 'https://github.com/dreamid27/selo-documentations',
   footer: {
-    text: 'Nextra Docs Template',
+    text: 'SELO Dokumentasi',
   },
 };
 

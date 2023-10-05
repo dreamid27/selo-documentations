@@ -1,0 +1,475 @@
+---
+title: Optimisasi Font
+nav_title: Font
+description: Optimalkan font web aplikasi Anda dengan loader `next/font` bawaan.
+related:
+  title: Referensi API
+  description: Pelajari lebih lanjut tentang API next/font.
+  links:
+    - app/api-reference/components/font
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Optimisasi Font
+
+[**`next/font`**](/docs/app/api-reference/components/font) akan secara otomatis mengoptimalkan font Anda (termasuk font kustom) dan menghapus permintaan jaringan eksternal untuk meningkatkan privasi dan kinerja.
+
+> **🎥 Tonton:** Pelajari lebih lanjut tentang cara menggunakan `next/font` → [YouTube (6 menit)](https://www.youtube.com/watch?v=L8_98i_bMMA).
+
+`next/font` termasuk **self-hosting otomatis bawaan** untuk _setiap_ file font. Ini berarti Anda dapat memuat font web secara optimal tanpa pergeseran tata letak (layout shift) dengan bantuan properti CSS `size-adjust` yang digunakan.
+
+Sistem font baru ini juga memungkinkan Anda dengan mudah menggunakan semua Font Google dengan mempertimbangkan kinerja dan privasi. File CSS dan font diunduh saat build dan di-hosting sendiri dengan aset statis lainnya. **Tidak ada permintaan yang dikirim ke Google oleh browser.**
+
+## Font Google
+
+Secara otomatis self-host font Google apa pun. Font-font ini disertakan dalam implementasi dan disajikan dari domain yang sama dengan implementasi Anda. **Tidak ada permintaan yang dikirim ke Google oleh browser.**
+
+Mulailah dengan mengimpor font yang ingin Anda gunakan dari `next/font/google` sebagai fungsi. Kami menyarankan menggunakan [font variabel](https://fonts.google.com/variablefonts) untuk kinerja dan fleksibilitas terbaik.
+
+```tsx filename="app/layout.tsx" switcher
+import { Inter } from 'next/font/google';
+
+// Jika memuat font variabel, Anda tidak perlu menentukan berat font
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { Inter } from 'next/font/google';
+
+// Jika memuat font variabel, Anda tidak perlu menentukan berat font
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Jika Anda tidak dapat menggunakan font variabel, Anda **perlu menentukan berat**:
+
+```tsx filename="app/layout.tsx" switcher
+import { Roboto } from 'next/font/google';
+
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { Roboto } from 'next/font/google';
+
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Anda dapat menentukan beberapa berat dan/atau gaya dengan menggunakan array:
+
+```jsx filename="app/layout.js"
+const roboto = Roboto({
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+  display: 'swap',
+});
+```
+
+> **Bagus untuk diketahui**: Gunakan garis bawah (\_) untuk nama font dengan beberapa kata. Misalnya, `Roboto Mono` harus diimpor sebagai `Roboto_Mono`.
+
+### Menentukan subset (subkumpulan)
+
+Font Google secara otomatis disubset (subkumpulan) [secara otomatis](https://fonts.google.com/knowledge/glossary/subsetting). Ini mengurangi ukuran file font dan meningkatkan kinerja. Anda perlu menentukan subkumpulan mana yang ingin Anda muat sebelumnya. Gagal menentukan subkumpulan apa pun saat [`preload`](/docs/app/api-reference/components/font#preload) bernilai `true` akan menghasilkan peringatan.
+
+Ini dapat dilakukan dengan menambahkannya ke dalam panggilan fungsi:
+
+```tsx filename="app/layout.tsx" switcher
+const inter = Inter({ subsets: ['latin'] });
+```
+
+```jsx filename="app/layout.js" switcher
+const inter = Inter({ subsets: ['latin'] });
+```
+
+Lihat [Referensi API Font](/docs/app/api-reference/components/font) untuk informasi lebih lanjut.
+
+### Menggunakan Beberapa Font
+
+Anda dapat mengimpor dan menggunakan beberapa font dalam aplikasi Anda. Ada dua pendekatan yang dapat Anda ambil.
+
+Pendekatan pertama adalah dengan membuat fungsi utilitas yang mengekspor sebuah font, mengimpornya, dan menerapkan `className`-nya sesuai kebutuhan. Hal ini memastikan font dimuat sebelumnya hanya ketika dirender:
+
+```ts filename="app/fonts.ts" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+
+export const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+});
+```
+
+```js filename="app/fonts.js" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+
+export const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+});
+
+export const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+});
+```
+
+```tsx filename="app/layout.tsx" switcher
+import { inter } from './fonts';
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>
+        <div>{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { inter } from './fonts';
+
+export default function Layout({ children }) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>
+        <div>{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```tsx filename="app/page.tsx" switcher
+import { roboto_mono } from './fonts';
+
+export default function Page() {
+  return (
+    <>
+      <h1 className={roboto_mono.className}>Halaman Saya</h1>
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { roboto_mono } from './fonts';
+
+export default function Page() {
+  return (
+    <>
+      <h1 className={roboto_mono.className}>Halaman Saya</h1>
+    </>
+  );
+}
+```
+
+Pada contoh di atas, `Inter` akan diterapkan secara global, dan `Roboto Mono` dapat diimpor dan diterapkan sesuai kebutuhan.
+
+Alternatifnya, Anda dapat membuat [variabel CSS](/docs/app/api-reference/components/font#variable) dan menggunakannya dengan solusi CSS pilihan Anda:
+
+```tsx filename="app/layout.tsx" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+import styles from './global.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  variable: '--font-roboto-mono',
+  display: 'swap',
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={`${inter.variable} ${roboto_mono.variable}`}>
+      <body>
+        <h1>Aplikasi Saya</h1>
+        <div>{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  variable: '--font-roboto-mono',
+  display: 'swap',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={`${inter.variable} ${roboto_mono.variable}`}>
+      <body>
+        <h1>Aplikasi Saya</h1>
+        <div>{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```css filename="app/global.css"
+html {
+  font-family: var(--font-inter);
+}
+
+h1 {
+  font-family: var(--font-roboto-mono);
+}
+```
+
+Pada contoh di atas, `Inter` akan diterapkan secara global, dan semua tag `<h1>` akan diberi gaya dengan `Roboto Mono`.
+
+> **Rekomendasi**: Gunakan beberapa font dengan bijak karena setiap font baru adalah sumber daya tambahan yang harus diunduh oleh klien.
+
+## Font Lokal
+
+Impor `next/font/local` dan tentukan `src` dari file font lokal Anda. Kami menyarankan menggunakan [font variabel](https://fonts.google.com/variablefonts) untuk kinerja dan fleksibilitas terbaik.
+
+```tsx filename="app/layout.tsx" switcher
+import localFont from 'next/font/local';
+
+// File font dapat ditempatkan di dalam folder `app`
+const myFont = localFont({
+  src: './my-font.woff2',
+  display: 'swap',
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import localFont from 'next/font/local';
+
+// File font dapat ditempatkan di dalam folder `app`
+const myFont = localFont({
+  src: './my-font.woff2',
+  display: 'swap',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Jika Anda ingin menggunakan beberapa file untuk satu keluarga font, `src` dapat berupa array:
+
+```js
+const roboto = localFont({
+  src: [
+    {
+      path: './Roboto-Regular.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './Roboto-Italic.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+    {
+      path: './Roboto-Bold.woff2',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: './Roboto-BoldItalic.woff2',
+      weight: '700',
+      style: 'italic',
+    },
+  ],
+});
+```
+
+Lihat [Referensi API Font](/docs/app/api-reference/components/font) untuk informasi lebih lanjut.
+
+## Dengan Tailwind CSS
+
+`next/font` dapat digunakan dengan [Tailwind CSS](https://tailwindcss.com/) melalui [variabel CSS](/docs/app/api-reference/components/font#css-variables).
+
+Pada contoh di bawah ini, kami menggunakan font `Inter` dari `next/font/google` (Anda dapat menggunakan font apa pun dari Google atau Font Lokal). Muat font Anda dengan opsi `variable` untuk menentukan nama variabel CSS Anda dan tetapkan ke `inter`. Kemudian, gunakan `inter.variable` untuk menambahkan variabel CSS ke dokumen HTML Anda.
+
+```tsx filename="app/layout.tsx" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto-mono',
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={`${inter.variable} ${roboto_mono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { Inter, Roboto_Mono } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const roboto_mono = Roboto_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto-mono',
+});
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" className={`${inter.variable} ${roboto_mono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Terakhir, tambahkan variabel CSS ke [konfigurasi Tailwind CSS](/docs/app/building-your-application/styling/tailwind-css#configuring-tailwind):
+
+```js filename="tailwind.config.js"
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)'],
+        mono: ['var(--font-roboto-mono)'],
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+Sekarang Anda dapat menggunakan kelas utilitas `font-sans` dan `font-mono` untuk menerapkan font ke elemen Anda.
+
+## Pra-pemuatan
+
+Ketika fungsi font dipanggil pada halaman situs Anda, font tersebut tidak tersedia secara global dan dimuat sebelumnya pada semua rute. Sebaliknya, font hanya dimuat sebelumnya pada rute-rute terkait berdasarkan jenis file di mana font itu digunakan:
+
+- Jika itu adalah [halaman unik](/docs/app/building-your-application/routing/pages-and-layouts#pages), itu dimuat sebelumnya pada rute unik untuk halaman tersebut.
+- Jika itu adalah [layout](/docs/app/building-your-application/routing/pages-and-layouts#layouts), itu dimuat sebelumnya pada semua rute yang dililit oleh layout.
+- Jika itu adalah [layout root](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required), itu dimuat sebelumnya pada semua rute.
+
+## Menggunakan Kembali Font
+
+Setiap kali Anda memanggil fungsi `localFont` atau font Google, font itu di-host sebagai satu instance dalam aplikasi Anda. Oleh karena itu, jika Anda memuat fungsi font yang sama dalam beberapa file, multiple instance dari font yang sama di-host. Dalam situasi ini, disarankan untuk melakukan hal berikut:
+
+- Panggil fungsi loader font dalam satu file berbagi
+- Eksport sebagai konstanta
+- Impor konstanta tersebut dalam setiap file di mana Anda ingin menggunakan font ini

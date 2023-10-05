@@ -2,5 +2,7 @@
   "routing": "Routing",
   "data-fetching": "Data Fetching",
   "rendering": "Rendering",
-  "caching": "Caching"
+  "caching": "Caching",
+  "styling": "Styling",
+  "optimizing": "Optimasi"
 }

@@ -1,0 +1,40 @@
+---
+title: Optimisasi
+nav_title: Mengoptimalkan
+description: Optimalkan aplikasi Next.js Anda untuk kinerja dan pengalaman pengguna terbaik.
+---
+
+# Optimasi
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js dilengkapi dengan berbagai optimisasi bawaan yang dirancang untuk meningkatkan kecepatan aplikasi Anda dan [Core Web Vitals](https://web.dev/vitals/). Panduan ini akan mencakup optimisasi yang dapat Anda manfaatkan untuk meningkatkan pengalaman pengguna Anda.
+
+## Komponen Bawaan
+
+Komponen bawaan mengabstraksi kompleksitas implementasi optimisasi UI umum. Komponen-komponen ini adalah:
+
+- **Gambar**: Dibangun di atas elemen `<img>` asli. Komponen Gambar mengoptimalkan gambar untuk kinerja dengan lazy loading dan secara otomatis mengubah ukuran gambar berdasarkan ukuran perangkat.
+- **Tautan**: Dibangun di atas tag `<a>` asli. Komponen Tautan memprediksi halaman-halaman secara latar belakang, untuk transisi halaman yang lebih cepat dan lancar.
+- **Script**: Dibangun di atas tag `<script>` asli. Komponen Script memberikan Anda kendali atas penggunaan dan eksekusi script pihak ketiga.
+
+## Metadata
+
+Metadata membantu mesin pencari memahami konten Anda dengan lebih baik (yang dapat menghasilkan SEO yang lebih baik), dan memungkinkan Anda menyesuaikan bagaimana konten Anda ditampilkan di media sosial, membantu Anda menciptakan pengalaman pengguna yang lebih menarik dan konsisten di berbagai platform.
+
+API Metadata di Next.js memungkinkan Anda untuk memodifikasi elemen `<head>` dari sebuah halaman. Anda dapat mengonfigurasi metadata dalam dua cara:
+
+- **Metadata Berbasis Konfigurasi**: Ekspor objek metadata statis atau fungsi generateMetadata dinamis dalam file `layout.js` atau `page.js`.
+- **Metadata Berbasis File**: Tambahkan file khusus yang dihasilkan secara statis atau dinamis ke segmen rute.
+
+Selain itu, Anda dapat membuat Gambar Open Graph dinamis menggunakan JSX dan CSS dengan konstruktor [imageResponse](/docs/app/api-reference/functions/image-response).
+
+Komponen Head di Next.js memungkinkan Anda untuk memodifikasi elemen `<head>` dari sebuah halaman. Pelajari lebih lanjut di [Dokumentasi Komponen Head](/docs/pages/api-reference/components/head).
+
+## Aset Statis
+
+Folder `/public` Next.js dapat digunakan untuk menyajikan aset statis seperti gambar, font, dan file lainnya. File-file di dalam `/public` juga dapat di-cache oleh penyedia CDN sehingga disampaikan dengan efisien.
+
+## Analitik dan Pemantauan
+
+Untuk aplikasi yang besar, Next.js berintegrasi dengan alat analitik dan pemantauan populer untuk membantu Anda memahami kinerja aplikasi Anda. Pelajari lebih lanjut di panduan [Analitik](/docs/app/building-your-application/optimizing/analytics), [OpenTelemetry](/docs/pages/building-your-application/optimizing/open-telemetry), dan [Instrumen](/docs/pages/building-your-application/optimizing/instrumentation).

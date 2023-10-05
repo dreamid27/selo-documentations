@@ -1,0 +1,262 @@
+---
+title: Optimasi Script
+nav_title: Script
+description: Optimasi script pihak ketiga dengan komponen Script bawaan.
+related:
+  title: Referensi API
+  description: Pelajari lebih lanjut tentang API next/script.
+  links:
+    - app/api-reference/components/script
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Optimasi Script
+
+### Script Layout
+
+Untuk memuat skrip pihak ketiga untuk beberapa rute, impor `next/script` dan sertakan skrip langsung dalam komponen layout Anda:
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+import Script from 'next/script';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+import Script from 'next/script';
+
+export default function DashboardLayout({ children }) {
+  return (
+    <>
+      <section>{children}</section>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+Skrip pihak ketiga diambil ketika rute folder diakses oleh pengguna (misalnya, `dashboard/page.js`) atau setiap rute bersarang (misalnya, `dashboard/settings/page.js`). Next.js akan memastikan skrip akan **hanya dimuat sekali**, bahkan jika pengguna menavigasi antara beberapa rute dalam layout yang sama.
+
+### Script Aplikasi
+
+Untuk memuat skrip pihak ketiga untuk semua rute, impor `next/script` dan sertakan skrip langsung dalam layout root Anda:
+
+```tsx filename="app/layout.tsx" switcher
+import Script from 'next/script';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script src="https://example.com/script.js" />
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import Script from 'next/script';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script src="https://example.com/script.js" />
+    </html>
+  );
+}
+```
+
+Skrip ini akan dimuat dan dieksekusi ketika _setiap_ rute dalam aplikasi Anda diakses. Next.js akan memastikan skrip akan **hanya dimuat sekali**, bahkan jika pengguna menavigasi antara beberapa halaman.
+
+> **Rekomendasi**: Kami menyarankan hanya menyertakan skrip pihak ketiga dalam halaman atau layout tertentu untuk meminimalkan dampak yang tidak perlu terhadap kinerja.
+
+### Strategi
+
+Meskipun perilaku default dari `next/script` memungkinkan Anda memuat skrip pihak ketiga dalam halaman atau layout apa pun, Anda dapat menyempurnakan perilaku pemuatannya dengan menggunakan properti `strategy`:
+
+- `beforeInteractive`: Muat skrip sebelum kode Next.js apa pun dan sebelum hydrasi halaman terjadi.
+- `afterInteractive`: (**default**) Muat skrip awal tetapi setelah beberapa hydrasi pada halaman terjadi.
+- `lazyOnload`: Muat skrip nanti selama waktu idle browser.
+- `worker`: (eksperimental) Muat skrip dalam web worker.
+
+Lihat dokumentasi referensi API [`next/script`](/docs/app/api-reference/components/script#strategy) untuk mempelajari lebih lanjut tentang masing-masing strategi dan kasus penggunaannya.
+
+### Memindahkan Skrip ke Web Worker (Eksperimental)
+
+> **Peringatan:** Strategi `worker` belum stabil dan belum bekerja dengan direktori [`app`](/docs/app/building-your-application/routing/defining-routes). Gunakan dengan hati-hati.
+
+Skrip yang menggunakan strategi `worker` dipindahkan dan dieksekusi dalam web worker dengan [Partytown](https://partytown.builder.io/). Ini dapat meningkatkan kinerja situs Anda dengan mengalokasikan utas utama untuk sisa kode aplikasi Anda.
+
+Strategi ini masih bersifat eksperimental dan hanya dapat digunakan jika flag `nextScriptWorkers` diaktifkan dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    nextScriptWorkers: true,
+  },
+};
+```
+
+Kemudian, jalankan `next` (biasanya `npm run dev` atau `yarn dev`) dan Next.js akan memandu Anda melalui instalasi paket yang diperlukan untuk menyelesaikan pengaturan:
+
+```bash filename="Terminal"
+npm run dev
+```
+
+Anda akan melihat instruksi seperti ini: Harap instal Partytown dengan menjalankan `npm install @builder.io/partytown`
+
+Setelah penyiapan selesai, menentukan `strategy="worker"` akan secara otomatis menginstansiasi Partytown dalam aplikasi Anda dan memindahkan skrip ke web worker.
+
+```tsx filename="pages/home.tsx" switcher
+import Script from 'next/script';
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  );
+}
+```
+
+```jsx filename="pages/home.js" switcher
+import Script from 'next/script';
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  );
+}
+```
+
+Ada beberapa pertimbangan yang perlu dipertimbangkan saat memuat skrip pihak ketiga dalam web worker. Silakan lihat dokumentasi [tradeoffs](https://partytown.builder.io/trade-offs) Partytown untuk informasi lebih lanjut.
+
+### Skrip Inline
+
+Skrip inline, atau skrip yang tidak dimuat dari file eksternal, juga didukung oleh komponen Script. Mereka dapat ditulis dengan menempatkan JavaScript dalam kurung kurawal:
+
+```jsx
+<Script id="show-banner">
+  {`document.getElementById('banner').classList.remove('hidden')`}
+</Script>
+```
+
+Atau dengan menggunakan properti `dangerouslySetInnerHTML`:
+
+```jsx
+<Script
+  id="show-banner"
+  dangerouslySetInnerHTML={{
+    __html: `document.getElementById('banner').classList.remove('hidden')`,
+  }}
+/>
+```
+
+> **Peringatan**: Sebuah properti `id` harus diberikan untuk skrip inline agar Next.js dapat melacak dan mengoptimalkan skrip.
+
+### Menjalankan Kode Tambahan
+
+Handler acara dapat digunakan dengan komponen Script untuk menjalankan kode tambahan setelah suatu peristiwa tertentu terjadi:
+
+- `onLoad`: Jalankan kode setelah skrip selesai dimuat.
+- `onReady`: Jalankan kode setelah skrip selesai dimuat dan setiap kali komponen dipasang.
+- `onError`: Jalankan kode jika skrip gagal dimuat.
+
+Handler ini hanya akan berfungsi ketika `next/script` diimpor dan digunakan di dalam [Komponen Klien](/docs/app/building-your-application/rendering/client-components) di mana `"use client"` didefinisikan sebagai baris pertama kode:
+
+```tsx filename="app/page.tsx" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Skrip telah dimuat');
+        }}
+      />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onLoad={() => {
+          console.log('Skrip telah dimuat');
+        }}
+      />
+    </>
+  );
+}
+```
+
+Lihat referensi API [`next/script`](/docs/app/api-reference/components/script#onload) untuk mempelajari lebih lanjut tentang setiap handler acara dan melihat contoh.
+
+### Atribut Tambahan
+
+Ada banyak atribut DOM yang dapat diberikan kepada elemen `<script>` yang tidak digunakan oleh komponen Script, seperti [`nonce`](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce) atau [atribut data kustom](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/data-*). Menyertakan atribut tambahan apa pun akan secara otomatis meneruskannya ke elemen `<script>` akhir yang dioptimalkan dan disertakan dalam HTML.
+
+```tsx filename="app/page.tsx" switcher
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        id="example-script"
+        nonce="XUENAJFW"
+        data-test="script"
+      />
+    </>
+  );
+}
+```

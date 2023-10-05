@@ -1,0 +1,105 @@
+import Image from '../../../../../components/image';
+
+# Komponen Klien
+
+Komponen Klien memungkinkan Anda untuk menulis antarmuka UI interaktif yang dapat dirender di klien pada saat permintaan. Di Next.js, rendering klien adalah **opt-in**, yang berarti Anda harus secara eksplisit memutuskan komponen apa yang harus dirender oleh React di klien.
+
+Halaman ini akan menjelaskan bagaimana Komponen Klien bekerja, bagaimana mereka dirender, dan kapan Anda mungkin menggunakannya.
+
+## Manfaat dari Rendering Klien
+
+Ada beberapa manfaat dari melakukan pekerjaan rendering di klien, termasuk:
+
+- **Interaktivitas**: Komponen Klien dapat menggunakan state, efek, dan penerima acara, yang berarti mereka dapat memberikan umpan balik langsung kepada pengguna dan memperbarui UI.
+- **API Browser**: Komponen Klien memiliki akses ke API browser, seperti [geolokasi](https://developer.mozilla.org/docs/Web/API/Geolocation_API) atau [localStorage](https://developer.mozilla.org/docs/Web/API/Window/localStorage), yang memungkinkan Anda untuk membangun UI untuk kasus penggunaan tertentu.
+
+## Menggunakan Komponen Klien di Next.js
+
+Untuk menggunakan Komponen Klien, Anda dapat menambahkan direktif React [`"use client"`](https://react.dev/reference/react/use-client) di bagian atas file, di atas impor Anda.
+
+`"use client"` digunakan untuk mendeklarasikan [batasan](/docs/app/building-your-application/rendering#network-boundary) antara modul Komponen Server dan Klien. Ini berarti dengan mendefinisikan `"use client"` dalam suatu file, semua modul lain yang diimpor ke dalamnya, termasuk komponen anak, dianggap sebagai bagian dari bundel klien - dan akan dirender oleh React di klien.
+
+```tsx filename="app/counter.tsx" highlight={1} switcher
+'use client';
+
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Anda mengklik {count} kali</p>
+      <button onClick={() => setCount(count + 1)}>Klik saya</button>
+    </div>
+  );
+}
+```
+
+```jsx filename="app/counter.js" highlight={1} switcher
+'use client';
+
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Anda mengklik {count} kali</p>
+      <button onClick={() => setCount(count + 1)}>Klik saya</button>
+    </div>
+  );
+}
+```
+
+Diagram di bawah ini menunjukkan komponen bertingkat, menggunakan `onClick` dan `useState` di `toggle.js` akan menyebabkan kesalahan jika direktif `"use client"` tidak didefinisikan. Ini karena, secara default, komponen dirender di server di mana API ini tidak tersedia. Dengan mendefinisikan direktif `"use client"` untuk `toggle.js`, Anda dapat memberi tahu React untuk merender komponen dan anak-anaknya di klien, di mana API tersedia.
+
+<Image
+  alt="Gunakan Direktif Klien dan Batasan Jaringan"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fuse-client-directive.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fuse-client-directive.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  width="1600"
+  height="1320"
+/>
+
+> **Menentukan beberapa titik masuk `"use client"`**:
+>
+> Anda dapat menentukan beberapa titik masuk "use client" dalam pohon Komponen React Anda. Ini memungkinkan Anda untuk membagi aplikasi Anda menjadi beberapa bundel klien (atau cabang).
+>
+> Namun, `"use client"` tidak perlu didefinisikan di setiap komponen yang perlu dirender di klien. Setelah Anda mendefinisikan batasan tersebut, semua komponen anak dan modul yang diimpor ke dalamnya dianggap sebagai bagian dari bundel klien.
+
+## Bagaimana Komponen Klien Dirender?
+
+Di Next.js, Komponen Klien dirender dengan cara yang berbeda tergantung apakah permintaan adalah bagian dari muat halaman penuh (kunjungan awal ke aplikasi Anda atau pengalihan halaman yang dipicu oleh pembaruan browser) atau navigasi selanjutnya.
+
+### Muat halaman penuh
+
+Untuk mengoptimalkan muat halaman awal, Next.js akan menggunakan API React untuk merender pratinjau HTML statis di server untuk Komponen Klien dan Server. Ini berarti, ketika pengguna pertama kali mengunjungi aplikasi Anda, mereka akan melihat konten halaman secara langsung, tanpa harus menunggu klien untuk mengunduh, mengurai, dan menjalankan bundel JavaScript Komponen Klien.
+
+Di server:
+
+1. React merender Komponen Server ke dalam format data khusus yang disebut **Payload Komponen Server React (RSC Payload)**, yang mencakup referensi ke Komponen Klien.
+2. Next.js menggunakan RSC Payload dan instruksi JavaScript Komponen Klien untuk merender **HTML** untuk rute di server.
+
+Kemudian, di klien:
+
+1. HTML digunakan untuk segera menampilkan pratinjau awal yang cepat dan non-interaktif dari rute.
+2. Payload Komponen Server React digunakan untuk menyelaraskan pohon Komponen Klien dan Server, dan memperbarui DOM.
+3. Instruksi JavaScript digunakan untuk [menyelaraskan](https://react.dev/reference/react-dom/client/hydrateRoot) Komponen Klien dan membuat UI mereka interaktif.
+
+> **Apa itu penyelarasan?**
+>
+> Penyelarasan adalah proses melekatkan penerima acara ke DOM, untuk membuat HTML statis menjadi interaktif. Di balik layar, penyelarasan dilakukan dengan API React [`hydrateRoot`](https://react.dev/reference/react-dom/client/hydrateRoot).
+
+### Navigasi Selanjutnya
+
+Pada navigasi selanjutnya, Komponen Klien dirender sepenuhnya di klien, tanpa HTML yang dirender di server.
+
+Ini berarti bundel JavaScript Komponen Klien diunduh dan diurai. Setelah bundel siap, React akan menggunakan Payload RSC untuk menyelaraskan pohon Komponen Klien dan Server, dan memperbarui DOM.
+
+## Kembali ke Lingkungan Server
+
+Terkadang, setelah Anda telah mendeklarasikan batasan `"use client"`, Anda mungkin ingin kembali ke lingkungan server. Misalnya, Anda mungkin ingin mengurangi ukuran bundel klien, mengambil data di server, atau menggunakan API yang hanya tersedia di server.
+
+Anda dapat menjaga kode di server meskipun secara teoritis bersarang di dalam Komponen Klien dengan cara memasukkan Komponen Klien, Komponen Server, dan Tindakan Server. Lihat halaman [Pola Komposisi](/docs/app/building-your-application/rendering/composition-patterns) untuk informasi lebih lanjut.

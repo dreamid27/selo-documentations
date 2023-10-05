@@ -1,0 +1,6 @@
+{
+  "server-components": "Komponen Server",
+  "client-components": "Komponen Klien",
+  "composition-patterns": "Pola Komposisi Server dan Klien",
+  "edge-and-nodejs-runtimes": "Runtimes Edge dan Node.js"
+}

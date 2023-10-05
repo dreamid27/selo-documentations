@@ -1,0 +1,131 @@
+import Image from '../../../../../components/image';
+
+# Komponen Server
+
+Komponen Server React memungkinkan Anda untuk menulis UI yang dapat dirender dan secara opsional dicache di server. Di Next.js, pekerjaan renderingnya dibagi lebih lanjut berdasarkan segmen rute untuk mengaktifkan streaming dan rendering parsial, dan ada tiga strategi rendering server yang berbeda:
+
+- [Rendering Statis](#static-rendering-default)
+- [Rendering Dinamis](#dynamic-rendering)
+- [Streaming](#streaming)
+
+Halaman ini akan menjelaskan bagaimana Komponen Server bekerja, kapan Anda mungkin menggunakannya, dan berbagai strategi rendering server.
+
+## Manfaat dari Server Rendering
+
+Ada beberapa manfaat dalam melakukan pekerjaan rendering di server, termasuk:
+
+- **Pengambilan Data**: Komponen Server memungkinkan Anda untuk memindahkan pengambilan data ke server, lebih dekat dengan sumber data Anda. Ini dapat meningkatkan kinerja dengan mengurangi waktu yang diperlukan untuk mengambil data yang diperlukan untuk rendering, dan jumlah permintaan yang diperlukan oleh client.
+- **Keamanan**: Komponen Server memungkinkan Anda untuk menyimpan data sensitif dan logika di server, seperti token dan kunci API, tanpa risiko mengeksposnya ke client.
+- **Penyimpanan Cache**: Dengan merender di server, hasilnya dapat dicache dan digunakan kembali pada permintaan berikutnya dan di seluruh pengguna. Ini dapat meningkatkan kinerja dan mengurangi biaya dengan mengurangi jumlah rendering dan pengambilan data yang dilakukan pada setiap permintaan.
+- **Ukuran Bundel**: Komponen Server memungkinkan Anda untuk menyimpan dependensi besar yang sebelumnya akan mempengaruhi ukuran bundel JavaScript client di server. Ini bermanfaat bagi pengguna dengan internet yang lambat atau perangkat yang kurang kuat, karena client tidak perlu mengunduh, mengurai, dan menjalankan JavaScript apa pun untuk Komponen Server.
+- **Muat Halaman Awal dan [First Contentful Paint (FCP)](https://web.dev/fcp/)**: Di server, kita dapat menghasilkan HTML untuk memungkinkan pengguna melihat halaman segera, tanpa harus menunggu client untuk mengunduh, mengurai, dan menjalankan JavaScript yang diperlukan untuk merender halaman.
+- **Optimasi Mesin Pencari dan Kemampuan Dibagikan di Media Sosial**: HTML yang dirender dapat digunakan oleh bot mesin pencari untuk mengindeks halaman Anda dan bot media sosial untuk menghasilkan pratinjau kartu sosial untuk halaman Anda.
+- **Streaming**: Komponen Server memungkinkan Anda untuk membagi pekerjaan rendering menjadi potongan dan mengalirkannya ke client saat potongan tersebut siap. Ini memungkinkan pengguna melihat bagian-bagian dari halaman lebih awal tanpa harus menunggu seluruh halaman selesai dirender.
+
+## Menggunakan Komponen Server di Next.js
+
+Secara default, Next.js menggunakan Komponen Server. Ini memungkinkan Anda untuk secara otomatis mengimplementasikan server rendering tanpa konfigurasi tambahan, dan Anda dapat memilih untuk menggunakan Komponen Client saat diperlukan, lihat [Komponen Client](/docs/app/building-your-application/rendering/client-components).
+
+## Bagaimana Komponen Server Dirender?
+
+Di server, Next.js menggunakan API React untuk mengatur rendering. Pekerjaan renderingnya dibagi menjadi potongan: berdasarkan segmen rute individu dan [Suspense Boundaries](https://react.dev/reference/react/Suspense).
+
+Setiap potongan dirender dalam dua langkah:
+
+1. React merender Komponen Server ke dalam format data khusus yang disebut **Payload Komponen Server React (RSC)**.
+2. Next.js menggunakan Payload RSC dan instruksi JavaScript Komponen Klien untuk merender **HTML** di server.
+
+[K diagram Rendering]
+
+Kemudian, di client:
+
+1. HTML digunakan untuk segera menampilkan pratinjau cepat yang tidak interaktif dari rute - ini hanya untuk muatan halaman awal.
+2. Payload Komponen Server React digunakan untuk mendamaikan pohon Komponen Klien dan Server, dan memperbarui DOM.
+3. Instruksi JavaScript digunakan untuk [menghidupkan](https://react.dev/reference/react-dom/client/hydrateRoot) Komponen Klien dan membuat aplikasi menjadi interaktif.
+
+> **Apa itu Payload Komponen Server React (RSC)?**
+>
+> Payload RSC adalah representasi biner ringkas dari pohon Komponen Server React yang dirender. Ini digunakan oleh React di client untuk memperbarui DOM browser. Payload RSC berisi:
+>
+> - Hasil yang dirender dari Komponen Server
+> - Placeholder untuk tempat dimana Komponen Klien harus dirender dan referensi ke file JavaScript mereka
+> - Properti apa pun yang diteruskan dari Komponen Server ke Komponen Klien
+
+## Strategi Rendering Server
+
+Ada tiga subset rendering server: Statis, Dinamis, dan Streaming.
+
+### Static Rendering (Default)
+
+[K diagram Statis Rendering]
+
+Dengan Static Rendering, rute dirender pada **waktu build**, atau di latar belakang setelah [pembaruan data](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#revalidating-data). Hasilnya dicache dan dapat didorong ke [Content Delivery Network (CDN)](https://developer.mozilla.org/docs/Glossary/CDN). Optimasi ini memungkinkan Anda untuk berbagi hasil pekerjaan rendering antara pengguna dan permintaan server.
+
+Statis rendering berguna ketika rute memiliki data yang tidak dipersonalisasi untuk pengguna dan dapat diketahui pada waktu build, seperti halaman blog statis atau halaman produk.
+
+### Dynamic Rendering
+
+[K diagram Dynamic Rendering]
+
+Dengan Dynamic Rendering, rute dirender untuk setiap pengguna pada **waktu permintaan**.
+
+Dynamic rendering berguna ketika rute memiliki data yang dipersonalisasi untuk pengguna atau memiliki informasi yang hanya dapat diketahui pada waktu permintaan, seperti cookies atau parameter pencarian URL.
+
+> **Rute Dinamis dengan Data yang Dicache**
+>
+> Di sebagian besar situs web, rute tidak sepenuhnya statis atau sepenuhnya dinamis - ini adalah spektrum. Sebagai contoh, Anda dapat memiliki halaman e-commerce yang menggunakan data produk yang dicache yang direvalidasi secara berkala, tetapi juga memiliki data pelanggan yang dipersonalisasi yang tidak dicache.
+>
+> Di Next.js, Anda dapat memiliki rute yang dirender secara dinamis yang memiliki data yang dicache dan yang tidak dicache. Hal ini karena Payload RSC dan data dicache secara terpisah. Ini memungkinkan Anda memilih untuk merender secara dinamis tanpa harus khawatir tentang dampak kinerja dari mengambil semua data pada waktu permintaan.
+>
+> Pelajari lebih lanjut tentang [cache seluruh rute](/docs/app/building-your-application/caching#full-route-cache) dan [Cache Data](/docs/app/building-your-application/caching#data-cache).
+
+#### Beralih ke Dynamic Rendering
+
+Selama rendering, jika ditemukan [fungsi dinamis](#dynamic-functions) atau [permintaan data yang tidak dicache](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#opting-out-of-data-caching), Next.js akan beralih ke pengembangan dinamis seluruh rute. Tabel berikut merangkum bagaimana fungsi dinamis dan cache data memengaruhi apakah suatu rute dirender secara statis atau dinamis:
+
+| Fungsi Dinamis | Data          | Rute              |
+| -------------- | ------------- | ----------------- |
+| Tidak          | Dicache       | Dirender Statisik |
+| Ya             | Dicache       | Dirender Dinamis  |
+| Tidak          | Tidak Dicache | Dirender Dinamis  |
+| Ya             | Tidak Dicache | Dirender Dinamis  |
+
+Dalam tabel di atas, untuk rute menjadi sepenuhnya statis, semua data harus dicache. Namun, Anda dapat memiliki rute yang dirender secara dinamis yang menggunakan pengambilan data yang dicache dan tidak dicache.
+
+Sebagai pengembang, Anda tidak perlu memilih antara rendering statis dan dinamis karena Next.js akan secara otomatis memilih strategi rendering terbaik untuk setiap rute berdasarkan fitur dan API yang digunakan. Sebaliknya, Anda memilih kapan [mencache atau merevalidasi data tertentu](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating), dan Anda mungkin memilih untuk [streaming](#streaming) bagian dari UI Anda.
+
+#### Fungsi Dinamis
+
+Fungsi dinamis bergantung pada informasi yang hanya dapat diketahui pada waktu permintaan seperti cookie pengguna, header permintaan saat ini, atau parameter pencarian URL. Di Next.js, fungsi dinamis ini adalah:
+
+- **[`cookies()`](/docs/app/api-reference/functions/cookies) dan [`headers()`](/docs/app/api-reference/functions/headers)**: Menggunakan ini dalam Komponen Server akan mengoptmasi seluruh rute secara dinamis pada waktu permintaan.
+- **[`useSearchParams()`](/docs/app/api-reference/functions/use-search-params)**:
+  - Di Komponen Klien, ini akan melewati rendering statis dan sebaliknya akan merender seluruh Komponen Klien hingga batas Suspense terdekat di client.
+  - Kami merekomendasikan untuk mengelilingi Komponen Klien yang menggunakan `useSearchParams()` dalam batas `<Suspense/>`. Ini akan memungkinkan Komponen Klien di atasnya untuk dirender secara statis. [Contoh](/docs/app/api-reference/functions/use-search-params#static-rendering).
+- **[`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional)**: Menggunakan [Halaman](/docs/app/api-reference/file-conventions/page) prop akan mengoptmasi seluruh rute secara dinamis pada waktu permintaan.
+
+Menggunakan salah satu dari fungsi ini akan mengoptmasi seluruh rute secara dinamis pada waktu permintaan.
+
+### Streaming
+
+<Image
+  alt="Diagram showing parallelization of route segments during streaming, showing data fetching, rendering, and hydration of invidiual chunks."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fsequential-parallel-data-fetching.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fsequential-parallel-data-fetching.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  width="1600"
+  height="525"
+/>
+
+Streaming memungkinkan Anda untuk secara progresif merender UI dari server. Pekerjaan dibagi menjadi potongan dan di-streaming ke client saat sudah siap. Ini memungkinkan pengguna melihat bagian dari halaman segera, sebelum seluruh konten selesai dirender.
+
+<Image
+  alt="Diagram showing partially rendered page on the client, with loading UI for chunks that are being streamed."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fserver-rendering-with-streaming.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ"
+  width="1600"
+  height="785"
+/>
+
+Streaming telah dibangun ke dalam Next.js App Router secara default. Ini membantu meningkatkan kinerja muatan halaman awal, serta UI yang bergantung pada pengambilan data yang lebih lambat yang akan memblokir rendering seluruh rute. Sebagai contoh, ulasan pada halaman produk.
+
+Anda dapat memulai streaming segmen rute menggunakan `loading.js` dan komponen UI dengan [React Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming). Lihat bagian [UI Loading dan Streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming) untuk informasi lebih lanjut.

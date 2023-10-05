@@ -1,4 +1,5 @@
 {
   "routing": "Routing",
-  "data-fetching": "Data Fetching"
+  "data-fetching": "Data Fetching",
+  "rendering": "Rendering"
 }

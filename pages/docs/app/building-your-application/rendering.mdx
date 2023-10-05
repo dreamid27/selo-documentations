@@ -1,0 +1,59 @@
+# Rendering
+
+Rendering mengubah kode yang Anda tulis menjadi antarmuka pengguna. React dan Next.js memungkinkan Anda untuk membuat aplikasi web hybrid di mana bagian dari kode Anda dapat dirender di server atau di client. Bagian ini akan membantu Anda memahami perbedaan antara lingkungan rendering ini, strategi, dan runtime.
+
+## Dasar-Dasar
+
+Untuk memulai, penting untuk familiar dengan tiga konsep dasar web:
+
+- [Lingkungan Rendering](#lingkungan-rendering) di mana kode aplikasi Anda dapat dieksekusi: server dan client.
+- [Siklus Permintaan-Respons](#siklus-permintaan-respons) yang dimulai ketika pengguna mengunjungi atau berinteraksi dengan aplikasi Anda.
+- [Batas Jaringan](#batas-jaringan) yang memisahkan kode server dan client.
+
+### Lingkungan Rendering
+
+Ada dua lingkungan di mana aplikasi web dapat dirender: client dan server.
+
+![Lingkungan Client dan Server](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fclient-and-server-environments.png&w=1920&q=75&dpl=dpl_EZni8Gd8CnmKBcPM4Nmj38WxhbFQ)
+
+- **Client** mengacu pada browser di perangkat pengguna yang mengirim permintaan ke server untuk kode aplikasi Anda. Kemudian, browser mengubah respons dari server menjadi antarmuka pengguna.
+- **Server** mengacu pada komputer di pusat data yang menyimpan kode aplikasi Anda, menerima permintaan dari client, dan mengirim respons yang sesuai.
+
+Secara historis, pengembang harus menggunakan bahasa berbeda (misalnya JavaScript, PHP) dan kerangka kerja yang berbeda saat menulis kode untuk server dan client. Dengan React, pengembang dapat menggunakan **bahasa yang sama** (JavaScript) dan **kerangka kerja yang sama** (misalnya Next.js atau kerangka kerja pilihan Anda). Fleksibilitas ini memungkinkan Anda menulis kode dengan mulus untuk kedua lingkungan tanpa perlu beralih konteks.
+
+Namun, setiap lingkungan memiliki seperangkat kemampuan dan batasan sendiri. Oleh karena itu, kode yang Anda tulis untuk server dan client tidak selalu sama. Ada operasi tertentu (misalnya, pengambilan data atau manajemen state pengguna) yang lebih cocok dilakukan di satu lingkungan daripada yang lain.
+
+Memahami perbedaan ini sangat penting untuk efektif menggunakan React dan Next.js. Kami akan membahas perbedaan dan kasus penggunaan lebih detail pada halaman [Komponen Server](/docs/app/building-your-application/rendering/server-components) dan [Komponen Client](/docs/app/building-your-application/rendering/client-components), untuk saat ini, mari terus membangun pada fondasi kita.
+
+### Siklus Permintaan-Respons
+
+Secara umum, semua situs web mengikuti **Siklus Permintaan-Respons** yang sama:
+
+1. **Aksi Pengguna:** Pengguna berinteraksi dengan aplikasi web. Ini bisa berupa mengklik tautan, mengirimkan formulir, atau mengetik URL langsung ke bilah alamat browser.
+2. **Permintaan HTTP:** Client mengirim permintaan [HTTP](https://developer.mozilla.org/docs/Web/HTTP) ke server yang berisi informasi yang diperlukan tentang sumber daya yang diminta, metode yang digunakan (misalnya `GET`, `POST`), dan data tambahan jika diperlukan.
+3. **Server:** Server memproses permintaan dan merespons dengan sumber daya yang sesuai. Proses ini mungkin melibatkan beberapa langkah seperti routing, pengambilan data, dll.
+4. **Respons HTTP:** Setelah memproses permintaan, server mengirim respons HTTP kembali ke client. Respons ini berisi kode status (yang memberi tahu client apakah permintaan berhasil atau tidak) dan sumber daya yang diminta (misalnya HTML, CSS, JavaScript, aset statis, dll).
+5. **Client:** Client mengurai sumber daya untuk merender antarmuka pengguna.
+6. **Aksi Pengguna:** Setelah antarmuka pengguna dirednder, pengguna dapat berinteraksi dengannya, dan seluruh proses dimulai kembali.
+
+Bagian besar dari membangun aplikasi web hybrid adalah memutuskan bagaimana membagi pekerjaan dalam siklus ini dan di mana menempatkan Batas Jaringan.
+
+### Batas Jaringan
+
+Dalam pengembangan web, **Batas Jaringan** adalah garis konseptual yang memisahkan lingkungan yang berbeda. Misalnya, client dan server, atau server dan penyimpanan data.
+
+Dalam React, Anda memilih di mana menempatkan batas jaringan client-server sesuai dengan yang paling masuk akal.
+
+Di balik layar, pekerjaan dibagi menjadi dua bagian: **grafik modul client** dan **grafik modul server**. Grafik modul server berisi semua komponen yang dirender di server, dan grafik modul client berisi semua komponen yang dirender di client.
+
+Mungkin berguna untuk memikirkan grafik modul sebagai representasi visual bagaimana file di aplikasi Anda saling bergantung.
+
+Anda dapat menggunakan konvensi React `"use client"` untuk menentukan batas ini. Ada juga konvensi `"use server"`, yang memberi tahu React untuk melakukan beberapa pekerjaan komputasi di server sementara di client.
+
+## Membangun Aplikasi Hybrid
+
+Ketika bekerja dalam lingkungan ini, berguna untuk memikirkan aliran kode dalam aplikasi Anda sebagai **unidireksional**. Dengan kata lain, selama respons, kode aplikasi Anda mengalir ke satu arah: dari server ke client.
+
+Jika Anda perlu mengakses server dari client, Anda mengirimkan permintaan **baru** ke server daripada menggunakan ulang permintaan yang sama. Ini membuat lebih mudah untuk memahami di mana merender komponen Anda dan di mana menempatkan Batas Jaringan.
+
+Dalam praktiknya

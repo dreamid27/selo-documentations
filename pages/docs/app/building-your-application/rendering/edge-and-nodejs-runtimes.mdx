@@ -1,0 +1,75 @@
+# Runtimes Edge dan Node.js
+
+Dalam konteks Next.js, runtime merujuk pada kumpulan pustaka, API, dan fungsionalitas umum yang tersedia untuk kode Anda selama eksekusi.
+
+Pada server, ada dua runtime di mana bagian dari kode aplikasi Anda dapat dirender:
+
+- **Runtime Node.js** (default) memiliki akses ke semua API Node.js dan paket yang kompatibel dari ekosistem.
+- **Runtime Edge** didasarkan pada [Web API](/docs/app/api-reference/edge).
+
+## Perbedaan Runtime
+
+Ada banyak pertimbangan yang harus Anda pertimbangkan saat memilih runtime. Tabel ini menunjukkan perbedaan utama secara sekilas. Jika Anda ingin analisis yang lebih mendalam tentang perbedaan tersebut, lihat bagian di bawah ini.
+
+|                                                                                                                                                     | Node   | Serverless | Edge             |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ---------- | ---------------- |
+| [Cold Boot](https://vercel.com/docs/concepts/get-started/compute#cold-and-hot-boots?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) | /      | ~250ms     | Instant          |
+| [HTTP Streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming)                                                              | Yes    | Yes        | Yes              |
+| IO                                                                                                                                                  | All    | All        | `fetch`          |
+| Scalability                                                                                                                                         | /      | High       | Highest          |
+| Security                                                                                                                                            | Normal | High       | High             |
+| Latency                                                                                                                                             | Normal | Low        | Lowest           |
+| npm Packages                                                                                                                                        | All    | All        | A smaller subset |
+| [Static Rendering](/docs/app/building-your-application/rendering/server-components#static-rendering-default)                                        | Yes    | Yes        | No               |
+| [Dynamic Rendering](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)                                              | Yes    | Yes        | Yes              |
+| [Data Revalidation w/ `fetch`](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#revalidating-data)               | Yes    | Yes        | Yes              |
+
+### Runtime Edge
+
+Dalam Next.js, Runtime Edge yang ringan adalah subset dari API Node.js yang tersedia.
+
+Runtime Edge ideal jika Anda perlu menyampaikan konten dinamis dan personalisasi dengan latensi rendah menggunakan fungsi yang kecil dan sederhana. Kecepatan Runtime Edge berasal dari penggunaan sumber daya yang minimal, tetapi itu dapat membatasi dalam banyak skenario.
+
+Sebagai contoh, kode yang dieksekusi di Runtime Edge [pada Vercel tidak dapat melebihi antara 1 MB dan 4 MB](https://vercel.com/docs/concepts/limits/overview#edge-middleware-and-edge-functions-size), batas ini mencakup paket yang diimpor, font, dan file, dan akan bervariasi tergantung pada infrastruktur penyebaran Anda.
+
+### Runtime Node.js
+
+Menggunakan runtime Node.js memberi Anda akses ke semua API Node.js dan semua paket npm yang mengandalkan mereka. Namun, memulai runtime Node.js tidak secepat rute yang menggunakan runtime Edge.
+
+Mendeploy aplikasi Next.js Anda ke server Node.js akan memerlukan manajemen, skalabilitas, dan konfigurasi infrastruktur Anda. Atau, Anda dapat mempertimbangkan untuk mendeploy aplikasi Next.js Anda ke platform serverless seperti Vercel, yang akan menanganinya untuk Anda.
+
+### Serverless Node.js
+
+Serverless ideal jika Anda memerlukan solusi yang dapat diubah ukur yang dapat menghandle beban komputasi yang lebih kompleks dibandingkan dengan Runtime Edge. Dengan Fungsi Serverless di Vercel, misalnya, ukuran kode keseluruhan Anda adalah [50MB](https://vercel.com/docs/concepts/limits/overview#serverless-function-size) termasuk paket yang diimpor, font, dan file.
+
+Kekurangan dibandingkan dengan rute yang menggunakan [Edge](https://vercel.com/docs/concepts/functions/edge-functions) adalah bahwa fungsi Serverless memerlukan waktu ratusan milidetik untuk memulai sebelum mereka mulai memproses permintaan. Bergantung pada jumlah lalu lintas yang diterima oleh situs Anda, ini bisa menjadi kejadian yang sering terjadi karena fungsi tidak sering "hangat".
+
+## Contoh
+
+### Opsi Runtime Segment
+
+Anda dapat menentukan runtime untuk segmen rute individual dalam aplikasi Next.js Anda. Untuk melakukannya, [deklarasikan variabel bernama `runtime` dan ekspor](/docs/app/api-reference/file-conventions/route-segment-config). Variabel tersebut harus berupa string, dan harus memiliki nilai 'nodejs' atau 'edge'.
+
+Contoh berikut menunjukkan segmen rute halaman yang mengekspor `runtime` dengan nilai 'edge':
+
+```tsx filename="app/page.tsx" switcher
+export const runtime = 'edge'; // 'nodejs' (default) | 'edge'
+```
+
+```jsx filename="app/page.js" switcher
+export const runtime = 'edge'; // 'nodejs' (default) | 'edge'
+```
+
+Anda juga dapat mendefinisikan `runtime` pada tingkat tata letak, yang akan membuat semua rute di bawah tata letak berjalan pada runtime edge:
+
+```tsx filename="app/layout.tsx" switcher
+export const runtime = 'edge'; // 'nodejs' (default) | 'edge'
+```
+
+```jsx filename="app/layout.js" switcher
+export const runtime = 'edge'; // 'nodejs' (default) | 'edge'
+```
+
+Jika runtime segmen _tidak_ diatur, runtime default 'nodejs' akan digunakan. Anda tidak perlu menggunakan opsi `runtime` jika Anda tidak berencana untuk beralih dari runtime Node.js.
+
+> Harap merujuk ke [Dokumentasi Node.js](https://nodejs.org/docs/latest/api/) dan [Dokumentasi Edge](/docs/app/api-reference/edge) untuk daftar lengkap dari API yang tersedia. Kedua runtime juga dapat mendukung [streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming) tergantung pada infrastruktur penyebaran Anda.

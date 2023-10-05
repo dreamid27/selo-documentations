@@ -1,0 +1,554 @@
+import { CheckCircle, XCircle } from '@phosphor-icons/react';
+
+# Pola Komposisi Server dan Klien
+
+Ketika membangun aplikasi React, Anda perlu mempertimbangkan bagian mana dari aplikasi Anda yang harus dirender di server atau di klien. Halaman ini mencakup beberapa pola komposisi yang direkomendasikan saat menggunakan Komponen Server dan Klien.
+
+## Kapan Menggunakan Komponen Server dan Klien?
+
+Berikut adalah ringkasan cepat tentang berbagai kasus penggunaan untuk Komponen Server dan Klien:
+
+| Apa yang perlu Anda lakukan?                                                                | Komponen Server                                       | Komponen Klien                                        |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- |
+| Mengambil data                                                                              | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       |
+| Mengakses sumber daya backend (langsung)                                                    | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       |
+| Menyimpan informasi sensitif di server (token akses, kunci API, dll.)                       | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       |
+| Menyimpan dependensi besar di server / Mengurangi JavaScript sisi klien                     | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       |
+| Menambahkan interaktivitas dan pemantau peristiwa (`onClick()`, `onChange()`, dll.)         | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> |
+| Menggunakan State dan Efek Siklus Hidup (`useState()`, `useReducer()`, `useEffect()`, dll.) | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> |
+| Menggunakan API hanya di browser                                                            | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> |
+| Menggunakan kaitan khusus yang bergantung pada state, efek, atau API hanya di browser       | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> |
+| Menggunakan [Komponen Kelas React](https://react.dev/reference/react/Component)             | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> |
+
+## Pola Komponen Server
+
+Sebelum memilih untuk merender sisi klien, Anda mungkin ingin melakukan beberapa pekerjaan di server seperti pengambilan data atau mengakses database atau layanan backend Anda.
+
+Berikut adalah beberapa pola umum saat bekerja dengan Komponen Server:
+
+### Berbagi data antara komponen
+
+Saat mengambil data di server, mungkin ada kasus di mana Anda perlu berbagi data antara berbagai komponen. Misalnya, Anda mungkin memiliki tata letak dan halaman yang bergantung pada data yang sama.
+
+Daripada menggunakan [Konteks React](https://react.dev/learn/passing-data-deeply-with-context) (yang tidak tersedia di server) atau melewati data sebagai prop, Anda dapat menggunakan [`fetch`](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#fetching-data-on-the-server-with-fetch) atau fungsi `cache` dari React untuk mengambil data yang sama di komponen yang membutuhkannya, tanpa khawatir membuat permintaan duplikat untuk data yang sama. Hal ini karena React memperluas `fetch` untuk secara otomatis memoisasi permintaan data, dan fungsi `cache` dapat digunakan ketika `fetch` tidak tersedia.
+
+Pelajari lebih lanjut tentang [memoisasi](/docs/app/building-your-application/caching#request-memoization) di React.
+
+### Menjaga Kode Hanya di Server Keluar dari Lingkungan Klien
+
+Karena modul JavaScript dapat dibagikan antara modul Komponen Server dan Klien, maka memungkinkan bagi kode yang hanya dimaksudkan untuk dijalankan di server masuk ke klien.
+
+Misalnya, pertimbangkan fungsi pengambilan data berikut:
+
+```ts filename="lib/data.ts" switcher
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  });
+
+  return res.json();
+}
+```
+
+```js filename="lib/data.js" switcher
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  });
+
+  return res.json();
+}
+```
+
+Pada pandangan pertama, tampaknya `getData` berfungsi baik di server maupun di sisi klien. Namun, fungsi ini mengandung `API_KEY`, ditulis dengan niat bahwa hanya akan dieksekusi di server.
+
+Karena variabel lingkungan `API_KEY` tidak diawali dengan `NEXT_PUBLIC`, itu adalah variabel pribadi yang hanya dapat diakses di server. Untuk mencegah bocornya variabel lingkungan Anda ke sisi klien, Next.js mengganti variabel lingkungan pribadi dengan string kosong.
+
+Akibatnya, meskipun `getData()` dapat diimpor dan dieksekusi di sisi klien, itu tidak akan berfungsi seperti yang diharapkan. Dan meskipun membuat variabel menjadi publik akan membuat fungsi berfungsi di sisi klien, Anda mungkin tidak ingin mengungkapkan informasi sensitif ke sisi klien.
+
+Untuk mencegah penggunaan kode server yang tidak disengaja di sisi klien, kita dapat menggunakan paket `server-only` untuk memberi pengembang lain kesalahan waktu kompilasi jika mereka secara tidak sengaja mengimpor salah satu modul ini ke Komponen Klien.
+
+Untuk menggunakan `server-only`, pertama-tama instal paketnya:
+
+```bash filename="Terminal"
+npm install server-only
+```
+
+Kemudian impor paket ini ke modul apa pun yang berisi kode server-only:
+
+```js filename="lib/data.js"
+import 'server-only';
+
+export async function getData() {
+  const res = await fetch('https://external-service.com/data', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  });
+
+  return res.json();
+}
+```
+
+Sekarang, setiap Komponen Klien yang mengimpor `getData()` akan menerima kesalahan waktu kompilasi yang menjelaskan bahwa modul ini hanya dapat digunakan di server.
+
+Paket yang sesuai, yaitu `client-only`, dapat digunakan untuk menandai modul yang berisi kode hanya di sisi klien - misalnya, kode yang mengakses objek `window`.
+
+### Menggunakan Paket dan Penyedia Pihak Ketiga
+
+Karena Komponen Server adalah fitur React yang baru, paket dan penyedia pihak ketiga dalam ekosistem baru mulai menambahkan direktif `"use client"` ke komponen yang menggunakan fitur hanya di sisi klien seperti `useState`, `useEffect`, dan `createContext`.
+
+Hari ini, banyak komponen dari paket `npm` yang menggunakan fitur hanya di sisi klien belum memiliki direktif tersebut. Komponen pihak ketiga ini akan berfungsi seperti yang diharapkan dalam Komponen Klien karena memiliki direktif `"use client"`, tetapi mereka tidak akan berfungsi dalam Komponen Server.
+
+Misalnya, katakanlah Anda telah menginstal paket hipotetis `acme-carousel` yang memiliki komponen `<Carousel />`. Komponen ini menggunakan `useState`, tetapi belum memiliki direktif `"use client"`.
+
+Jika Anda menggunakan `<Carousel />` dalam Komponen Klien, itu akan berfungsi seperti yang diharapkan:
+
+```tsx filename="app/gallery.tsx" switcher
+'use client';
+
+import { useState } from 'react';
+import { Carousel } from 'acme-carousel';
+
+export default function Gallery() {
+  let [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>Lihat gambar</button>
+
+      {/* Berfungsi, karena Carousel digunakan dalam Komponen Klien */}
+      {isOpen && <Carousel />}
+    </div>
+  );
+}
+```
+
+```jsx filename="app/gallery.js" switcher
+'use client';
+
+import { useState } from 'react';
+import { Carousel } from 'acme-carousel';
+
+export default function Gallery() {
+  let [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>Lihat gambar</button>
+
+      {/* Berfungsi, karena Carousel digunakan dalam Komponen Klien */}
+      {isOpen && <Carousel />}
+    </div>
+  );
+}
+```
+
+Namun, jika Anda mencoba menggunakannya langsung dalam Komponen Server, Anda akan melihat kesalahan:
+
+```tsx filename="app/page.tsx" switcher
+import { Carousel } from 'acme-carousel';
+
+export default function Page() {
+  return (
+    <div>
+      <p>Lihat gambar</p>
+
+      {/* Kesalahan: `useState` tidak dapat digunakan dalam Komponen Server */}
+      <Carousel />
+    </div>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { Carousel } from 'acme-carousel';
+
+export default function Page() {
+  return (
+    <div>
+      <p>Lihat gambar</p>
+
+      {/* Kesalahan: `useState` tidak dapat digunakan dalam Komponen Server */}
+      <Carousel />
+    </div>
+  );
+}
+```
+
+Ini karena Next.js tidak tahu bahwa `<Carousel />` menggunakan fitur hanya di sisi klien.
+
+Untuk mengatasi ini, Anda dapat melingkupi komponen pihak ketiga yang bergantung pada fitur hanya di sisi klien dalam Komponen Klien Anda sendiri:
+
+```tsx filename="app/carousel.tsx" switcher
+'use client';
+
+import { Carousel } from 'acme-carousel';
+
+export default Carousel;
+```
+
+```jsx filename="app/carousel.js" switcher
+'use client';
+
+import { Carousel } from 'acme-carousel';
+
+export default Carousel;
+```
+
+Sekarang, Anda dapat menggunakan `<Carousel />` langsung dalam Komponen Server:
+
+```tsx filename="app/page.tsx" switcher
+import Carousel from './carousel';
+
+export default function Page() {
+  return (
+    <div>
+      <p>Lihat gambar</p>
+
+      {/* Berfungsi, karena Carousel adalah Komponen Klien */}
+      <Carousel />
+    </div>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Carousel from './carousel';
+
+export default function Page() {
+  return (
+    <div>
+      <p>Lihat gambar</p>
+
+      {/* Berfungsi, karena Carousel adalah Komponen Klien */}
+      <Carousel />
+    </div>
+  );
+}
+```
+
+Kami tidak mengharapkan Anda perlu membungkus sebagian besar komponen pihak ketiga karena kemungkinan besar Anda akan menggunakannya dalam Komponen Klien. Namun, satu pengecualian adalah penyedia (providers), karena mereka bergantung pada state dan konteks React, dan biasanya diperlukan di akar aplikasi. [Pelajari lebih lanjut tentang penyedia konteks pihak ketiga di bawah ini](#menggunakan-penyedia-konteks).
+
+#### Menggunakan Penyedia Konteks
+
+Penyedia konteks biasanya dirender di dekat akar aplikasi untuk berbagi kekhawatiran global, seperti tema saat ini. Karena [konteks React](https://react.dev/learn/passing-data-deeply-with-context) tidak didukung di Komponen Server, mencoba membuat konteks di akar aplikasi Anda akan menyebabkan kesalahan:
+
+```tsx filename="app/layout.tsx" switcher
+import { createContext } from 'react';
+
+// createContext tidak didukung di Komponen Server
+export const ThemeContext = createContext({});
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import { createContext } from 'react';
+
+// createContext tidak didukung di Komponen Server
+export const ThemeContext = createContext({});
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>
+      </body>
+    </html>
+  );
+}
+```
+
+Untuk mengatasi ini, buat konteks Anda dan render penyedia konteksnya di dalam Komponen Klien:
+
+```tsx filename="app/theme-provider.tsx" switcher
+'use client';
+
+import { createContext } from 'react';
+
+export const ThemeContext = createContext({});
+
+export default function ThemeProvider({ children }) {
+  return <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>;
+}
+```
+
+```jsx filename="app/theme-provider.js" switcher
+'use client';
+
+import { createContext } from 'react';
+
+export const ThemeContext = createContext({});
+
+export default function ThemeProvider({ children }) {
+  return <ThemeContext.Provider value="dark">{children}</ThemeContext.Provider>;
+}
+```
+
+Komponen Server Anda sekarang akan dapat langsung merender penyedia Anda karena telah ditandai sebagai Komponen Klien:
+
+```tsx filename="app/layout.tsx" switcher
+import ThemeProvider from './theme-provider';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import ThemeProvider from './theme-provider';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Dengan penyedia yang dirender di akar, semua Komponen Klien lainnya dalam aplikasi Anda akan dapat menggunakan konteks ini.
+
+> **Bagus untuk diketahui**: Anda sebaiknya merender penyedia sejauh mungkin dalam pohon komponen - perhatikan bagaimana `ThemeProvider` hanya membungkus `{children}` daripada seluruh dokumen `<html>`. Hal ini memudahkan Next.js untuk mengoptimalkan bagian statis dari Komponen Server Anda.
+
+#### Saran untuk Penulis Pustaka
+
+Dengan cara yang serupa, penulis pustaka yang membuat paket untuk digunakan oleh pengembang lain dapat menggunakan direktif `"use client"` untuk menandai titik masuk klien dari paket mereka. Ini memungkinkan pengguna paket untuk mengimpor komponen paket secara langsung ke dalam Komponen Server mereka tanpa harus membuat pembungkus.
+
+Anda dapat mengoptimalkan paket Anda dengan menggunakan ['use client' lebih dalam dalam pohon](#menggerakkan-komponen-klien-turun-ke-pohon), memungkinkan modul yang diimpor menjadi bagian dari grafik modul Komponen Server.
+
+Harap dicatat bahwa beberapa bundler mungkin akan menghapus direktif `"use client"`. Anda dapat menemukan contoh cara mengonfigurasi esbuild untuk menyertakan direktif `"use client"` dalam repositori [React Wrap Balancer](https://github.com/shuding/react-wrap-balancer/blob/main/tsup.config.ts#L10-L13) dan [Vercel Analytics](https://github.com/vercel/analytics/blob/main/packages/web/tsup.config.js#L26-L30).
+
+## Komponen Klien
+
+### Menurunkan Komponen Klien ke dalam Pohon
+
+Untuk mengurangi ukuran bundel JavaScript Klien, kami merekomendasikan untuk menurunkan Komponen Klien ke dalam pohon komponen Anda.
+
+Sebagai contoh, Anda mungkin memiliki Tata Letak yang memiliki elemen-elemen statis (misalnya, logo, tautan, dll) dan kotak pencarian interaktif yang menggunakan state.
+
+Daripada membuat seluruh tata letak menjadi Komponen Klien, pindahkan logika interaktif ke Komponen Klien (misalnya, `<SearchBar />`) dan pertahankan tata letak Anda sebagai Komponen Server. Ini berarti Anda tidak perlu mengirimkan seluruh JavaScript komponen dari tata letak ke klien.
+
+```tsx filename="app/layout.tsx" switcher
+// SearchBar adalah Komponen Klien
+import SearchBar from './searchbar';
+// Logo adalah Komponen Server
+import Logo from './logo';
+
+// Tata Letak adalah Komponen Server secara default
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <nav>
+        <Logo />
+        <SearchBar />
+      </nav>
+      <main>{children}</main>
+    </>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+// SearchBar adalah Komponen Klien
+import SearchBar from './searchbar';
+// Logo adalah Komponen Server
+import Logo from './logo';
+
+// Tata Letak adalah Komponen Server secara default
+export default function Layout({ children }) {
+  return (
+    <>
+      <nav>
+        <Logo />
+        <SearchBar />
+      </nav>
+      <main>{children}</main>
+    </>
+  );
+}
+```
+
+### Mengirimkan Prop dari Komponen Server ke Komponen Klien (Serialisasi)
+
+Jika Anda mengambil data dalam Komponen Server, Anda mungkin ingin meneruskan data sebagai prop ke Komponen Klien. Prop yang diteruskan dari Komponen Server ke Komponen Klien harus dapat [diserialisasi](https://developer.mozilla.org/docs/Glossary/Serialization) oleh React.
+
+Jika Komponen Klien Anda bergantung pada data yang tidak dapat diserialkan, Anda dapat [mengambil data pada klien dengan pustaka pihak ketiga](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating#fetching-data-on-the-client-with-third-party-libraries) atau pada server melalui [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers).
+
+## Menyelingkan Komponen Server dan Klien
+
+Ketika menyelipkan Komponen Klien dan Server, mungkin berguna untuk memvisualisasikan antarmuka pengguna Anda sebagai pohon komponen. Mulai dengan [tata letak root](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required), yang merupakan Komponen Server, Anda kemudian dapat merender subtree tertentu dari komponen pada klien dengan menambahkan direktif `"use client"`.
+
+{/* Diagram - penyelipan */}
+
+Dalam subtree klien tersebut, Anda masih dapat menyusun Komponen Server atau memanggil Tindakan Server, namun ada beberapa hal yang perlu diperhatikan:
+
+- Selama siklus permintaan-respons, kode Anda berpindah dari server ke klien. Jika Anda perlu mengakses data atau sumber daya pada server saat berada di klien, Anda akan membuat permintaan **baru** ke server - bukan beralih bolak-balik.
+- Ketika permintaan baru dibuat ke server, semua Komponen Server dirender terlebih dahulu, termasuk yang bersarang di dalam Komponen Klien. Hasil yang dirender (Payload RSC) akan berisi referensi ke lokasi Komponen Klien. Kemudian, pada klien, React menggunakan Payload RSC untuk mendamaikan Komponen Server dan Klien menjadi satu pohon tunggal.
+
+{/* Diagram */}
+
+- Karena Komponen Klien dirender setelah Komponen Server, Anda tidak dapat mengimpor Komponen Server ke dalam modul Komponen Klien (karena itu akan memerlukan permintaan baru ke server). Sebagai gantinya, Anda dapat meneruskan Komponen Server sebagai `props` ke Komponen Klien. Lihat bagian [pola yang tidak didukung](#pola-yang-tidak-didukung-mengimpor-komponen-server-ke-komponen-klien) dan bagian [pola yang didukung](#pola-yang-didukung-meneruskan-komponen-server-ke-komponen-klien-sebagai-props) di bawah.
+
+### Pola yang Tidak Didukung: Mengimpor Komponen Server ke dalam Komponen Klien
+
+Pola berikut tidak didukung. Anda tidak dapat mengimpor Komponen Server ke dalam Komponen Klien:
+
+```tsx filename="app/client-component.tsx" switcher highlight={4,17}
+'use client';
+
+// Anda tidak dapat mengimpor Komponen Server ke dalam Komponen Klien.
+import ServerComponent from './Server-Component';
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      <ServerComponent />
+    </>
+  );
+}
+```
+
+```jsx filename="app/client-component.js" switcher highlight={3,13}
+'use client';
+
+// Anda tidak dapat mengimpor Komponen Server ke dalam Komponen Klien.
+import ServerComponent from './Server-Component';
+
+export default function ClientComponent({ children }) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      <ServerComponent />
+    </>
+  );
+}
+```
+
+### Pola yang Didukung: Meneruskan Komponen Server ke Komponen Klien sebagai Props
+
+Pola berikut didukung. Anda dapat meneruskan Komponen Server sebagai prop ke Komponen Klien.
+
+Pola umum adalah menggunakan prop `children` React untuk membuat _"slot"_ dalam Komponen Klien Anda.
+
+Pada contoh di bawah ini, `<ClientComponent>` menerima prop `children`:
+
+```tsx filename="app/client-component.tsx" switcher highlight={6,15}
+'use client';
+
+import { useState } from 'react';
+
+export default function ClientComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {children}
+    </>
+  );
+}
+```
+
+```jsx filename="app/client-component.js" switcher highlight={5,12}
+'use client';
+
+import { useState } from 'react';
+
+export default function ClientComponent({ children }) {
+  const [count, setCount] = useState(0);
+
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+
+      {children}
+    </>
+  );
+}
+```
+
+`<ClientComponent>` tidak tahu bahwa `children` pada akhirnya akan diisi oleh hasil dari Komponen Server. Satu-satunya tanggung jawab `<ClientComponent>` adalah memutuskan **di mana** `children` pada akhirnya akan ditempatkan.
+
+Dalam Komponen Server induk, Anda dapat mengimpor baik `<ClientComponent>` maupun `<ServerComponent>` dan meneruskan `<ServerComponent>` sebagai anak dari `<ClientComponent>`:
+
+```tsx filename="app/page.tsx"  highlight={11} switcher
+// Pola ini berfungsi:
+// Anda dapat meneruskan Komponen Server sebagai anak atau prop dari
+// Komponen Klien.
+import ClientComponent from './client-component';
+import ServerComponent from './server-component';
+
+// Halaman dalam Next.js secara default adalah Komponen Server
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  );
+}
+```
+
+```jsx filename="app/page.js" highlight={11} switcher
+// Pola ini berfungsi:
+// Anda dapat meneruskan Komponen Server sebagai anak atau prop dari
+// Komponen Klien.
+import ClientComponent from './client-component';
+import ServerComponent from './server-component';
+
+// Halaman dalam Next.js secara default adalah Komponen Server
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  );
+}
+```
+
+Dengan pendekatan ini, `<ClientComponent>` dan `<ServerComponent>` terlepas satu sama lain dan dapat dirender secara independen. Dalam kasus ini, anak `<ServerComponent>` dapat dirender pada server, jauh sebelum `<ClientComponent>` dirender pada klien.
+
+> **Bagus untuk diketahui:**
+>
+> - Pola "mengangkat konten ke atas" telah digunakan untuk menghindari pembaruan ulang komponen anak yang bersarang saat induk membarukan.
+> - Anda tidak terbatas pada prop `children`. Anda dapat menggunakan prop apa pun untuk meneruskan JSX.

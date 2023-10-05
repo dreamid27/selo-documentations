@@ -1,0 +1,587 @@
+import Image from '../../../../components/image';
+
+# Penyimpanan Cache dalam Next.js
+
+Next.js meningkatkan kinerja aplikasi Anda dan mengurangi biaya dengan menyimpan pekerjaan penggambaran dan permintaan data. Halaman ini memberikan pandangan mendalam tentang mekanisme penyimpanan cache Next.js, API yang dapat Anda gunakan untuk mengonfigurasinya, dan bagaimana interaksi antara mereka.
+
+> **Bagus untuk diketahui**: Halaman ini membantu Anda memahami bagaimana Next.js bekerja di bawah layar tetapi **bukan** pengetahuan yang penting untuk menjadi produktif dengan Next.js. Sebagian besar heuristik penyimpanan cache Next.js ditentukan oleh penggunaan API Anda dan memiliki nilai default untuk kinerja terbaik dengan konfigurasi minimal atau tanpa konfigurasi.
+
+## Gambaran
+
+Berikut adalah gambaran tingkat tinggi tentang mekanisme penyimpanan cache yang berbeda dan tujuan mereka:
+
+| Mekanisme                                                     | Apa                          | Di Mana | Tujuan                                                       | Durasi                               |
+| ------------------------------------------------------------- | ---------------------------- | ------- | ------------------------------------------------------------ | ------------------------------------ |
+| [Memoisasi Permintaan](#memoisasi-permintaan)                 | Nilai-nilai kembalian fungsi | Server  | Menyimpan ulang data dalam pohon Komponen React              | Siklus per permintaan                |
+| [Penyimpanan Cache Data](#penyimpanan-cache-data)             | Data                         | Server  | Menyimpan data di seluruh permintaan pengguna dan penyebaran | Persisten (dapat divalidasi ulang)   |
+| [Penyimpanan Cache Rute Penuh](#penyimpanan-cache-rute-penuh) | HTML dan muatan RSC          | Server  | Mengurangi biaya penggambaran dan meningkatkan kinerja       | Persisten (dapat divalidasi ulang)   |
+| [Penyimpanan Cache Router](#penyimpanan-cache-router)         | Muatan RSC                   | Klien   | Mengurangi permintaan server saat navigasi                   | Sesi pengguna atau berdasarkan waktu |
+
+Secara default, Next.js akan menyimpan cache sebanyak mungkin untuk meningkatkan kinerja dan mengurangi biaya. Ini berarti rute-rute **di-render secara statis** dan permintaan data **disimpan dalam cache** kecuali jika Anda memilih keluar. Diagram di bawah ini menunjukkan perilaku penyimpanan cache default: saat rute di-render secara statis pada waktu pembangunan dan saat rute statis pertama kali dikunjungi.
+
+![Diagram yang menunjukkan perilaku penyimpanan cache default di Next.js untuk empat mekanisme, dengan HIT, MISS, dan SET pada waktu pembangunan dan saat rute pertama kali dikunjungi.](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fcaching-overview.png&w=1920&q=75&dpl=dpl_J5LBCYjaJsJNmSMpCKL3WgwCFE5f)
+
+Perilaku penyimpanan cache berubah tergantung pada apakah rute di-render secara statis atau dinamis, data disimpan dalam cache atau tidak, dan apakah permintaan merupakan bagian dari kunjungan awal atau navigasi berikutnya. Tergantung pada kasus penggunaan Anda, Anda dapat mengonfigurasi perilaku penyimpanan cache untuk rute-rute individu dan permintaan data.
+
+## Memoisasi Permintaan
+
+React memperluas [`fetch` API](#fetch) untuk secara otomatis **memoisasi** permintaan yang memiliki URL dan opsi yang sama. Ini berarti Anda dapat memanggil fungsi fetch untuk data yang sama di beberapa tempat dalam pohon komponen React hanya sekali.
+
+![Permintaan Fetch yang Di-Deduplikasi](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fdeduplicated-fetch-requests.png&w=1920&q=75&dpl=dpl_J5LBCYjaJsJNmSMpCKL3WgwCFE5f)
+
+Sebagai contoh, jika Anda perlu menggunakan data yang sama di seluruh rute (misalnya, di Layout, Page, dan beberapa komponen), Anda tidak perlu mengambil data di bagian atas pohon lalu meneruskan properti antar komponen. Sebaliknya, Anda dapat mengambil data di komponen yang membutuhkannya tanpa khawatir tentang dampak kinerja dari melakukan beberapa permintaan melintasi jaringan untuk data yang sama.
+
+```tsx filename="app/example.tsx" switcher
+async function getItem() {
+  // Fungsi `fetch` secara otomatis memoisasi dan hasilnya
+  // disimpan dalam cache
+  const res = await fetch('https://.../item/1');
+  return res.json();
+}
+
+// Fungsi ini dipanggil dua kali, tetapi hanya dieksekusi pada kali pertama
+const item = await getItem(); // cache MISS
+
+// Panggilan kedua bisa di mana saja dalam rute Anda
+const item = await getItem(); // cache HIT
+```
+
+```jsx filename="app/example.js" switcher
+async function getItem() {
+  // Fungsi `fetch` secara otomatis memoisasi dan hasilnya
+  // disimpan dalam cache
+  const res = await fetch('https://.../item/1');
+  return res.json();
+}
+
+// Fungsi ini dipanggil dua kali, tetapi hanya dieksekusi pada kali pertama
+const item = await getItem(); // cache MISS
+
+// Panggilan kedua bisa di mana saja dalam rute Anda
+const item = await getItem(); // cache HIT
+```
+
+**Cara Memoisasi Permintaan Bekerja**
+
+![Diagram yang menunjukkan bagaimana memoisasi fetch berfungsi selama penggambaran React.](https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Frequest-memoization.png&w=1920&q=75&dpl=dpl_J5LBCYjaJsJNmSMpCKL3WgwCFE5f)
+
+- Saat merender rute, pertama kali permintaan tertentu dipanggil, hasilnya tidak akan ada dalam memori dan akan menjadi cache MISS.
+- Oleh karena itu, fungsi akan dieksekusi, dan data akan diambil dari sumber eksternal, dan hasilnya akan disimpan dalam memori.
+- Panggilan fungsi berikutnya dari permintaan dalam satu proses render yang sama akan menjadi cache HIT, dan data akan dikembalikan dari memori tanpa mengeksekusi fungsi.
+- Setelah rute di-render dan proses penggambaran selesai, memori "direset" dan semua entri memoisasi permintaan dihapus.
+
+> **Bagus untuk diketahui**:
+>
+> - Memoisasi permintaan adalah fitur React, bukan fitur Next.js. Ini disertakan di sini untuk menunjukkan bagaimana interaksi dengan mekanisme penyimpanan cache lainnya.
+> - Memoisasi hanya berlaku untuk metode `GET` dalam permintaan `fetch`.
+> - Memoisasi hanya berlaku untuk pohon Komponen React, yang berarti:
+>   - Ini berlaku untuk permintaan `fetch` dalam `generateMetadata`, `generateStaticParams`, Layout, Pages, dan Komponen Server lainnya.
+>   - Ini tidak berlaku untuk permintaan `fetch` dalam Pengendali Rute karena mereka bukan bagian dari pohon komponen React.
+> - Untuk kasus di mana `fetch` tidak cocok (misalnya, beberapa klien database, klien CMS, atau klien GraphQL), Anda dapat menggunakan [fungsi cache React](#fungsi-cache-react) untuk memori fungsi.
+
+### Durasi
+
+Cache bertahan selama waktu permintaan server sampai pohon komponen React selesai merender.
+
+### Merevalidasi
+
+Karena pememorisan tidak dibagikan di seluruh permintaan server dan hanya berlaku selama merender, tidak ada kebutuhan untuk merevalidasinya.
+
+### Keluar dari Cache
+
+Untuk keluar dari pememorisan dalam permintaan `fetch`, Anda dapat mengirimkan sinyal dari `AbortController` ke permintaan tersebut.
+
+```js filename="app/contoh.js"
+const { signal } = new AbortController();
+fetch(url, { signal });
+```
+
+## Cache Data
+
+Next.js memiliki Cache Data bawaan yang **bertahan** hasil pengambilan data melalui **permintaan server** yang masuk dan **penerapan**. Ini dimungkinkan karena Next.js memperluas API `fetch` asli untuk memungkinkan setiap permintaan di server untuk mengatur semantik cache persisten sendiri.
+
+> **Bagus untuk diketahui**: Di browser, opsi `cache` dari `fetch` menunjukkan bagaimana permintaan akan berinteraksi dengan cache HTTP browser, di Next.js, opsi `cache` menunjukkan bagaimana permintaan sisi server akan berinteraksi dengan Cache Data server.
+
+Secara default, permintaan data yang menggunakan `fetch` **dicache**. Anda dapat menggunakan opsi [`cache`](#fetch-optionscache) dan [`next.revalidate`](#fetch-optionsnextrevalidate) dari `fetch` untuk mengonfigurasi perilaku caching.
+
+**Bagaimana Cache Data Bekerja**
+
+<Image
+  alt="Diagram yang menunjukkan bagaimana permintaan `fetch` yang dicache dan yang tidak dicache berinteraksi dengan Cache Data. Permintaan yang dicache disimpan dalam Cache Data, dan memoized, permintaan yang tidak dicache diambil dari sumber data, tidak disimpan dalam Cache Data, dan memoized."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fdata-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fdata-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="661"
+/>
+
+- Pertama kali permintaan `fetch` dipanggil selama rendering, Next.js memeriksa Cache Data untuk respons yang dicache.
+- Jika respons yang dicache ditemukan, itu langsung dikembalikan dan [memoized](#request-memoization).
+- Jika respons yang dicache tidak ditemukan, permintaan dibuat ke sumber data, hasilnya disimpan dalam Cache Data, dan memoized.
+- Untuk data yang tidak dicache (misalnya `{ cache: 'no-store' }`), hasilnya selalu diambil dari sumber data, dan memoized.
+- Baik data yang dicache maupun yang tidak dicache, permintaan selalu memoized untuk menghindari membuat permintaan ganda untuk data yang sama selama satu proses render React.
+
+> **Perbedaan antara Cache Data dan Memoisasi Permintaan**
+>
+> Meskipun kedua mekanisme caching ini membantu meningkatkan performa dengan menggunakan data yang dicache ulang, Cache Data adalah persisten melintasi permintaan yang masuk dan penerapan, sedangkan memoisasi hanya berlangsung selama masa hidup permintaan.
+>
+> Dengan memoisasi, kami mengurangi jumlah permintaan **duplikat** dalam satu proses render yang harus menyeberangi batas jaringan dari server rendering ke server Cache Data (misalnya, CDN atau Jaringan Edge) atau sumber data (misalnya, database atau CMS). Dengan Cache Data, kami mengurangi jumlah permintaan yang dibuat ke sumber data asli kami.
+
+### Durasi
+
+Cache Data adalah persisten melintasi permintaan yang masuk dan penerapan kecuali Anda melakukan revalidasi atau keluar.
+
+### Revalidasi
+
+Data yang dicache dapat direvalidasi dengan dua cara, dengan:
+
+- **Revalidasi Berdasarkan Waktu**: Merevalidasi data setelah jumlah waktu tertentu telah berlalu dan permintaan baru dibuat. Ini berguna untuk data yang jarang berubah dan kesegarannya tidak begitu penting.
+- **Revalidasi Berdasarkan Permintaan**: Merevalidasi data berdasarkan peristiwa (misalnya, pengiriman formulir). Revalidasi berdasarkan permintaan dapat menggunakan pendekatan berbasis tag atau berbasis path untuk merevalidasi grup data sekaligus. Ini berguna saat Anda ingin memastikan data terbaru ditampilkan sesegera mungkin (misalnya, ketika konten dari CMS tanpa kepala Anda diperbarui).
+
+#### Revalidasi Berdasarkan Waktu
+
+Untuk merevalidasi data pada interval waktu tertentu, Anda dapat menggunakan opsi `next.revalidate` dari `fetch` untuk mengatur masa cache dari sumber daya (dalam detik).
+
+```js
+// Revalidasi setidaknya setiap satu jam
+fetch('https://...', { next: { revalidate: 3600 } });
+```
+
+Atau, Anda dapat menggunakan [Opsi Konfigurasi Segmen Rute](#segment-config-options) untuk mengonfigurasi semua permintaan `fetch` dalam suatu segmen atau untuk kasus di mana Anda tidak dapat menggunakan `fetch`.
+
+**Bagaimana Revalidasi Berdasarkan Waktu Bekerja**
+
+<Image
+  alt="Diagram yang menunjukkan bagaimana revalidasi berdasarkan waktu bekerja, setelah periode revalidasi, data yang usang dikembalikan untuk permintaan pertama, lalu data direvalidasi."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftime-based-revalidation.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftime-based-revalidation.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="1252"
+/>
+
+- Pertama kali permintaan fetch dengan `revalidate` dipanggil, data akan diambil dari sumber data eksternal dan disimpan dalam Cache Data.
+- Permintaan apa pun yang dipanggil dalam jangka waktu yang ditentukan (misalnya, 60 detik) akan mengembalikan data yang dicache.
+- Setelah jangka waktu tersebut, permintaan berikutnya masih akan mengembalikan data yang dicache (sekarang sudah usang).
+  - Next.js akan memicu revalidasi data secara latar belakang.
+  - Begitu data berhasil diambil, Next.js akan memperbarui Cache Data dengan data segar.
+  - Jika revalidasi latar belakang gagal, data sebelumnya akan tetap tidak berubah.
+
+Ini mirip dengan perilaku [**stale-while-revalidate**](https://web.dev/stale-while-revalidate/).
+
+#### Revalidasi Berdasarkan Permintaan
+
+Data dapat direvalidasi berdasarkan permintaan dengan path ([`revalidatePath`](#revalidatepath)) atau dengan tag cache ([`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)).
+
+**Bagaimana Revalidasi Berdasarkan Permintaan Bekerja**
+
+<Image
+  alt="Diagram yang menunjukkan bagaimana revalidasi berdasarkan permintaan bekerja, Cache Data diperbarui dengan data segar setelah permintaan revalidasi."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fon-demand-revalidation.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fon-demand-revalidation.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="1082"
+/>
+
+- Pertama kali permintaan `fetch` dipanggil, data akan diambil dari sumber data eksternal dan disimpan dalam Cache Data.
+- Ketika revalidasi berdasarkan permintaan dipicu, entri cache yang sesuai akan dihapus dari cache.
+  - Ini berbeda dari revalidasi berdasarkan waktu, yang tetap menjaga data usang di cache sampai data segar diambil.
+- Ketika permintaan berikutnya dibuat, itu akan menjadi `MISS` cache lagi, dan data akan diambil dari sumber data eksternal dan disimpan dalam Cache Data.
+
+### Keluar
+
+Untuk pengambilan data individual, Anda dapat keluar dari cache dengan mengatur opsi [`cache`](#fetch-optionscache) menjadi `no-store`. Ini berarti data akan diambil setiap kali `fetch` dipanggil.
+
+```jsx
+// Keluar dari cache untuk permintaan `fetch` individual
+fetch(`https://...`, { cache: 'no-store' });
+```
+
+Atau, Anda juga dapat menggunakan [Opsi Konfigurasi Segmen Rute](#segment-config-options) untuk keluar dari cache untuk segmen rute tertentu. Ini akan memengaruhi semua permintaan data dalam segmen rute, termasuk perpustakaan pihak ketiga.
+
+```jsx
+// Keluar dari cache untuk semua permintaan data dalam segmen rute
+export const dynamic = 'force-dynamic';
+```
+
+> **Cache Data Vercel**
+>
+> Jika aplikasi Next.js Anda diterapkan di Vercel, kami sarankan membaca dokumentasi [Cache Data Vercel](https://vercel.com/docs/infrastructure/data-cache) untuk pemahaman yang lebih baik tentang fitur-fitur khusus Vercel.
+
+## Cache Rute Penuh
+
+> **Terminologi Terkait**:
+>
+> Anda mungkin melihat istilah **Optimasi Statis Otomatis**, **Generasi Situs Statis**, atau **Rendering Statis** digunakan secara bergantian untuk merujuk pada proses merender dan menyimpan rute aplikasi Anda pada waktu pembangunan.
+
+Next.js secara otomatis merender dan menyimpan rute pada waktu pembangunan. Ini adalah optimasi yang memungkinkan Anda melayani rute yang telah disimpan dalam cache daripada merender di server setiap permintaan, yang menghasilkan waktu muat halaman yang lebih cepat.
+
+Untuk memahami bagaimana Cache Rute Penuh bekerja, berguna untuk melihat bagaimana React menangani rendering, dan bagaimana Next.js menyimpan hasilnya:
+
+### 1. Rendering React pada Server
+
+Pada server, Next.js menggunakan API React untuk mengatur rendering. Pekerjaan rendering dibagi menjadi potongan: berdasarkan segmen rute individual dan batas Suspense.
+
+Setiap potongan di-render dalam dua langkah:
+
+1. React merender Komponen Server menjadi format data khusus, dioptimalkan untuk streaming, yang disebut **Payload Komponen Server React**.
+2. Next.js menggunakan Payload Komponen Server React dan instruksi JavaScript Komponen Klien untuk merender **HTML** pada server.
+
+Ini berarti kita tidak perlu menunggu semuanya selesai merender sebelum menyimpan pekerjaan atau mengirimkan respons. Sebaliknya, kita dapat mengalirkan respons saat pekerjaan selesai.
+
+> **Apa itu Payload Komponen Server React?**
+>
+> Payload Komponen Server React adalah representasi biner ringkas dari pohon Komponen Server React yang di-render. Ini digunakan oleh React di sisi klien untuk memperbarui DOM browser. Payload Komponen Server React berisi:
+>
+> - Hasil yang di-render dari Komponen Server
+> - Placeholder untuk tempat Komponen Klien harus di-render dan referensi ke file JavaScript mereka
+> - Semua props yang dilewatkan dari Komponen Server ke Komponen Klien
+>
+> Untuk mempelajari lebih lanjut, lihat dokumentasi [Komponen Server](/docs/app/building-your-application/rendering/server-components).
+
+### 2. Penyimpanan Cache Next.js pada Server (Cache Rute Penuh)
+
+<Image
+  alt="Perilaku default Cache Rute Penuh, menunjukkan bagaimana Payload Komponen Server React dan HTML di-cache pada server untuk rute yang dirender secara statis."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffull-route-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ffull-route-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="888"
+/>
+
+Perilaku default Next.js adalah menyimpan hasil yang di-render (Payload Komponen Server React dan HTML) dari suatu rute pada server. Ini berlaku untuk rute yang dirender secara statis pada waktu pembangunan, atau selama revalidasi.
+
+### 3. Hidrasi React dan Rekonsiliasi pada Klien
+
+Pada waktu permintaan, di sisi klien:
+
+1. HTML digunakan untuk segera menampilkan pratinjau awal yang cepat dan non-interaktif dari Komponen Klien dan Server.
+2. Payload Komponen Server React digunakan untuk mendamaikan pohon Komponen Klien dan Server yang di-render, dan memperbarui DOM.
+3. Instruksi JavaScript digunakan untuk [menghidrasi](https://react.dev/reference/react-dom/client/hydrateRoot) Komponen Klien dan membuat aplikasi menjadi interaktif.
+
+### 4. Penyimpanan Cache Next.js pada Klien (Cache Router)
+
+Payload Komponen Server Component React disimpan dalam [Cache Router](#router-cache) sisi klien - cache in-memory terpisah, yang dibagi berdasarkan segmen rute individu. Cache Router ini digunakan untuk meningkatkan pengalaman navigasi dengan menyimpan rute yang telah dikunjungi sebelumnya dan melakukan prefetching rute mendatang.
+
+### 5. Navigasi Selanjutnya
+
+Pada navigasi selanjutnya atau selama prefetching, Next.js akan memeriksa apakah Payload Komponen Server React disimpan dalam Cache Router. Jika ya, maka akan melewati pengiriman permintaan baru ke server.
+
+Jika segmen rute tidak ada dalam cache, Next.js akan mengambil Payload Komponen Server React dari server, dan mengisi Cache Router di sisi klien.
+
+### Rendering Statis dan Dinamis
+
+Apakah suatu rute di-cache atau tidak pada waktu pembangunan tergantung pada apakah rute tersebut dirender secara statis atau dinamis. Rute statis di-cache secara default, sementara rute dinamis di-render pada waktu permintaan, dan tidak di-cache.
+
+Diagram ini menunjukkan perbedaan antara rute yang dirender secara statis dan dinamis, dengan data yang di-cache dan tidak di-cache:
+
+<Image
+  alt="Bagaimana rendering statis dan dinamis memengaruhi Cache Rute Penuh. Rute statis di-cache pada waktu pembangunan atau setelah revalidasi data, sedangkan rute dinamis tidak pernah di-cache"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fstatic-and-dynamic-routes.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fstatic-and-dynamic-routes.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="1314"
+/>
+
+Pelajari lebih lanjut tentang [rendering statis dan dinamis](/docs/app/building-your-application/rendering/server-components#strategi-rendering-server).
+
+### Durasi
+
+Secara default, Cache Rute Penuh adalah persisten. Ini berarti hasil render di-cache di seluruh permintaan pengguna.
+
+### Invalidasi
+
+Ada dua cara Anda dapat melakukan invalidasi Cache Rute Penuh:
+
+- **[Revalidasi Data](/docs/app/building-your-application/caching#revalidating)**: Dengan merevalidasi [Penyimpanan Data](#data-cache), Router Cache juga akan di-invalidasi dengan merender kembali komponen pada server dan meng-cache hasil render baru.
+- **Redeploy**: Berbeda dengan Penyimpanan Data, yang persisten di seluruh implementasi, Cache Rute Penuh dibersihkan saat diterapkan ulang.
+
+### Menonaktifkan
+
+Anda dapat menonaktifkan Cache Rute Penuh, atau dengan kata lain, merender komponen secara dinamis untuk setiap permintaan yang masuk, dengan cara berikut:
+
+- **Menggunakan [Fungsi Dinamis](#dynamic-functions)**: Ini akan menonaktifkan rute dari Cache Rute Penuh dan merendernya secara dinamis pada waktu permintaan. Penyimpanan Data masih bisa digunakan.
+- **Menggunakan opsi konfigurasi segmen rute `dynamic = 'force-dynamic'` atau `revalidate = 0`**: Ini akan melewati Cache Rute Penuh dan Penyimpanan Data. Artinya komponen akan dirender dan data diambil pada setiap permintaan yang masuk ke server. Cache Router masih akan berlaku karena ini adalah cache sisi klien.
+- **Menonaktifkan [Penyimpanan Data](#data-cache)**: Jika sebuah rute memiliki permintaan `fetch` yang tidak di-cache, ini akan menonaktifkan rute dari Cache Rute Penuh. Data untuk permintaan `fetch` tertentu akan diambil setiap kali permintaan masuk. Permintaan `fetch` lain yang tidak menonaktifkan penyimpanan cache masih akan di-cache dalam Penyimpanan Data. Ini memungkinkan untuk kombinasi data yang di-cache dan tidak di-cache.
+
+## Cache Router
+
+> **Terminologi Terkait**:
+>
+> Anda mungkin melihat Cache Router disebut sebagai **Cache Sisi Klien** atau **Cache Prefetch**. Meskipun **Cache Prefetch** merujuk pada segmen rute yang telah di-prefetch, **Cache Sisi Klien** merujuk pada cache keseluruhan Router, yang mencakup segmen yang telah dikunjungi dan di-prefetch.
+> Cache ini secara khusus berlaku untuk Next.js dan Komponen Server, dan berbeda dari [bfcache](https://web.dev/bfcache/) browser, meskipun hasilnya serupa.
+
+Next.js memiliki cache sisi klien dalam memori yang menyimpan Payload Komponen Server React, dibagi berdasarkan segmen rute individu, selama sesi pengguna. Ini disebut Cache Router.
+
+**Cara Kerja Cache Router**
+
+<Image
+  alt="Cara Cache Router bekerja untuk rute statis dan dinamis, menunjukkan MISS dan HIT untuk navigasi awal dan selanjutnya."
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Frouter-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Frouter-cache.png&w=1920&q=75&dpl=dpl_9FkuVG3Uig46gCSubMc7znCzBC5B"
+  width="1600"
+  height="1375"
+/>
+
+Saat pengguna menavigasi antara rute, Next.js akan menyimpan rute yang telah dikunjungi dan [mengprefetch](/docs/app/building-your-application/routing/linking-and-navigating#1-prefetching) rute yang mungkin akan diakses oleh pengguna (berdasarkan komponen `<Link>` dalam tampilan mereka).
+
+Ini menghasilkan pengalaman navigasi yang lebih baik bagi pengguna:
+
+- Navigasi mundur/maju instan karena rute yang telah dikunjungi di-cache dan navigasi cepat ke rute baru karena prefetching dan [pemberian render parsial](/docs/app/building-your-application/routing/linking-and-navigating#3-partial-rendering).
+- Tidak ada reload halaman penuh antara navigasi dan status React serta status browser akan dipertahankan.
+
+> **Perbedaan antara Cache Router dan Cache Rute Penuh**:
+>
+> Cache Router menyimpan Payload Komponen Server React di memori sementara browser untuk durasi sesi pengguna, sementara Cache Rute Penuh menyimpan Payload Komponen Server React dan HTML secara persisten pada server di sepanjang permintaan pengguna.
+>
+> Sementara Cache Rute Penuh hanya meng-cache rute yang dirender secara statis, Cache Router berlaku baik untuk rute yang dirender secara statis maupun dinamis.
+
+### Durasi
+
+Cache disimpan dalam memori sementara browser. Dua faktor menentukan berapa lama cache router berlangsung:
+
+- **Sesi**: Cache tetap ada selama navigasi. Namun, akan dibersihkan pada saat refresh halaman.
+- **Periode Invalidation Otomatis**: Cache dari segmen individu secara otomatis di-invalidasi setelah waktu tertentu. Durasi tergantung pada apakah rute dirender secara [statis](/docs/app/building-your-application/rendering/server-components#static-rendering-default) atau [dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering):
+  - **Dinamis Dirender**: 30 detik
+  - **Statis Dirender**: 5 menit
+
+Saat refresh halaman akan membersihkan **semua** segmen yang di-cache, periode invalidasi otomatis hanya memengaruhi segmen individu mulai dari saat terakhir diakses atau dibuat.
+
+Dengan menambahkan `prefetch={true}` atau memanggil `router.prefetch` untuk rute yang dirender secara dinamis, Anda dapat memilih untuk mengaktifkan caching selama 5 menit.
+
+### Invalidasi
+
+Ada dua cara Anda dapat melakukan invalidasi Cache Router:
+
+- Dalam **Aksi Server**:
+  - Merevalidasi data sesuai kebutuhan berdasarkan path dengan ([`revalidatePath`](/docs/app/api-reference/functions/revalidatePath)) atau berdasarkan tag cache dengan ([`revalidateTag`](/docs/app/api-reference/functions/revalidateTag))
+  - Menggunakan [`cookies.set`](/docs/app/api-reference/functions/cookies#cookiessetname-value-options) atau [`cookies.delete`](/docs/app/api-reference/functions/cookies#deleting-cookies) akan meng-invalidasi Cache Router untuk mencegah rute yang menggunakan cookie menjadi usang (misalnya, autentikasi).
+- Memanggil [`router.refresh`](/docs/app/api-reference/functions/use-router) akan meng-invalidasi Cache Router dan membuat permintaan baru ke server untuk rute saat ini.
+
+### Menonaktifkan
+
+Tidak mungkin menonaktifkan Cache Router.
+
+Anda dapat menonaktifkan **pengprefetchan** dengan mengatur prop `prefetch` dari komponen `<Link>` menjadi `false`. Namun, ini masih akan sementara menyimpan segmen rute selama 30 detik untuk memungkinkan navigasi instan antara segmen yang bersarang, seperti tab bar, atau navigasi mundur dan maju. Rute yang telah dikunjungi masih akan di-cache.
+
+## Interaksi Cache
+
+Ketika mengonfigurasi mekanisme penyimpanan cache yang berbeda, penting untuk memahami bagaimana mereka berinteraksi satu sama lain:
+
+### Penyimpanan Data dan Cache Rute Penuh
+
+- Merevalidasi atau menonaktifkan Penyimpanan Data **akan** meng-invalidasi Cache Rute Penuh, karena hasil render bergantung pada data.
+- Menginvalidasi atau menonaktifkan Cache Rute Penuh **tidak** memengaruhi Penyimpanan Data. Anda dapat merender rute secara dinamis yang memiliki data yang di-cache dan tidak di-cache. Ini berguna ketika sebagian besar halaman Anda menggunakan data yang di-cache, tetapi Anda memiliki beberapa komponen yang bergantung pada data yang perlu diambil pada waktu permintaan. Anda dapat merender secara dinamis tanpa khawatir tentang dampak kinerja dari pengambilan kembali semua data.
+
+### Penyimpanan Data dan Cache Router sisi klien
+
+- Merevalidasi Penyimpanan Data dalam [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) **tidak akan** langsung meng-invalidasi Cache Router, karena Pengendali Rute tidak terkait dengan rute tertentu. Ini berarti Cache Router akan terus melayani payload sebelumnya hingga refresh halaman yang keras, atau periode invalidasi otomatis berakhir.
+- Untuk langsung meng-invalidasi Penyimpanan Data dan Cache Router, Anda dapat menggunakan [`revalidatePath`](#revalidatepath) atau [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag) dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+## Antarmuka API
+
+Berikut adalah tabel yang memberikan gambaran tentang bagaimana berbagai Antarmuka Next.js memengaruhi penyimpanan cache:
+
+| API                                                                     | Cache Router             | Cache Rute Penuh       | Cache Data             | Cache React |
+| ----------------------------------------------------------------------- | ------------------------ | ---------------------- | ---------------------- | ----------- |
+| [`<Link prefetch>`](#link)                                              | Cache                    |                        |                        |             |
+| [`router.prefetch`](#routerprefetch)                                    | Cache                    |                        |                        |             |
+| [`router.refresh`](#routerrefresh)                                      | Revalidasi               |                        |                        |             |
+| [`fetch`](#fetch)                                                       |                          |                        | Cache                  | Cache       |
+| [`fetch` `options.cache`](#fetch-optionscache)                          |                          |                        | Cache atau Keluar      |             |
+| [`fetch` `options.next.revalidate`](#fetch-optionsnextrevalidate)       |                          | Revalidasi             | Revalidasi             |             |
+| [`fetch` `options.next.tags`](#fetch-optionsnexttags-and-revalidatetag) |                          | Cache                  | Cache                  |             |
+| [`revalidateTag`](#fetch-optionsnexttags-and-revalidatetag)             | Revalidasi (Aksi Server) | Revalidasi             | Revalidasi             |             |
+| [`revalidatePath`](#revalidatepath)                                     | Revalidasi (Aksi Server) | Revalidasi             | Revalidasi             |             |
+| [`const revalidate`](#segment-config-options)                           |                          | Revalidasi atau Keluar | Revalidasi atau Keluar |             |
+| [`const dynamic`](#segment-config-options)                              |                          | Cache atau Keluar      | Cache atau Keluar      |             |
+| [`cookies`](#cookies)                                                   | Revalidasi (Aksi Server) | Keluar                 |                        |             |
+| [`headers`, `useSearchParams`, `searchParams`](#dynamic-functions)      |                          | Keluar                 |                        |             |
+| [`generateStaticParams`](#generatestaticparams)                         |                          | Cache                  |                        |             |
+| [`React.cache`](#react-cache-function)                                  |                          |                        |                        | Cache       |
+| [`unstable_cache`](#unstable_cache) (Segera Hadir)                      |                          |                        |                        |             |
+
+### `<Link>`
+
+Secara default, komponen `<Link>` secara otomatis melakukan prefetching pada rute dari Cache Rute Penuh dan menambahkan Payload Komponen Server React ke dalam Cache Router.
+
+Untuk menonaktifkan prefetching, Anda dapat mengatur prop `prefetch` menjadi `false`. Namun ini tidak akan mengabaikan cache secara permanen, segmen rute akan tetap dicache di sisi klien ketika pengguna mengunjungi rute tersebut.
+
+Pelajari lebih lanjut tentang [`<Link>` component](/docs/app/api-reference/components/link).
+
+### `router.prefetch`
+
+Pilihan `prefetch` pada hook `useRouter` dapat digunakan untuk melakukan prefetching secara manual pada sebuah rute. Ini akan menambahkan Payload Komponen Server React ke dalam Cache Router.
+
+Lihat referensi API hook [`useRouter`](/docs/app/api-reference/functions/use-router).
+
+### `router.refresh`
+
+Pilihan `refresh` pada hook `useRouter` dapat digunakan untuk memperbarui secara manual sebuah rute. Ini akan membersihkan sepenuhnya Cache Router, dan membuat permintaan baru ke server untuk rute saat ini. `refresh` tidak mempengaruhi Cache Data atau Cache Rute Penuh.
+
+Hasil yang dirender akan diselaraskan di sisi klien sambil mempertahankan state React dan state browser.
+
+Lihat referensi API hook [`useRouter`](/docs/app/api-reference/functions/use-router).
+
+### `fetch`
+
+Data yang dikembalikan dari `fetch` secara otomatis dicache dalam Cache Data.
+
+```jsx
+// Dicache secara default. `force-cache` adalah opsi default dan dapat dihilangkan.
+fetch(`https://...`, { cache: 'force-cache' });
+```
+
+Lihat referensi [`fetch` API](/docs/app/api-reference/functions/fetch) untuk opsi lebih lanjut.
+
+### `fetch options.cache`
+
+Anda dapat memilih keluar dari permintaan `fetch` individual pada caching data dengan mengatur opsi `cache` menjadi `no-store`:
+
+```jsx
+// Keluar dari caching
+fetch(`https://...`, { cache: 'no-store' });
+```
+
+Karena hasil keluaran render tergantung pada data, penggunaan `cache: 'no-store'` juga akan mengabaikan Cache Rute Penuh untuk rute di mana permintaan `fetch` digunakan. Artinya, rute akan secara dinamis dirender setiap permintaan, tetapi Anda masih dapat memiliki permintaan data yang dicache lainnya di rute yang sama.
+
+Lihat referensi [`fetch` API](/docs/app/api-reference/functions/fetch) untuk opsi lebih lanjut.
+
+### `fetch options.next.revalidate`
+
+Anda dapat menggunakan opsi `next.revalidate` pada `fetch` untuk mengatur periode revalidasi (dalam detik) dari permintaan `fetch` individual. Ini akan merevalidasi Cache Data, yang pada gilirannya akan merevalidasi Cache Rute Penuh. Data segar akan diambil, dan komponen akan dirender kembali di server.
+
+```jsx
+// Revalidasi setidaknya setelah 1 jam
+fetch(`https://...`, { next: { revalidate: 3600 } });
+```
+
+Lihat referensi [`fetch` API](/docs/app/api-reference/functions/fetch) untuk opsi lebih lanjut.
+
+### `fetch options.next.tags` dan `revalidateTag`
+
+Next.js memiliki sistem tagging cache untuk caching data yang sangat terperinci dan revalidasi.
+
+1. Saat menggunakan `fetch` atau `unstable_cache`, Anda memiliki opsi untuk menandai entri cache dengan satu atau lebih tag.
+2. Kemudian, Anda dapat memanggil `revalidateTag` untuk membersihkan entri cache yang terkait dengan tag tersebut.
+
+Sebagai contoh, Anda dapat menetapkan tag saat mengambil data:
+
+```jsx
+// Mencache data dengan tag
+fetch(`https://...`, { next: { tags: ['a', 'b', 'c'] } });
+```
+
+Kemudian, panggil `revalidateTag` dengan tag untuk membersihkan entri cache:
+
+```jsx
+// Revalidasi entri dengan tag tertentu
+revalidateTag('a');
+```
+
+Ada dua tempat Anda dapat menggunakan `revalidateTag`, tergantung pada apa yang Anda coba capai:
+
+1. [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) - untuk merevalidasi data sebagai respons terhadap peristiwa pihak ketiga (misalnya, webhook). Ini tidak akan menginvalasi Cache Router segera karena Pengendali Rute tidak terikat pada rute tertentu.
+2. [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) - untuk merevalidasi data setelah interaksi pengguna (misalnya, pengiriman formulir). Ini akan menginvalasi Cache Router untuk rute yang terkait.
+
+### `revalidatePath`
+
+`revalidatePath` memungkinkan Anda untuk merevalidasi data secara manual **dan** merender segmen rute di bawah suatu path tertentu dalam satu operasi. Memanggil metode `revalidatePath` akan merevalidasi Cache Data, yang pada gilirannya akan menginvalasi Cache Rute Penuh.
+
+```jsx
+revalidatePath('/');
+```
+
+Ada dua tempat Anda dapat menggunakan `revalidatePath`, tergantung pada apa yang Anda coba capai:
+
+1. [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) - untuk merevalidasi data sebagai respons terhadap peristiwa pihak ketiga (misalnya, webhook).
+2. [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) - untuk merevalidasi data setelah interaksi pengguna (misalnya, pengiriman formulir, mengklik tombol).
+
+Lihat referensi API [`revalidatePath`](/docs/app/api-reference/functions/revalidatePath) untuk informasi lebih lanjut.
+
+> **`revalidatePath`** vs. **`router.refresh`**:
+>
+> Memanggil `router.refresh` akan menghapus cache Router, dan merender kembali segmen rute di server tanpa menginvalasi Cache Data atau Cache Rute Penuh.
+>
+> Perbedaannya adalah bahwa `revalidatePath` membersihkan Cache Data dan Cache Rute Penuh, sedangkan `router.refresh()` tidak mengubah Cache Data dan Cache Rute Penuh, karena ini adalah API sisi klien.
+
+### Fungsi Dinamis
+
+`cookies`, `headers`, `useSearchParams`, dan `searchParams` semua adalah fungsi dinamis yang bergantung pada informasi permintaan yang masuk pada saat runtime. Menggunakan fungsi-fungsi ini akan mengeluarkan rute dari Cache Rute Penuh, dengan kata lain, rute akan dirender secara dinamis.
+
+#### `cookies`
+
+Menggunakan `cookies.set` atau `cookies.delete` dalam Aksi Server akan menginvalasi Cache Router untuk mencegah rute yang menggunakan cookies menjadi usang (misalnya, untuk mencerminkan perubahan otentikasi).
+
+Lihat referensi API [`cookies`](/docs/app/api-reference/functions/cookies).
+
+### Opsi Konfigurasi Segmen Rute
+
+Opsi Konfigurasi Segmen Rute dapat digunakan untuk mengganti default segmen rute atau saat Anda tidak dapat menggunakan API `fetch` (misalnya, klien database atau perpustakaan pihak ketiga).
+
+Opsi Konfigurasi Segmen Rute berikut akan mengeluarkan Cache Data dan Cache Rute Penuh:
+
+- `const dynamic = 'force-dynamic'`
+- `const revalidate = 0`
+
+Lihat dokumentasi [Konfigurasi Segmen Rute](/docs/app/api-reference/file-conventions/route-segment-config) untuk opsi lebih lanjut.
+
+### `generateStaticParams`
+
+Untuk [segmen dinamis](/docs/app/building-your-application/routing/dynamic-routes) (misalnya, `app/blog/[slug]/page.js`), jalur yang disediakan oleh `generateStaticParams` dicache di Cache Rute Penuh saat waktu kompilasi. Pada saat permintaan, Next.js juga akan mencache jalur-jalur yang tidak diketahui pada waktu kompilasi saat pertama kali mereka dikunjungi.
+
+Anda dapat menonaktifkan caching pada saat permintaan dengan menggunakan opsi `export const dynamicParams = false` dalam segmen rute. Ketika opsi konfigurasi ini digunakan, hanya jalur-jalur yang disediakan oleh `generateStaticParams` yang akan disajikan, dan rute lainnya akan memberikan 404 atau cocok (dalam kasus [rute tangkap semua](/docs/app/building-your-application/routing/dynamic-routes#catch-all-segments)).
+
+Lihat referensi [`generateStaticParams`](/docs/app/api-reference/functions/generate-static-params).
+
+### Fungsi `cache` React
+
+Fungsi `cache` React memungkinkan Anda untuk memori hasil pengembalian suatu fungsi, memungkinkan Anda untuk memanggil fungsi yang sama beberapa kali sambil hanya menjalankannya sekali.
+
+Karena permintaan `fetch` secara otomatis dimemorikan, Anda tidak perlu membungkusnya dalam fungsi `cache` React. Namun, Anda dapat menggunakan `cache` untuk memori manual permintaan data untuk kasus penggunaan di mana API `fetch` tidak cocok. Misalnya, beberapa klien database, klien CMS, atau klien GraphQL.
+
+```tsx filename="utils/get-item.ts" switcher
+import { cache } from 'react';
+import db from '@/lib/db';
+
+export const getItem = cache(async (id: string) => {
+  const item = await db.item.findUnique({ id });
+  return item;
+});
+```
+
+```jsx filename="utils/get-item.js" switcher
+import { cache } from 'react';
+import db from '@/lib/db';
+
+export const getItem = cache(async (id) => {
+  const item = await db.item.findUnique({ id });
+  return item;
+});
+```
+
+### `unstable_cache`
+
+`unstable_cache` adalah API eksperimental untuk menambahkan nilai ke Cache Data ketika API `fetch` tidak cocok. Misalnya, ketika menggunakan klien database, klien CMS, atau GraphQL.
+
+```jsx
+import { unstable_cache } from 'next/cache';
+
+export default async function Page() {
+  const cachedData = await unstable_cache(
+    async () => {
+      const data = await db.query('...');
+      return data;
+    },
+    ['cache-key'],
+    {
+      tags: ['a', 'b', 'c'],
+      revalidate: 10,
+    }
+  )();
+}
+```
+
+> **Peringatan**: API ini sedang dalam pengembangan, dan kami tidak merekomendasikan menggunakannya di produksi. Ini tercantum di sini untuk menunjukkan arah masa depan Cache Data.
+
+```
+
+```

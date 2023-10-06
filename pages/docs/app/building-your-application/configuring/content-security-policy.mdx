@@ -38,11 +38,11 @@ Setiap kali sebuah halaman dilihat, nonce baru harus dibuat. Ini berarti bahwa A
 
 Sebagai contoh:
 
-tttts filename="middleware.ts" switcher
-import { NextRequest, NextResponse } from 'next/server'
+```ts filename="middleware.ts" switcher
+import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
@@ -55,30 +55,30 @@ export function middleware(request: NextRequest) {
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
-`
+`;
 
-const requestHeaders = new Headers(request.headers)
-requestHeaders.set('x-nonce', nonce)
-requestHeaders.set(
-'Content-Security-Policy',
-// Mengganti karakter pembaris baru dan spasi
-cspHeader.replace(/\s{2,}/g, ' ').trim()
-)
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set(
+    'Content-Security-Policy',
+    // Mengganti karakter pembaris baru dan spasi
+    cspHeader.replace(/\s{2,}/g, ' ').trim()
+  );
 
-return NextResponse.next({
-headers: requestHeaders,
-request: {
-headers: requestHeaders,
-},
-})
+  return NextResponse.next({
+    headers: requestHeaders,
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
-ttt
+```
 
-tttjs filename="middleware.js" switcher
-import { NextResponse } from 'next/server'
+```js filename="middleware.js" switcher
+import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
@@ -91,30 +91,30 @@ export function middleware(request) {
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
-`
+`;
 
-const requestHeaders = new Headers(request.headers)
-requestHeaders.set('x-nonce', nonce)
-requestHeaders.set(
-'Content-Security-Policy',
-// Mengganti karakter pembaris baru dan spasi
-cspHeader.replace(/\s{2,}/g, ' ').trim()
-)
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set(
+    'Content-Security-Policy',
+    // Mengganti karakter pembaris baru dan spasi
+    cspHeader.replace(/\s{2,}/g, ' ').trim()
+  );
 
-return NextResponse.next({
-headers: requestHeaders,
-request: {
-headers: requestHeaders,
-},
-})
+  return NextResponse.next({
+    headers: requestHeaders,
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
-ttt
+```
 
 Secara default, Middleware berjalan pada semua permintaan. Anda dapat menyaring Middleware untuk berjalan pada path tertentu menggunakan [`matcher`](/docs/app/building-your-application/routing/middleware#matcher).
 
 Kami menyarankan untuk mengabaikan pencocokan prefetch (dari `next/link`) dan aset statis yang tidak memerlukan header CSP.
 
-tttts filename="middleware.ts" switcher
+```ts filename="middleware.ts" switcher
 export const config = {
 matcher: [
 /\*
@@ -133,9 +133,9 @@ missing: [
 },
 ],
 }
-ttt
+```
 
-tttjs filename="middleware.js" switcher
+```js filename="middleware.js" switcher
 export const config = {
 matcher: [
 /\*
@@ -154,48 +154,46 @@ missing: [
 },
 ],
 }
-ttt
+```
 
 ### Membaca nonce
 
 Anda sekarang dapat membaca nonce dari [Komponen Server](/docs/app/building-your-application/rendering/server-components) menggunakan [`headers`](/docs/app/api-reference/functions/headers):
 
-ttttsx filename="app/page.tsx" switcher
-import { headers } from 'next/headers'
-import Script from 'next/script'
+```tsx filename="app/page.tsx" switcher
+import { headers } from 'next/headers';
+import Script from 'next/script';
 
 export default function Page() {
-  const nonce = headers().get('x-nonce')
+  const nonce = headers().get('x-nonce');
 
-return (
-
-<Script
+  return (
+    <Script
       src="https://www.googletagmanager.com/gtag/js"
       strategy="afterInteractive"
       nonce={nonce}
     />
-)
+  );
 }
-ttt
+```
 
-tttjsx filename="app/page.jsx" switcher
-import { headers } from 'next/headers'
-import Script from 'next/script'
+```jsx filename="app/page.jsx" switcher
+import { headers } from 'next/headers';
+import Script from 'next/script';
 
 export default function Page() {
-  const nonce = headers().get('x-nonce')
+  const nonce = headers().get('x-nonce');
 
-return (
-<Script
+  return (
+    <Script
       src="https://www.googletagmanager.com/gtag/js"
       strategy="afterInteractive"
       nonce={nonce}
     />
-)
+  );
 }
-ttt
+```
 
 ## Riwayat Versi
 
 Kami menyarankan menggunakan `v13.4.20+` dari Next.js untuk menangani dan menerapkan nonce dengan benar.
-

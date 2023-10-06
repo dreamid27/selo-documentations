@@ -3,10 +3,6 @@
     "title": "Beranda",
     "type": "page"
   },
-  "about": {
-    "title": "About",
-    "type": "page"
-  },
   "docs": {
     "title": "Dokumentasi NextJS",
     "type": "page"

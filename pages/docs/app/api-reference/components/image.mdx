@@ -1,0 +1,791 @@
+---
+title: <Gambar>
+description: Optimalkan Gambar dalam Aplikasi Next.js Anda menggunakan Komponen `next/image` bawaan.
+---
+
+{/* Konten dokumen ini digunakan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+<details>
+  <summary>Contoh</summary>
+
+- [Komponen Gambar](https://github.com/vercel/next.js/tree/canary/examples/image-component)
+
+</details>
+
+Referensi API ini akan membantu Anda memahami cara menggunakan [props](#props) dan [opsi konfigurasi](#configuration-options) yang tersedia untuk Komponen Gambar. Untuk fitur dan penggunaan, silakan lihat halaman [Komponen Gambar](/docs/app/building-your-application/optimizing/images).
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+
+export default function Halaman() {
+  return (
+    <Image src="/profile.png" width={500} height={500} alt="Gambar penulis" />
+  );
+}
+```
+
+## Props
+
+Berikut adalah ringkasan props yang tersedia untuk Komponen Gambar:
+
+<div style={{ overflowX: 'auto', width: '100%' }}>
+| Prop                                      | Contoh                              | Tipe            | Diperlukan |
+| ----------------------------------------- | ------------------------------------ | --------------- | -------- |
+| [`src`](#src)                             | `src="/profile.png"`                 | String          | Ya       |
+| [`width`](#width)                         | `width={500}`                        | Integer (px)    | Ya       |
+| [`height`](#height)                       | `height={500}`                       | Integer (px)    | Ya       |
+| [`alt`](#alt)                             | `alt="Gambar penulis"`               | String          | Ya       |
+| [`loader`](#loader)                       | `loader={imageLoader}`               | Function        | -        |
+| [`fill`](#fill)                           | `fill={true}`                        | Boolean         | -        |
+| [`sizes`](#sizes)                         | `sizes="(max-width: 768px) 100vw"`   | String          | -        |
+| [`quality`](#quality)                     | `quality={80}`                       | Integer (1-100) | -        |
+| [`priority`](#priority)                   | `priority={true}`                    | Boolean         | -        |
+| [`placeholder`](#placeholder)             | `placeholder="blur"`                 | String          | -        |
+| [`style`](#style)                         | `style={{objectFit: "contain"}}`     | Object          | -        |
+| [`onLoadingComplete`](#onloadingcomplete) | `onLoadingComplete={img => done())}` | Function        | -        |
+| [`onLoad`](#onload)                       | `onLoad={event => done())}`          | Function        | -        |
+| [`onError`](#onerror)                     | `onError(event => fail()}`           | Function        | -        |
+| [`loading`](#loading)                     | `loading="lazy"`                     | String          | -        |
+| [`blurDataURL`](#blurdataurl)             | `blurDataURL="data:image/jpeg..."`   | String          | -        |
+</div>
+
+## Props yang Diperlukan
+
+Komponen Gambar memerlukan properti berikut: `src`, `width`, `height`, dan `alt`.
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+
+export default function Halaman() {
+  return (
+    <div>
+      <Image src="/profile.png" width={500} height={500} alt="Gambar penulis" />
+    </div>
+  );
+}
+```
+
+### `src`
+
+Harus menjadi salah satu dari yang berikut:
+
+- Gambar yang diimpor secara statis
+- String path. Ini bisa berupa URL eksternal absolut, atau path internal tergantung pada prop [`loader`](#loader).
+
+Ketika menggunakan URL eksternal, Anda harus menambahkannya ke [remotePatterns](#remotepatterns) dalam `next.config.js`.
+
+### `width`
+
+Properti `width` mewakili lebar yang _dirender_ dalam piksel, sehingga akan memengaruhi seberapa besar gambar muncul.
+
+Diperlukan, kecuali untuk gambar yang diimpor secara statis atau gambar dengan properti [`fill`](#fill).
+
+### `height`
+
+Properti `height` mewakili tinggi yang _dirender_ dalam piksel, sehingga akan memengaruhi seberapa besar gambar muncul.
+
+Diperlukan, kecuali untuk gambar yang diimpor secara statis atau gambar dengan properti [`fill`](#fill).
+
+### `alt`
+
+Properti `alt` digunakan untuk menjelaskan gambar bagi pembaca layar dan mesin pencari. Ini juga teks pengganti jika gambar dinonaktifkan atau terjadi kesalahan saat memuat gambar.
+
+Properti ini seharusnya berisi teks yang dapat menggantikan gambar [tanpa mengubah makna halaman](https://html.spec.whatwg.org/multipage/images.html#general-guidelines). Ini tidak dimaksudkan untuk melengkapi gambar dan tidak boleh mengulangi informasi yang sudah disediakan dalam keterangan di atas atau di bawah gambar.
+
+Jika gambar [hanya dekoratif](https://html.spec.whatwg.org/multipage/images.html#a-purely-decorative-image-that-doesn't-add-any-information) atau [tidak ditujukan untuk pengguna](https://html.spec.whatwg.org/multipage/images.html#an-image-not-intended-for-the-user), properti `alt` harus berupa string kosong (`alt=""`).
+
+[Pelajari lebih lanjut](https://html.spec.whatwg.org/multipage/images.html#alt)
+
+## Props Opsional
+
+Komponen `<Image />` menerima sejumlah properti tambahan selain yang diperlukan. Bagian ini menjelaskan properti yang paling sering digunakan dari komponen Gambar. Temukan detail tentang properti yang jarang digunakan dalam bagian [Advanced Props](#advanced-props).
+
+### `loader`
+
+Fungsi kustom yang digunakan untuk memecahkan URL gambar.
+
+Sebuah `loader` adalah fungsi yang mengembalikan string URL untuk gambar, dengan parameter berikut:
+
+- [`src`](#src)
+- [`width`](#width)
+- [`quality`](#quality
+
+)
+
+Berikut adalah contoh penggunaan loader kustom:
+
+```js
+'gunakan client';
+
+import Image from 'next/image';
+
+const imageLoader = ({ src, width, quality }) => {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`;
+};
+
+export default function Halaman() {
+  return (
+    <Image
+      loader={imageLoader}
+      src="me.png"
+      alt="Gambar penulis"
+      width={500}
+      height={500}
+    />
+  );
+}
+```
+
+> **Menarik untuk diketahui**: Menggunakan properti seperti `loader`, yang menerima fungsi, memerlukan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components) untuk mengurai fungsi yang disediakan.
+
+Alternatifnya, Anda dapat menggunakan konfigurasi [loaderFile](#loaderfile) dalam `next.config.js` untuk mengonfigurasi setiap instance `next/image` dalam aplikasi Anda, tanpa melewati properti.
+
+### `fill`
+
+```js
+fill={true} // {true} | {false}
+```
+
+Sebuah boolean yang membuat gambar mengisi elemen parent, yang berguna ketika [`width`](#width) dan [`height`](#height) tidak diketahui.
+
+Elemen parent _harus_ menetapkan gaya `position: "relative"`, `position: "fixed"`, atau `position: "absolute"`.
+
+Secara default, elemen img akan secara otomatis ditetapkan gaya `position: "absolute"`.
+
+Jika tidak ada gaya yang diterapkan pada gambar, gambar akan meregang untuk sesuai dengan kontainer. Anda mungkin lebih suka mengatur `object-fit: "contain"` untuk gambar yang letterboxed agar sesuai dengan kontainer dan mempertahankan rasio aspek.
+
+Alternatifnya, `object-fit: "cover"` akan membuat gambar mengisi seluruh kontainer dan dipangkas untuk mempertahankan rasio aspek. Agar ini terlihat benar, gaya `overflow: "hidden"` harus diberikan pada elemen parent.
+
+Untuk informasi lebih lanjut, lihat juga:
+
+- [`position`](https://developer.mozilla.org/docs/Web/CSS/position)
+- [`object-fit`](https://developer.mozilla.org/docs/Web/CSS/object-fit)
+- [`object-position`](https://developer.mozilla.org/docs/Web/CSS/object-position)
+
+### `sizes`
+
+Sebuah string, mirip dengan media query, yang memberikan informasi tentang seberapa lebar gambar akan menjadi pada breakpoint yang berbeda. Nilai dari `sizes` akan sangat memengaruhi performa untuk gambar yang menggunakan [`fill`](#fill) atau yang [diberi gaya untuk memiliki ukuran responsif](#responsive-images).
+
+Properti `sizes` melayani dua tujuan penting yang terkait dengan performa gambar:
+
+- Pertama, nilai dari `sizes` digunakan oleh browser untuk menentukan ukuran gambar yang akan diunduh, dari `srcset` yang dihasilkan otomatis oleh `next/image`. Ketika browser memilih, ia belum tahu ukuran gambar pada halaman, sehingga ia memilih gambar yang sama ukurannya atau lebih besar dari viewport. Properti `sizes` memungkinkan Anda memberi tahu browser bahwa gambar sebenarnya akan lebih kecil dari layar penuh. Jika Anda tidak menentukan nilai `sizes` dalam gambar dengan properti [`fill`](#fill), maka akan digunakan nilai default `100vw` (lebar layar penuh).
+- Kedua, properti `sizes` mengubah perilaku nilai `srcset` yang dihasilkan otomatis. Jika tidak ada nilai `sizes`, srcset kecil dihasilkan, cocok untuk gambar dengan ukuran tetap (1x/2x/dll). Jika `sizes` didefinisikan, srcset besar dihasilkan, cocok untuk gambar responsif (640w/750w/dll). Jika properti `sizes` termasuk ukuran seperti `50vw`, yang mewakili persentase lebar viewport, maka srcset dipangkas untuk tidak mencakup nilai yang terlalu kecil untuk pernah diperlukan.
+
+Misalnya, jika Anda tahu styling Anda akan membuat gambar menjadi lebar penuh di perangkat mobile, dalam tata letak 2 kolom di tablet, dan tata letak 3 kolom di tampilan desktop, Anda harus menyertakan properti sizes seperti berikut:
+
+```jsx
+import Image from 'next/image';
+
+export default function Halaman() {
+  return (
+    <div className="grid-element">
+      <Image
+        fill
+        src="/example.png"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
+    </div>
+  );
+}
+```
+
+Contoh `sizes` ini dapat memiliki efek dramatis pada metrik kinerja. Tanpa `sizes` 33vw, gambar yang dipilih dari server akan 3 kali lebih lebar dari yang seharusnya. Karena ukuran file berbanding lurus dengan kuadrat lebar, tanpa `sizes`, pengguna akan mengunduh gambar yang 9 kali lebih besar dari yang diperlukan.
+
+Pelajari lebih lanjut tentang `srcset` dan `sizes`:
+
+- [web.dev](https://web.dev/learn/design/responsive-images/#sizes)
+- [mdn](https://developer.mozilla.org/docs/Web/HTML/Element/img#attr-sizes)
+
+### `quality`
+
+```js
+quality={75} // {number 1-100}
+```
+
+Kualitas gambar yang dioptimalkan, bilangan bulat antara `1` dan `100`, di mana `100` adalah kualitas terbaik dan oleh karena itu ukuran file terbesar. Defaultnya adalah `75`.
+
+### `priority`
+
+```js
+priority={false} // {false} | {true}
+```
+
+Jika benar, gambar akan dianggap prioritas tinggi dan akan di-[preload](https://web.dev/preload-responsive-images/). Lazy loading secara otomatis dinonaktifkan untuk gambar yang menggunakan `priority`.
+
+Anda harus menggunakan properti `priority` pada gambar yang terdeteksi sebagai elemen [Largest Contentful Paint (LCP)](https://nextjs.org/learn/seo/web-performance/lcp). Mungkin sesuai untuk memiliki gambar prioritas yang berbeda, karena gambar yang berbeda dapat menjadi elemen LCP yang berbeda untuk ukuran viewport yang berbeda.
+
+Sebaiknya hanya digunakan ketika gambar terlihat di atas fold. Defaultnya adalah `false`.
+
+### `placeholder`
+
+```js
+placeholder = 'empty'; // "empty" | "blur" | "data:image/..."
+```
+
+Sebuah tempat untuk digunakan
+
+saat gambar sedang dimuat. Nilai yang mungkin adalah `blur`, `empty`, atau `data:image/...`. Defaultnya adalah `empty`.
+
+Ketika `blur`, properti [`blurDataURL`](#blurdataurl) akan digunakan sebagai placeholder. Jika `src` adalah objek dari [impor statis](/docs/app/building-your-application/optimizing/images#local-images) dan gambar yang diimpor adalah `.jpg`, `.png`, `.webp`, atau `.avif`, maka `blurDataURL` akan diisi secara otomatis, kecuali jika gambar terdeteksi sebagai animasi.
+
+Untuk gambar dinamis, Anda harus menyediakan properti [`blurDataURL`](#blurdataurl). Solusi seperti [Plaiceholder](https://github.com/joe-bell/plaiceholder) dapat membantu dalam menghasilkan `base64`.
+
+Ketika `data:image/...`, [URL Data](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs) akan digunakan sebagai placeholder saat gambar dimuat.
+
+Ketika `empty`, tidak akan ada placeholder saat gambar dimuat, hanya ruang kosong.
+
+Cobalah:
+
+- [Demo placeholder `blur`](https://image-component.nextjs.gallery/placeholder)
+- [Demo efek shimmer dengan prop `placeholder` berupa URL data](https://image-component.nextjs.gallery/shimmer)
+- [Demo efek warna dengan prop `blurDataURL`](https://image-component.nextjs.gallery/color)
+
+## Props Lanjutan
+
+Dalam beberapa kasus, Anda mungkin memerlukan penggunaan yang lebih lanjut. Komponen `<Image />` secara opsional menerima properti lanjutan berikut.
+
+### `style`
+
+Memungkinkan pengiriman gaya CSS ke elemen gambar yang mendasarinya.
+
+```jsx filename="components/ProfileImage.js"
+const imageStyle = {
+  borderRadius: '50%',
+  border: '1px solid #fff',
+};
+
+export default function GambarProfil() {
+  return <Image src="..." style={imageStyle} />;
+}
+```
+
+Ingat bahwa properti lebar dan tinggi yang diperlukan dapat berinteraksi dengan gaya Anda. Jika Anda menggunakan gaya untuk mengubah lebar gambar, Anda juga harus mengatur tingginya ke `auto` untuk mempertahankan rasio aspek intrinsiknya, atau gambar Anda akan menjadi distorsi.
+
+### `onLoadingComplete`
+
+```jsx
+'gunakan client'
+
+<Image onLoadingComplete={(img) => console.log(img.naturalWidth)} />
+```
+
+Sebuah fungsi callback yang dipanggil begitu gambar selesai dimuat sepenuhnya dan [placeholder](#placeholder) telah dihapus.
+
+Fungsi callback ini akan dipanggil dengan satu argumen, referensi ke elemen `<img>` mendasar.
+
+> **Menarik untuk diketahui**: Menggunakan properti seperti `onLoadingComplete`, yang menerima fungsi, memerlukan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components) untuk mengurai fungsi yang disediakan.
+
+### `onLoad`
+
+```jsx
+<Image onLoad={(e) => console.log(e.target.naturalWidth)} />
+```
+
+Sebuah fungsi callback yang dipanggil ketika gambar dimuat.
+
+Acara muat mungkin terjadi sebelum placeholder gambar dihapus dan gambar sepenuhnya diuraikan. Jika Anda ingin menunggu hingga gambar sepenuhnya dimuat, gunakan [`onLoadingComplete`](#onloadingcomplete) sebaliknya.
+
+> **Menarik untuk diketahui**: Menggunakan properti seperti `onLoad`, yang menerima fungsi, memerlukan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components) untuk mengurai fungsi yang disediakan.
+
+### `onError`
+
+```jsx
+<Image onError={(e) => console.error(e.target.id)} />
+```
+
+Sebuah fungsi callback yang dipanggil jika gambar gagal dimuat.
+
+> **Menarik untuk diketahui**: Menggunakan properti seperti `onError`, yang menerima fungsi, memerlukan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components) untuk mengurai fungsi yang disediakan.
+
+### `loading`
+
+> **Rekomendasi**: Properti ini hanya dimaksudkan untuk penggunaan lanjutan. Mengganti gambar untuk dimuat dengan `eager` biasanya akan **merugikan kinerja**. Kami merekomendasikan menggunakan properti [`priority`](#priority) sebagai gantinya, yang akan memuat gambar dengan cepat.
+
+```js
+loading = 'lazy'; // {lazy} | {eager}
+```
+
+Perilaku pemuatan gambar. Defaultnya adalah `lazy`.
+
+Ketika `lazy`, penundaan pemuatan gambar sampai mencapai jarak yang dihitung dari viewport.
+
+Ketika `eager`, gambar dimuat segera.
+
+Pelajari lebih lanjut tentang [atribut `loading`](https://developer.mozilla.org/docs/Web/HTML/Element/img#attr-loading).
+
+### `blurDataURL`
+
+Sebuah [URL Data](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/Data_URIs) untuk digunakan sebagai gambar placeholder sebelum gambar `src` berhasil dimuat. Hanya berlaku saat digabungkan dengan [`placeholder="blur"`](#placeholder).
+
+Harus berupa gambar berbasis base64 yang akan diperbesar dan diburamkan, sehingga gambar kecil (10px atau kurang) sangat disarankan. Menggunakan gambar yang lebih besar sebagai placeholder dapat merugikan kinerja aplikasi Anda.
+
+Coba sendiri:
+
+- [Demo prop `blurDataURL` default](https://image-component.nextjs.gallery/placeholder)
+- [Demo efek warna dengan prop `blurDataURL`](https://image-component.nextjs.gallery/color)
+
+Anda juga dapat [menghasilkan URL Data warna solid](https://png-pixel.com) untuk sesuaikan dengan gambar.
+
+### `unoptimized`
+
+```js
+unoptimized = {false} // {false} | {true}
+```
+
+Ketika bernilai `true`, gambar sumber akan disajikan apa adanya tanpa mengubah kualitas,
+ukuran, atau format. Default adalah `false`.
+
+```js
+import Image from 'next/image';
+
+const UnoptimizedImage = (props) => {
+  return <Image {...props} unoptimized />;
+};
+```
+
+Sejak Next.js 12.3.0, prop ini dapat diberikan ke semua gambar dengan memperbarui `next.config.js` dengan konfigurasi berikut:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    unoptimized: true,
+  },
+};
+```
+
+### Prop Lainnya
+
+Properti lain pada komponen `<Image />` akan diteruskan ke elemen `img` yang mendasarinya
+dengan pengecualian dari yang berikut:
+
+- `srcSet`. Gunakan [Ukuran Perangkat](#devicesizes) sebagai penggantinya.
+- `decoding`. Selalu berisi `"async"`.
+
+## Opsi Konfigurasi
+
+Selain dari prop, Anda dapat mengkonfigurasi Komponen Gambar dalam `next.config.js`. Opsi-opsi berikut tersedia:
+
+### `remotePatterns`
+
+Untuk melindungi aplikasi Anda dari pengguna jahat, konfigurasi diperlukan untuk menggunakan gambar eksternal. Ini memastikan bahwa hanya gambar eksternal dari akun Anda yang dapat disajikan dari API Optimisasi Gambar Next.js. Gambar eksternal ini dapat dikonfigurasi dengan properti `remotePatterns` dalam file `next.config.js` Anda, seperti yang ditunjukkan di bawah:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/account123/**',
+      },
+    ],
+  },
+};
+```
+
+> **Baik untuk diketahui**: Contoh di atas akan memastikan properti `src` dari `next/image` harus dimulai dengan `https://example.com/account123/`. Protokol, hostname, port, atau path lain akan merespons dengan 400 Bad Request.
+
+Berikut adalah contoh lain dari properti `remotePatterns` dalam file `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.example.com',
+      },
+    ],
+  },
+};
+```
+
+> **Baik untuk diketahui**: Contoh di atas akan memastikan properti `src` dari `next/image` harus dimulai dengan `https://img1.example.com` atau `https://me.avatar.example.com` atau berbagai subdomain lainnya. Protokol lain atau hostname yang tidak cocok akan merespons dengan 400 Bad Request.
+
+Pola wildcard dapat digunakan untuk `pathname` dan `hostname` dan memiliki sintaks berikut:
+
+- `*` cocokkan segmen path atau subdomain tunggal
+- `**` cocokkan sejumlah segmen path di akhir atau subdomain di awal
+
+Sintaks `**` tidak berfungsi di tengah-tengah pola.
+
+### `domains`
+
+> **Peringatan**: Kami merekomendasikan mengonfigurasi [`remotePatterns`](#remotepatterns) yang ketat daripada `domains` untuk melindungi aplikasi Anda dari pengguna jahat. Hanya gunakan `domains` jika Anda memiliki semua konten yang disajikan dari domain tersebut.
+
+Sama seperti [`remotePatterns`](#remotepatterns), konfigurasi `domains` dapat digunakan untuk memberikan daftar hostname yang diizinkan untuk gambar eksternal.
+
+Namun, konfigurasi `domains` tidak mendukung pencocokan pola wildcard dan tidak dapat membatasi protokol, port, atau pathname.
+
+Berikut adalah contoh dari properti `domains` dalam file `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    domains: ['assets.acme.com'],
+  },
+};
+```
+
+### `loaderFile`
+
+Jika Anda ingin menggunakan penyedia cloud untuk mengoptimalkan gambar daripada menggunakan API Optimisasi Gambar Next.js yang sudah ada, Anda dapat mengkonfigurasi `loaderFile` dalam file `next.config.js` Anda seperti yang berikut:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    loader: 'custom',
+    loaderFile: './my/image/loader.js',
+  },
+};
+```
+
+Ini harus menunjuk ke file yang berhubungan dengan root aplikasi Next.js Anda. File tersebut harus mengeksporkan fungsi default yang mengembalikan string, contohnya:
+
+```js
+'use client';
+
+export default function myImageLoader({ src, width, quality }) {
+  return `https://example.com/${src}?w=${width}&q=${quality || 75}`;
+}
+```
+
+Alternatif, Anda dapat menggunakan prop [`loader`](#loader) untuk mengkonfigurasi setiap instance `next/image`.
+
+Contoh:
+
+- [Konfigurasi Loader Gambar Kustom](/docs/app/api-reference/next-config-js/images#example-loader-configuration)
+
+> **Baik untuk diketahui**: Menyesuaikan file loader gambar, yang menerima sebuah fungsi, memerlukan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components) untuk melakukan serialize fungsi yang diberikan.
+
+## Lanjutan
+
+Konfigurasi berikut adalah untuk penggunaan kasus lanjutan dan biasanya tidak diperlukan. Jika Anda memilih untuk mengkonfigurasi properti-properti di bawah ini, Anda akan menggantikan perubahan default Next.js dalam pembaruan mendatang.
+
+### `deviceSizes`
+
+Jika Anda mengetahui lebar per
+
+angkat yang diharapkan oleh pengguna Anda, Anda dapat menentukan daftar breakpoint lebar perangkat menggunakan properti `deviceSizes` dalam `next.config.js`. Lebar-lebar ini digunakan saat komponen `next/image` menggunakan prop [`sizes`](#sizes) untuk memastikan gambar yang benar disajikan untuk perangkat pengguna.
+
+Jika tidak ada konfigurasi yang diberikan, default berikut digunakan.
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+  },
+};
+```
+
+### `imageSizes`
+
+Anda dapat menentukan daftar lebar gambar menggunakan properti `images.imageSizes` dalam file `next.config.js` Anda. Lebar-lebar ini digabungkan dengan array [device sizes](#devicesizes) untuk membentuk array penuh ukuran yang digunakan untuk menghasilkan [srcset](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/srcset) gambar.
+
+Alasannya ada dua daftar terpisah adalah bahwa imageSizes hanya digunakan untuk gambar yang menyediakan prop [`sizes`](#sizes), yang menunjukkan bahwa gambar tersebut lebih kecil dari lebar penuh layar. **Oleh karena itu, ukuran di imageSizes harus semua lebih kecil dari ukuran terkecil di deviceSizes.**
+
+Jika tidak ada konfigurasi yang diberikan, default berikut digunakan.
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+};
+```
+
+### `formats`
+
+API Optimisasi Gambar default akan secara otomatis mendeteksi format gambar yang didukung oleh browser melalui header `Accept` dari permintaan.
+
+Jika header `Accept` cocok dengan lebih dari satu format yang dikonfigurasi, maka yang pertama cocok dalam array akan digunakan. Oleh karena itu, urutan array ini penting. Jika tidak ada cocokan (atau gambar sumbernya [bergerak](#animated-images)), API Optimisasi Gambar akan kembali ke format gambar asli.
+
+Jika tidak ada konfigurasi yang diberikan, default berikut digunakan.
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    formats: ['image/webp'],
+  },
+};
+```
+
+Anda dapat mengaktifkan dukungan AVIF dengan konfigurasi berikut.
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
+};
+```
+
+> **Baik untuk diketahui**:
+>
+> - AVIF umumnya memerlukan waktu 20% lebih lama untuk mengkodekan tetapi mengompres 20% lebih kecil dibandingkan dengan WebP. Ini berarti bahwa saat pertama kali gambar diminta, biasanya akan lebih lambat dan kemudian permintaan berikutnya yang di-cache akan lebih cepat.
+> - Jika Anda meng-host sendiri dengan Proxy/CDN di depan Next.js, Anda harus mengkonfigurasi Proxy untuk meneruskan header `Accept`.
+
+## Perilaku Penyimpanan Cache
+
+Berikut ini menggambarkan algoritma penyimpanan cache untuk [loader](#loader) default. Untuk semua loader lainnya, silakan merujuk ke dokumentasi penyedia cloud Anda.
+
+Gambar dioptimalkan secara dinamis saat diminta dan disimpan di direktori `<distDir>/cache/images`. File gambar yang dioptimalkan akan disajikan untuk permintaan berikutnya hingga mencapai waktu kadaluwarsa. Ketika permintaan dibuat yang cocok dengan file yang di-cache tetapi sudah kadaluwarsa, gambar yang sudah kadaluwarsa disajikan secara stale dengan segera. Kemudian gambar dioptimalkan kembali di latar belakang (juga disebut revalidasi) dan disimpan di cache dengan tanggal kadaluwarsa yang baru.
+
+Status cache gambar dapat ditentukan dengan membaca nilai header respons `x-nextjs-cache`. Nilai-nilai yang mungkin adalah:
+
+- `MISS` - path tidak ada di cache (terjadi paling banyak sekali, pada kunjungan pertama)
+- `STALE` - path ada di cache tetapi telah melewati waktu revalidasi sehingga akan diperbarui di latar belakang
+- `HIT` - path ada di cache dan belum melewati waktu revalidasi
+
+Waktu kadaluwarsa (atau lebih tepatnya Max Age) didefinisikan oleh konfigurasi [`minimumCacheTTL`](#minimumcachettl) atau header `Cache-Control` gambar sumber, mana yang lebih besar. Secara khusus, nilai `max-age` header `Cache-Control` digunakan. Jika ditemukan baik `s-maxage` maupun `max-age`, maka yang dipilih adalah `s-maxage`. Nilai `max-age` juga diteruskan ke klien downstream termasuk CDN dan browser.
+
+- Anda dapat mengkonfigurasi [`minimumCacheTTL`](#minimumcachettl) untuk meningkatkan durasi cache saat gambar sumber tidak termasuk header `Cache-Control` atau nilai sangat rendah.
+- Anda dapat mengkonfigurasi [`deviceSizes`](#devicesizes) dan [`imageSizes`](#imagesizes) untuk mengurangi jumlah total gambar yang mungkin dihasilkan.
+- Anda dapat mengkonfigurasi [formats](#formats) untuk menonaktifkan beberapa format demi format gambar tunggal.
+
+### `minimumCacheTTL`
+
+Anda dapat mengkonfigurasi Time to Live (TTL) dalam detik untuk gambar yang dioptimalkan yang disimpan dalam cache. Dalam banyak kasus, lebih baik menggunakan [Impor Gambar Statis](/docs/app/building-your-application/optimizing/images#local-images) yang akan secara otomatis menghasilkan hash isi file dan menyimpan gambar selamanya dengan header `Cache-Control` berisi `immutable`.
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    minimumCacheTTL: 60,
+  },
+};
+```
+
+````markdown
+## Menentukan Masa Berlaku (atau lebih tepatnya Maksimal Usia) Gambar yang Telah Dioptimalkan
+
+Masa berlaku gambar yang telah dioptimalkan ditentukan oleh `minimumCacheTTL` atau header `Cache-Control` gambar asal yang lebih besar, yang mana pun yang lebih besar.
+
+Jika Anda perlu mengubah perilaku pengecachan per gambar, Anda dapat mengonfigurasi [`headers`](/docs/app/api-reference/next-config-js/headers) untuk mengatur header `Cache-Control` pada gambar asal (misalnya, `/some-asset.jpg`, bukan `/_next/image` itu sendiri).
+
+Tidak ada mekanisme untuk membatalkan pengecachan saat ini, jadi lebih baik menjaga `minimumCacheTTL` tetap rendah. Sebaliknya, Anda mungkin perlu mengubah properti [`src`](#src) secara manual atau menghapus `<distDir>/cache/images`.
+
+### `disableStaticImages`
+
+Perilaku default memungkinkan Anda untuk mengimpor file statis seperti `import icon from './icon.png'` dan kemudian memasukkannya ke properti `src`.
+
+Dalam beberapa kasus, Anda mungkin ingin menonaktifkan fitur ini jika bertentangan dengan plugin lain yang mengharapkan impor berperilaku berbeda.
+
+Anda dapat menonaktifkan impor gambar statis dalam `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    disableStaticImages: true,
+  },
+};
+```
+````
+
+### `dangerouslyAllowSVG`
+
+Loader default [loader](#loader) tidak mengoptimalkan gambar SVG dengan beberapa alasan. Pertama, SVG adalah format vektor yang berarti dapat diubah ukurannya tanpa kehilangan kualitas. Kedua, SVG memiliki banyak fitur yang sama dengan HTML/CSS, yang dapat menyebabkan kerentanannya tanpa [Content Security Policy](/docs/app/building-your-application/configuring/content-security-policy) yang tepat.
+
+Jika Anda perlu menyajikan gambar SVG dengan API Optimasi Gambar default, Anda dapat mengatur `dangerouslyAllowSVG` dalam `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+};
+```
+
+Selain itu, sangat disarankan untuk juga mengatur `contentDispositionType` untuk memaksa browser mengunduh gambar, serta `contentSecurityPolicy` untuk mencegah skrip yang tertanam dalam gambar dari dieksekusi.
+
+## Gambar Bergerak
+
+[Loader](#loader) default akan secara otomatis mengabaikan Optimasi Gambar untuk gambar bergerak dan menyajikan gambar apa adanya.
+
+Deteksi otomatis untuk file bergerak adalah yang terbaik dan mendukung GIF, APNG, dan WebP. Jika Anda ingin dengan jelas mengabaikan Optimasi Gambar untuk gambar bergerak tertentu, gunakan properti [unoptimized](#unoptimized).
+
+## Gambar Responsif
+
+`srcset` yang dihasilkan secara default berisi gambar-gambar `1x` dan `2x` untuk mendukung perbandingan piksel perangkat yang berbeda. Namun, Anda mungkin ingin merender gambar responsif yang dapat meregang sesuai dengan tampilan. Dalam hal ini, Anda perlu mengatur [`sizes`](#sizes) serta `style` (atau `className`).
+
+Anda dapat merender gambar responsif menggunakan salah satu metode berikut.
+
+### Gambar responsif menggunakan impor statis
+
+Jika gambar sumber tidak dinamis, Anda dapat mengimpornya secara statis untuk membuat gambar responsif:
+
+```jsx filename="components/author.js"
+import Image from 'next/image';
+import me from '../photos/me.jpg';
+
+export default function Author() {
+  return (
+    <Image
+      src={me}
+      alt="Gambar penulis"
+      sizes="100vw"
+      style={{
+        width: '100%',
+        height: 'auto',
+      }}
+    />
+  );
+}
+```
+
+Coba:
+
+- [Demo gambar responsif terhadap tampilan](https://image-component.nextjs.gallery/responsive)
+
+### Gambar responsif dengan rasio aspek
+
+Jika gambar sumber dinamis atau berada di URL jarak jauh, Anda juga perlu menyediakan `width` dan `height` untuk mengatur rasio aspek gambar responsif dengan benar:
+
+```jsx filename="components/page.js"
+import Image from 'next/image';
+
+export default function Page({ photoUrl }) {
+  return (
+    <Image
+      src={photoUrl}
+      alt="Gambar penulis"
+      sizes="100vw"
+      style={{
+        width: '100%',
+        height: 'auto',
+      }}
+      width={500}
+      height={300}
+    />
+  );
+}
+```
+
+Coba:
+
+- [Demo gambar responsif terhadap tampilan](https://image-component.nextjs.gallery/responsive)
+
+### Gambar responsif dengan `fill`
+
+Jika Anda tidak mengetahui rasio aspeknya, Anda perlu mengatur properti [`fill`](#fill) dan mengatur `position: relative` pada elemen induk. Opsional, Anda dapat mengatur gaya `object-fit` tergantung pada perilaku yang diinginkan, yaitu meregang atau memotong:
+
+```jsx filename="app/page.js"
+import Image from 'next/image';
+
+export default function Page({ photoUrl }) {
+  return (
+    <div style={{ position: 'relative', width: '500px', height: '300px' }}>
+      <Image
+        src={photoUrl}
+        alt="Gambar penulis"
+        sizes="500px"
+        fill
+        style={{
+          objectFit: 'contain',
+        }}
+      />
+    </div>
+  );
+}
+```
+
+Coba:
+
+- [Demo properti `fill`](https://image-component.nextjs.gallery/fill)
+
+## Deteksi Tema
+
+Jika Anda ingin menampilkan gambar yang berbeda untuk mode terang dan mode gelap, Anda dapat membuat komponen baru yang membungkus dua komponen `<Image>` dan mengungkapkan yang benar berdasarkan kueri media CSS.
+
+```css filename="components/theme-image.module.css"
+.imgDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .imgLight {
+    display: none;
+  }
+  .imgDark {
+    display: unset;
+  }
+}
+```
+
+```tsx filename="components/theme-image.tsx" switcher
+import styles from './theme-image.module.css';
+import Image, { ImageProps } from 'next/image';
+
+type Props = Omit<ImageProps, 'src' | 'priority' | 'loading'> & {
+  src;
+
+  Light: string;
+  srcDark: string;
+};
+
+const ThemeImage = (props: Props) => {
+  const { srcLight, srcDark, ...rest } = props;
+
+  return (
+    <>
+      <Image {...rest} src={srcLight} className={styles.imgLight} />
+      <Image {...rest} src={srcDark} className={styles.imgDark} />
+    </>
+  );
+};
+```
+
+```jsx filename="components/theme-image.js" switcher
+import styles from './theme-image.module.css';
+import Image from 'next/image';
+
+const ThemeImage = (props) => {
+  const { srcLight, srcDark, ...rest } = props;
+
+  return (
+    <>
+      <Image {...rest} src={srcLight} className={styles.imgLight} />
+      <Image {...rest} src={srcDark} className={styles.imgDark} />
+    </>
+  );
+};
+```
+
+> **Baik untuk diketahui**: Perilaku default `loading="lazy"` memastikan bahwa hanya gambar yang benar yang dimuat. Anda tidak dapat menggunakan `priority` atau `loading="eager"` karena itu akan menyebabkan kedua gambar dimuat. Sebaliknya, Anda dapat menggunakan [`fetchPriority="high"`](https://developer.mozilla.org/docs/Web/API/HTMLImageElement/fetchPriority).
+
+Coba:
+
+- [Demo deteksi tema mode terang/gelap](https://image-component.nextjs.gallery/theme)
+
+## Bug Browser yang Diketahui
+
+Komponen `next/image` ini menggunakan [lazy loading](https://caniuse.com/loading-lazy-attr) bawaan browser, yang mungkin menggunakan pengambilan lambat untuk browser lama sebelum Safari 15.4. Ketika menggunakan placeholder blur-up, browser lama sebelum Safari 12 akan menggunakan placeholder kosong. Ketika menggunakan gaya dengan `width`/`height` `auto`, mungkin menyebabkan [Layout Shift](https://web.dev/cls/) di browser lama sebelum Safari 15 yang tidak [mempertahankan rasio aspek](https://caniuse.com/mdn-html_elements_img_aspect_ratio_computed_from_attributes). Untuk lebih jelasnya, lihat [video MDN ini](https://www.youtube.com/watch?v=4-d_SoCHeWE).
+
+- [Safari 15 - 16.3](https://bugs.webkit.org/show_bug.cgi?id=243601) menampilkan batas abu-abu saat memuat. Safari 16.4 [memperbaiki masalah ini](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/#:~:text=Now%20in%20Safari%2016.4%2C%20a%20gray%20line%20no%20longer%20appears%20to%20mark%20the%20space%20where%20a%20lazy%2Dloaded%20image%20will%20appear%20once%20it%E2%80%99s%20been%20loaded.). Solusi yang mungkin:
+  - Gunakan CSS `@supports (font: -apple-system-body) and (-webkit-appearance: none) { img[loading="lazy"] { clip-path: inset(0.6px) } }`
+  - Gunakan [`priority`](#priority) jika gambar berada di atas lipatan
+- [Firefox 67+](https://bugzilla.mozilla.org/show_bug.cgi?id=1556156) menampilkan latar belakang putih saat memuat. Solusi yang mungkin:
+  - Aktifkan [format AVIF `formats`](#formats)
+  - Gunakan [`placeholder`](#placeholder)
+
+## Riwayat Versi
+
+| Versi      | Perubahan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v13.4.14` | Dukungan properti `placeholder` untuk `data:/image...`                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `v13.2.0`  | Penambahan konfigurasi `contentDispositionType`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `v13.0.6`  | Penambahan properti `ref`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `v13.0.0`  | Impor `next/image` diubah nama menjadi `next/legacy/image`. Impor `next/future/image` diubah nama menjadi `next/image`. [Codemod tersedia](/docs/app/building-your-application/upgrading/codemods#next-image-to-legacy-image) untuk mengubah nama impor secara aman dan otomatis. Wrapper `<span>` dihapus. Properti `layout`, `objectFit`, `objectPosition`, `lazyBoundary`, `lazyRoot` dihapus. `alt` menjadi wajib. `onLoadingComplete` menerima referensi ke elemen `img`. Konfigurasi loader bawaan dihapus. |
+| `v12.3.0`  | Konfigurasi `remotePatterns` dan `unoptimized` stabil.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `v12.2.0`  | Penambahan konfigurasi eksperimental `remotePatterns` dan konfigurasi eksperimental `unoptimized`. Penghapusan `layout="raw"`.                                                                                                                                                                                                                                                                                                                                                                                    |
+| `v12.1.1`  | Penambahan properti `style`. Dukungan eksperimental untuk `layout="raw"` ditambahkan.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `v12.1.0`  | Penambahan konfigurasi `dangerouslyAllowSVG` dan `contentSecurityPolicy`.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `v12.0.9`  | Penambahan properti `lazyRoot`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `v12.0.0`  | Penambahan konfigurasi `formats`. Dukungan AVIF ditambahkan. Wrapper `<div>` diubah menjadi `<span>`.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `v11.1.0`  | Penambahan properti `onLoadingComplete` dan `lazyBoundary`.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `v11.0.0`  | Dukungan properti `src` untuk impor statis. Penambahan properti `placeholder`. Penambahan properti `blurDataURL`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `v10.0.5`  | Penambahan properti `loader`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v10.0.1`  | Penambahan properti `layout`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `v10.0.0`  | Pengenalan `next/image`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |

@@ -1,0 +1,362 @@
+---
+title: Modul Font
+nav_title: Font
+description: Mengoptimalkan pengambilan font web dengan loader `next/font` bawaan.
+---
+
+import { CheckCircle, XCircle } from '@phosphor-icons/react';
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan tidak boleh dibungkus dalam komponen. */}
+
+# Modul Font
+
+Dalam referensi API ini, Anda akan memahami cara menggunakan [`next/font/google`](/docs/app/building-your-application/optimizing/fonts#google-fonts) dan [`next/font/local`](/docs/app/building-your-application/optimizing/fonts#local-fonts). Untuk fitur dan penggunaan, silakan lihat halaman [Mengoptimalkan Font](/docs/app/building-your-application/optimizing/fonts).
+
+### Argumen Fungsi Font
+
+Untuk penggunaan, tinjau [Font Google](/docs/app/building-your-application/optimizing/fonts#google-fonts) dan [Font Lokal](/docs/app/building-your-application/optimizing/fonts#local-fonts).
+
+| Kunci                                       | `font/google`                                         | `font/local`                                          | Tipe                         | Diperlukan      |
+| ------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ---------------------------- | --------------- |
+| [`src`](#src)                               | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> | String atau Array of Objects | Ya              |
+| [`weight`](#weight)                         | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | String atau Array            | Diperlukan/Opsi |
+| [`style`](#style)                           | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | String atau Array            | -               |
+| [`subsets`](#subsets)                       | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       | Array of Strings             | -               |
+| [`axes`](#axes)                             | <CheckCircle size={18} color="green" weight="fill" /> | <XCircle size={18} color="red" weight="fill" />       | Array of Strings             | -               |
+| [`display`](#display)                       | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | String                       | -               |
+| [`preload`](#preload)                       | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | Boolean                      | -               |
+| [`fallback`](#fallback)                     | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | Array of Strings             | -               |
+| [`adjustFontFallback`](#adjustfontfallback) | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | Boolean atau String          | -               |
+| [`variable`](#variable)                     | <CheckCircle size={18} color="green" weight="fill" /> | <CheckCircle size={18} color="green" weight="fill" /> | String                       | -               |
+| [`declarations`](#declarations)             | <XCircle size={18} color="red" weight="fill" />       | <CheckCircle size={18} color="green" weight="fill" /> | Array of Objects             | -               |
+
+### `src`
+
+Jalur berkas font sebagai string atau array objek (dengan tipe `Array<{path: string, weight?: string, style?: string}>`) relatif terhadap direktori di mana fungsi loader font dipanggil.
+
+Digunakan dalam `next/font/local`
+
+- Diperlukan
+
+Contoh:
+
+- `src:'./fonts/my-font.woff2'` di mana `my-font.woff2` ditempatkan dalam direktori bernama `fonts` di dalam direktori `app`
+- `src:[{path: './inter/Inter-Thin.ttf', weight: '100',},{path: './inter/Inter-Regular.ttf',weight: '400',},{path: './inter/Inter-Bold-Italic.ttf', weight: '700',style: 'italic',},]`
+- jika fungsi loader font dipanggil di `app/page.tsx` dengan menggunakan `src:'../styles/fonts/my-font.ttf'`, maka `my-font.ttf` ditempatkan di `styles/fonts` pada akar proyek
+
+### `weight`
+
+Font [`weight`](https://fonts.google.com/knowledge/glossary/weight) dengan kemungkinan berikut:
+
+- String dengan nilai kemungkinan berat yang tersedia untuk font tertentu atau rentang nilai jika itu adalah font [variabel](https://fonts.google.com/variablefonts)
+- Array nilai berat jika font bukan [font google variabel](https://fonts.google.com/variablefonts). Hanya berlaku untuk `next/font/google` saja.
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Diperlukan jika font yang digunakan **tidak** [variabel](https://fonts.google.com/variablefonts)
+
+Contoh:
+
+- `weight: '400'`: String untuk satu nilai berat tunggal - untuk font [`Inter`](https://fonts.google.com/specimen/Inter?query=inter), nilai kemungkinan adalah `'100'`, `'200'`, `'300'`, `'400'`, `'500'`, `'600'`, `'700'`, `'800'`, `'900'` atau `'variable'` di mana `'variable'` adalah nilai default)
+- `weight: '100 900'`: String untuk rentang antara `100` dan `900` untuk font variabel
+- `weight: ['100','400','900']`: Array 3 nilai kemungkinan untuk font non-variabel
+
+### `style`
+
+Font [`style`](https://developer.mozilla.org/docs/Web/CSS/font-style) dengan kemungkinan nilai berikut:
+
+- String [nilai](https://developer.mozilla.org/docs/Web/CSS/font-style#values) dengan nilai default `'normal'`
+- Array nilai style jika font bukan [font google variabel](https://fonts.google.com/variablefonts). Hanya berlaku untuk `next/font/google` saja.
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `style: 'italic'`: String - bisa `normal` atau `italic` untuk `next/font/google`
+- `style: 'oblique'`: String - bisa mengambil nilai apapun untuk `next/font/local` tetapi diharapkan berasal dari [gaya font standar](https://developer.mozilla.org/docs/Web/CSS/font-style)
+- `style: ['italic','normal']`: Array 2 nilai untuk `next/font/google` - nilai berasal dari `normal` dan `italic`
+
+### `subsets`
+
+Font [`subsets`](https://fonts.google.com/knowledge/glossary/subsetting) yang ditentukan oleh array nilai string dengan nama setiap subset yang ingin Anda [preload](/docs/app/building-your-application/optimizing/fonts#specifying-a-subset). Font yang ditentukan melalui `subsets` akan memiliki tag preload tautan yang disisipkan ke dalam kepala saat opsi [`preload`](#preload) aktif, yang merupakan nilai default.
+
+Digunakan dalam `next/font/google`
+
+- Opsi
+
+Contoh:
+
+- `subsets: ['latin']`: Array dengan subset
+
+`latin`
+
+Anda dapat menemukan daftar semua subset di halaman Google Fonts untuk font Anda.
+
+### `axes`
+
+Beberapa font variabel memiliki `axes` tambahan yang dapat dimasukkan. Secara default, hanya berat font yang disertakan untuk menjaga ukuran file tetap kecil. Nilai-nilai `axes` yang mungkin bergantung pada font tertentu.
+
+Digunakan dalam `next/font/google`
+
+- Opsi
+
+Contoh:
+
+- `axes: ['slnt']`: Array dengan nilai `slnt` untuk font variabel `Inter` yang memiliki `axes` tambahan seperti yang ditunjukkan [di sini](https://fonts.google.com/variablefonts?vfquery=inter#font-families). Anda dapat menemukan nilai-nilai `axes` yang mungkin untuk font Anda dengan menggunakan filter pada [halaman font variabel Google](https://fonts.google.com/variablefonts#font-families) dan mencari axes selain `wght`
+
+### `display`
+
+Font [`display`](https://developer.mozilla.org/docs/Web/CSS/@font-face/font-display) dengan string kemungkinan [nilai](https://developer.mozilla.org/docs/Web/CSS/@font-face/font-display#values) `'auto'`, `'block'`, `'swap'`, `'fallback'` atau `'optional'` dengan nilai default `'swap'`.
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `display: 'optional'`: String yang diberikan kepada nilai `optional`
+
+### `preload`
+
+Nilai boolean yang menentukan apakah font harus [preloaded](/docs/app/building-your-application/optimizing/fonts#preloading) atau tidak. Default adalah `true`.
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `preload: false`
+
+### `fallback`
+
+Font cadangan yang akan digunakan jika font tidak dapat dimuat. Array string font cadangan tanpa default.
+
+- Opsi
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+Contoh:
+
+- `fallback: ['system-ui', 'arial']`: Array yang menetapkan font cadangan ke `system-ui` atau `arial`
+
+### `adjustFontFallback`
+
+- Untuk `next/font/google`: Nilai boolean yang menentukan apakah font cadangan otomatis harus digunakan untuk mengurangi [Cumulative Layout Shift](https://web.dev/cls/). Default adalah `true`.
+- Untuk `next/font/local`: Nilai string atau boolean `false` yang menentukan apakah font cadangan otomatis harus digunakan untuk mengurangi [Cumulative Layout Shift](https://web.dev/cls/). Nilai yang mungkin adalah `'Arial'`, `'Times New Roman'` atau `false`. Default adalah `'Arial'`.
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `adjustFontFallback: false`: untuk `next/font/google`
+- `adjustFontFallback: 'Times New Roman'`: untuk `next/font/local`
+
+### `variable`
+
+Nilai string untuk mendefinisikan nama variabel CSS yang akan digunakan jika gaya diterapkan dengan metode [variabel CSS](#css-variables).
+
+Digunakan dalam `next/font/google` dan `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `variable: '--my-font'`: Variabel CSS `--my-font` dideklarasikan
+
+### `declarations`
+
+Array pasangan kunci-nilai [deskriptor](https://developer.mozilla.org/docs/Web/CSS/@font-face#descriptors) wajah font yang mendefinisikan `@font-face` yang dihasilkan lebih lanjut.
+
+Digunakan dalam `next/font/local`
+
+- Opsi
+
+Contoh:
+
+- `declarations: [{ prop: 'ascent-override', value: '90%' }]`
+
+## Penerapan Gaya
+
+Anda dapat menerapkan gaya font dengan tiga cara:
+
+- [`className`](#classname)
+- [`style`](#style-1)
+- [Variabel CSS](#css-variables)
+
+### `className`
+
+Mengembalikan CSS `className` baca saja untuk font yang dimuat yang akan diteruskan ke elemen HTML.
+
+```tsx
+<p className={inter.className}>Halo, Next.js!</p>
+```
+
+### `style`
+
+Mengembalikan objek CSS `style` baca saja untuk font yang dimuat yang akan diteruskan ke elemen HTML, termasuk `style.fontFamily` untuk mengakses nama keluarga font dan font cadangan.
+
+```tsx
+<p style={inter.style}>Halo Dunia</p>
+```
+
+### Variabel CSS
+
+Jika Anda ingin mengatur gaya Anda di lembar gaya eksternal dan menentukan opsi tambahan di sana, gunakan metode variabel CSS.
+
+Selain mengimpor font, juga impor berkas CSS di mana variabel CSS didefinisikan dan atur opsi variabel objek loader font sebagai berikut:
+
+```tsx filename="app/page.tsx" switcher
+import { Inter } from 'next/font/google';
+import styles from '../styles/component.module.css';
+
+const inter = Inter({
+  variable: '--font-inter',
+});
+```
+
+```jsx filename="app/page.js" switcher
+import { Inter } from 'next/font/google';
+import styles from '../styles/component.module.css';
+
+const inter = Inter({
+  variable: '--font-inter',
+});
+```
+
+Untuk menggunakan font, atur `className` dari kontainer induk teks yang ingin Anda gayakan ke nilai `variable` loader font dan `className` teks ke properti `styles` dari berkas CSS eksternal.
+
+```tsx filename="app/page.tsx" switcher
+<main className={inter.variable}>
+  <p className={styles.text}>Halo Dunia</p>
+</main>
+```
+
+```jsx filename="app/page.js" switcher
+<main className={inter.variable}>
+  <p className={styles.text}>Halo Dunia</p>
+</main>
+```
+
+Tentukan kelas pemilih `text` di berkas CSS `component.module.css` sebagai berikut:
+
+```css filename="styles/component.module.css"
+.text {
+  font-family: var(--font-inter);
+  font-weight: 200;
+  font-style: italic;
+}
+```
+
+Pada contoh di atas, teks `Halo Dunia` digayakan menggunakan font `Inter` dan font cadangan yang dihasilkan dengan `font-weight: 200` dan `font-style: italic`.
+
+## Menggunakan berkas definisi font
+
+Setiap kali Anda memanggil fungsi `localFont` atau font Google, font itu akan dihosting sebagai satu instance dalam aplikasi Anda. Oleh karena itu, jika Anda perlu menggunakan font yang sama di beberapa tempat, Anda harus memuatnya di satu tempat dan impor objek font terkait di tempat Anda membutuhkannya. Ini dilakukan dengan menggunakan berkas definisi font.
+
+Misalnya, buat berkas `fonts.ts` di dalam folder `styles` di akar direktori aplikasi Anda.
+
+Lalu, tentukan defin
+
+isi font Anda seperti berikut:
+
+```ts filename="styles/fonts.ts" switcher
+import { Inter, Lora, Source_Sans_3 } from 'next/font/google';
+import localFont from 'next/font/local';
+
+// tentukan font variabel Anda
+const inter = Inter();
+const lora = Lora();
+// tentukan 2 berat font non-variabel
+const sourceCodePro400 = Source_Sans_3({ weight: '400' });
+const sourceCodePro700 = Source_Sans_3({ weight: '700' });
+// tentukan font lokal kustom di mana GreatVibes-Regular.ttf disimpan dalam folder styles
+const greatVibes = localFont({ src: './GreatVibes-Regular.ttf' });
+
+export { inter, lora, sourceCodePro400, sourceCodePro700, greatVibes };
+```
+
+```js filename="styles/fonts.js" switcher
+import { Inter, Lora, Source_Sans_3 } from 'next/font/google';
+import localFont from 'next/font/local';
+
+// tentukan font variabel Anda
+const inter = Inter();
+const lora = Lora();
+// tentukan 2 berat font non-variabel
+const sourceCodePro400 = Source_Sans_3({ weight: '400' });
+const sourceCodePro700 = Source_Sans_3({ weight: '700' });
+// tentukan font lokal kustom di mana GreatVibes-Regular.ttf disimpan dalam folder styles
+const greatVibes = localFont({ src: './GreatVibes-Regular.ttf' });
+
+export { inter, lora, sourceCodePro400, sourceCodePro700, greatVibes };
+```
+
+Sekarang Anda dapat menggunakan definisi ini dalam kode Anda seperti berikut:
+
+```tsx filename="app/page.tsx" switcher
+import { inter, lora, sourceCodePro700, greatVibes } from '../styles/fonts';
+
+export default function Page() {
+  return (
+    <div>
+      <p className={inter.className}>Halo dunia menggunakan font Inter</p>
+      <p style={lora.style}>Halo dunia menggunakan font Lora</p>
+      <p className={sourceCodePro700.className}>
+        Halo dunia menggunakan font Source_Sans_3 dengan berat 700
+      </p>
+      <p className={greatVibes.className}>Judul saya dalam font Great Vibes</p>
+    </div>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { inter, lora, sourceCodePro700, greatVibes } from '../styles/fonts';
+
+export default function Page() {
+  return (
+    <div>
+      <p className={inter.className}>Halo dunia menggunakan font Inter</p>
+      <p style={lora.style}>Halo dunia menggunakan font Lora</p>
+      <p className={sourceCodePro700.className}>
+        Halo dunia menggunakan font Source_Sans_3 dengan berat 700
+      </p>
+      <p className={greatVibes.className}>Judul saya dalam font Great Vibes</p>
+    </div>
+  );
+}
+```
+
+Untuk memudahkan akses definisi font dalam kode Anda, Anda dapat mendefinisikan alias jalur dalam berkas `tsconfig.json` atau `jsconfig.json` Anda sebagai berikut:
+
+```json filename="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": {
+      "@/fonts": ["./styles/fonts"]
+    }
+  }
+}
+```
+
+Anda sekarang dapat mengimpor definisi font apa pun seperti berikut:
+
+```tsx filename="app/about/page.tsx" switcher
+import { greatVibes, sourceCodePro400 } from '@/fonts';
+```
+
+```jsx filename="app/about/page.js" switcher
+import { greatVibes, sourceCodePro400 } from '@/fonts';
+```
+
+## Perubahan Versi
+
+| Versi     | Perubahan                                                                 |
+| --------- | ------------------------------------------------------------------------- |
+| `v13.2.0` | `@next/font` diubah menjadi `next/font`. Instalasi tidak lagi diperlukan. |
+| `v13.0.0` | `@next/font` ditambahkan.                                                 |

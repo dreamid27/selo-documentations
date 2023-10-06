@@ -1,0 +1,313 @@
+---
+title: Kompilator Next.js
+description: Kompilator Next.js, ditulis dalam Rust, yang mengubah dan meminimalkan kode Next.js Anda.
+---
+
+# Kompilator Next.js
+
+Kompilator Next.js, yang ditulis dalam Rust menggunakan [SWC](http://swc.rs/), memungkinkan Next.js untuk mengubah dan meminimalkan kode JavaScript Anda untuk produksi. Ini menggantikan Babel untuk file individu dan Terser untuk meminimalkan bundel output.
+
+Proses kompilasi dengan Kompilator Next.js 17 kali lebih cepat daripada Babel dan diaktifkan secara default sejak Next.js versi 12. Jika Anda memiliki konfigurasi Babel yang ada atau menggunakan [fitur yang tidak didukung](#fitur-yang-tidak-didukung), aplikasi Anda akan keluar dari Kompilator Next.js dan tetap menggunakan Babel.
+
+## Mengapa SWC?
+
+[SWC](http://swc.rs/) adalah platform berbasis Rust yang dapat diperluas untuk generasi berikutnya dari alat pengembang yang cepat.
+
+SWC dapat digunakan untuk kompilasi, peminyakan, pengikatan, dan banyak lagi - dan dirancang untuk diperluas. Ini adalah sesuatu yang dapat Anda panggil untuk melakukan transformasi kode (baik yang sudah ada maupun kustom). Proses transformasi ini dilakukan melalui alat-alat berlevel lebih tinggi seperti Next.js.
+
+Kami memilih untuk membangun di atas SWC karena beberapa alasan:
+
+- **Dapat Diperluas:** SWC dapat digunakan sebagai Crate di dalam Next.js, tanpa harus bercabang dari perpustakaan atau mengatasi kendala desain.
+- **Kinerja:** Kami berhasil mencapai Fast Refresh sekitar 3 kali lebih cepat dan pembangunan sekitar 5 kali lebih cepat di Next.js dengan beralih ke SWC, dengan ruang lebih banyak untuk optimisasi yang masih berlangsung.
+- **WebAssembly:** Dukungan Rust untuk WASM sangat penting untuk mendukung semua platform yang mungkin dan membawa pengembangan Next.js ke mana saja.
+- **Komunitas:** Komunitas dan ekosistem Rust sangat luar biasa dan terus berkembang.
+
+## Fitur yang Didukung
+
+### Komponen Gaya
+
+Kami sedang bekerja untuk memindahkan `babel-plugin-styled-components` ke Kompilator Next.js.
+
+Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `next.config.js` Anda:
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+// lihat https://styled-components.com/docs/tooling#babel-plugin untuk informasi lebih lanjut tentang opsi-opsi.
+styledComponents: boolean | {
+// Diaktifkan secara default dalam pengembangan, dinonaktifkan dalam produksi untuk mengurangi ukuran file,
+// mengatur ini akan menggantikan default untuk semua lingkungan.
+displayName?: boolean,
+// Diaktifkan secara default.
+ssr?: boolean,
+// Diaktifkan secara default.
+fileName?: boolean,
+// Kosong secara default.
+topLevelImportPaths?: string[],
+// Defaultnya ["index"].
+meaninglessFileNames?: string[],
+// Diaktifkan secara default.
+cssProp?: boolean,
+// Kosong secara default.
+namespace?: string,
+// Belum didukung.
+minify?: boolean,
+// Belum didukung.
+transpileTemplateLiterals?: boolean,
+// Belum didukung.
+pure?: boolean,
+},
+},
+}
+ttt
+
+`minify`, `transpileTemplateLiterals`, dan `pure` belum diimplementasikan. Anda dapat mengikuti perkembangannya [di sini](https://github.com/vercel/next.js/issues/30802). Transformasi `ssr` dan `displayName` adalah persyaratan utama untuk menggunakan `styled-components` di Next.js.
+
+### Jest
+
+Kompilator Next.js mengubah pengujian Anda dan menyederhanakan konfigurasi Jest bersama dengan Next.js, termasuk:
+
+- Otomatisasi mocking dari `.css`, `.module.css` (dan varian `.scss` mereka), dan impor gambar
+- Mengatur `transform` secara otomatis menggunakan SWC
+- Memuat `.env` (dan semua varian) ke dalam `process.env`
+- Mengabaikan `node_modules` dari resolusi dan transformasi pengujian
+- Mengabaikan `.next` dari resolusi pengujian
+- Memuat `next.config.js` untuk bendera yang mengaktifkan transformasi SWC eksperimental
+
+Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jest.config.js` Anda:
+
+tttjs filename="jest.config.js"
+const nextJest = require('next/jest')
+
+// Menyediakan path ke aplikasi Next.js Anda yang akan mengaktifkan pemuatan next.config.js dan file .env
+const createJestConfig = nextJest({ dir: './' })
+
+// Konfigurasi kustom apa pun yang ingin Anda lewatkan ke Jest
+const customJestConfig = {
+setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+}
+
+// createJestConfig diekspor dengan cara ini untuk memastikan bahwa next/jest dapat memuat konfigurasi Next.js, yang bersifat asinkron
+module.exports = createJestConfig(customJestConfig)
+ttt
+
+### Relay
+
+Untuk mengaktifkan dukungan [Relay](https://relay.dev/):
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+relay: {
+// Ini harus sesuai dengan relay.config.js
+src: './',
+artifactDirectory: './**generated**',
+language: 'typescript',
+eagerEsModules: false,
+},
+},
+}
+ttt
+
+> **Perlu diketahui**: Dalam Next.js, semua file JavaScript dalam direktori `pages` dianggap sebagai rute. Jadi, untuk `relay-compiler`, Anda perlu menentukan pengaturan konfigurasi `artifactDirectory` di luar `pages`, jika tidak `relay-compiler` akan menghasilkan file di samping file sumber dalam direktori `__generated__`, dan file ini akan dianggap sebagai rute, yang akan merusak pembangunan produksi.
+
+### Hapus Properti React
+
+Memungkinkan untuk menghapus properti JSX. Ini sering digunakan untuk pengujian. Mirip dengan `babel-plugin-react-remove-properties`.
+
+Untuk menghapus properti yang cocok dengan regex default `^data-test`:
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+reactRemoveProperties: true,
+},
+}
+ttt
+
+Untuk menghapus properti kustom:
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+// Regex yang didefinisikan di sini diproses dalam Rust sehingga sintaksnya berbeda dari
+// `RegExp` JavaScript. Lihat https://docs.rs/regex.
+reactRemoveProperties: { properties: ['^data-custom$'] },
+},
+}
+ttt
+
+### Hapus Console
+
+Transformasi ini memungkinkan untuk menghapus semua panggilan `console.*` dalam kode aplikasi (bukan `node_modules`). Mirip dengan `babel-plugin-transform-remove-console`.
+
+Hapus semua panggilan `console.*`:
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+removeConsole: true,
+},
+}
+ttt
+
+Hapus keluaran `console.*` kecuali `console.error`:
+
+tttjs filename="next.config.js"
+module.exports = {
+compiler: {
+removeConsole: {
+exclude: ['error'],
+},
+},
+}
+ttt
+
+### Dekorator Legacy
+
+Next.js secara otomatis akan mendeteksi `experimentalDecorators` di `jsconfig.json` atau `tsconfig.json`. Dekorator legacy biasanya digunakan dengan versi lama pustaka seperti `mobx`.
+
+Bendera ini hanya didukung untuk kompatibilitas dengan aplikasi yang ada. Kami tidak merekomendasikan penggunaan dekorator legacy dalam aplikasi baru.
+
+Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jsconfig.json` atau `tsconfig.json` Anda:
+
+tttjs
+{
+"compilerOptions": {
+"experimentalDecorators": true
+}
+}
+ttt
+
+### importSource
+
+Next.js secara otomatis akan mendeteksi `jsxImportSource` di `jsconfig.json` atau `tsconfig.json` dan menerapkannya. Ini umumnya digunakan dengan pustaka seperti [Theme UI](https://theme-ui.com).
+
+Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jsconfig.json` atau `tsconfig.json` Anda:
+
+tttjs
+{
+"compilerOptions": {
+"jsxImportSource": "theme-ui"
+}
+}
+ttt
+
+### Emotion
+
+Kami sedang bekerja untuk memindahkan `@emotion/babel-plugin` ke Kompilator Next.js.
+
+Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `next.config.js` Anda:
+
+tttjs filename="next.config.js"
+
+module.exports = {
+compiler: {
+emotion: boolean | {
+// defaultnya true. Ini akan dinonaktifkan saat tipe pembangunan adalah produksi.
+sourceMap?: boolean,
+// defaultnya 'dev-only'.
+autoLabel?: 'never' | 'dev-only' | 'always',
+// defaultnya '[local]'.
+// Nilai yang diizinkan: `[local]` `[filename]` dan `[dirname]`
+// Opsi ini hanya berfungsi ketika autoLabel diatur ke 'dev-only' atau 'always'.
+// Ini memungkinkan Anda untuk mendefinisikan format label yang dihasilkan.
+// Formatnya didefinisikan melalui string di mana bagian variabel diapit dalam kurung siku [].
+// Sebagai contoh labelFormat: "my-classname--[local]", di mana [local] akan digantikan dengan nama variabel yang hasilnya diberikan.
+labelFormat?: string,
+// defaultnya tidak terdefinisi.
+// Opsi ini memungkinkan Anda memberi tahu kompiler tentang impor apa yang harus
+// dilihat untuk menentukan apa yang harus diubah sehingga jika Anda mengekspor ulang
+// Ekspor Emotion, Anda masih dapat menggunakan transformasi.
+importMap?: {
+[packageName: string]: {
+[exportName: string]: {
+canonicalImport?: [string, string],
+styledBaseImport?: [string, string],
+}
+}
+},
+},
+},
+}
+ttt
+
+### Peminyakan
+
+Kompilator swc Next.js digunakan untuk peminyakan secara default sejak v13. Ini 7 kali lebih cepat daripada Terser.
+
+Jika Terser masih diperlukan karena alasan tertentu, ini dapat dikonfigurasi.
+
+tttjs filename="next.config.js"
+module.exports = {
+swcMinify: false,
+}
+ttt
+
+### Transpilasi Modul
+
+Next.js dapat secara otomatis melakukan transpilasi dan bundling dependensi dari paket lokal (seperti monorepos) atau dari dependensi eksternal (`node_modules`). Ini menggantikan paket `next-transpile-modules`.
+
+tttjs filename="next.config.js"
+module.exports = {
+transpilePackages: ['@acme/ui', 'lodash-es'],
+}
+ttt
+
+### Impor Modular
+
+Opsi ini telah digantikan oleh [`optimizePackageImports`](/docs/app/api-reference/next-config-js/optimizePackageImports) di Next.js 13.5. Kami merekomendasikan untuk mengupgrade penggunaan opsi baru yang tidak memerlukan konfigurasi manual dari path impor.
+
+## Fitur Eksperimental
+
+### Profil Jejak SWC
+
+Anda dapat menghasilkan jejak transformasi internal SWC sebagai format [acara jejak](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?mode=html#%21=) chromium.
+
+tttjs filename="next.config.js"
+module.exports = {
+experimental: {
+swcTraceProfiling: true,
+},
+}
+ttt
+
+Setelah diaktifkan, swc akan menghasilkan jejak dengan nama `swc-trace-profile-${timestamp}.json` di bawah `.next/`. Pemutar jejak chromium (chrome://tracing/, https://ui.perfetto.dev/), atau pemutar flamegraph yang kompatibel (https://www.speedscope.app/) dapat memuat dan memvisualisasikan jejak yang dihasilkan.
+
+### Plugin SWC (Eksperimental)
+
+Anda dapat mengkonfigurasi transformasi swc untuk menggunakan dukungan plugin eksperimental SWC yang ditulis dalam wasm untuk menyesuaikan perilaku transformasi.
+
+tttjs filename="next.config.js"
+module.exports = {
+experimental: {
+swcPlugins: [
+[
+'plugin',
+{
+...pluginOptions,
+},
+],
+],
+},
+}
+ttt
+
+`swcPlugins` menerima array dari tupel untuk mengkonfigurasi plugin. Sebuah tupel untuk plugin berisi path ke plugin dan objek untuk konfigurasi plugin. Path ke plugin dapat berupa nama modul npm atau path absolut ke binary `.wasm` itu sendiri.
+
+## Fitur yang Tidak Didukung
+
+Ketika aplikasi Anda memiliki file `.babelrc`, Next.js akan secara otomatis kembali ke penggunaan Babel untuk mengubah file individu. Ini memastikan kompatibilitas mundur dengan aplikasi yang ada yang memanfaatkan plugin Babel kustom.
+
+Jika Anda menggunakan setup Babel kustom, [silakan bagikan konfigurasi Anda](https://github.com/vercel/next.js/discussions/30174). Kami sedang bekerja untuk memindahkan sebanyak mungkin transformasi Babel yang umum digunakan, serta mendukung plugin di masa depan.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                                                                                                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `v13.1.0` | [Transpilasi Modul](https://nextjs.org/blog/next-13-1#built-in-module-transpilation-stable) dan [Impor Modular](https://nextjs.org/blog/next-13-1#import-resolution-for-smaller-bundles) stabil. |
+| `v13.0.0` | Minifier SWC diaktifkan secara default.                                                                                                                                                          |
+| `v12.3.0` | Minifier SWC [stabil](https://nextjs.org/blog/next-12-3#swc-minifier-stable).                                                                                                                    |
+| `v12.2.0` | Dukungan eksperimental untuk [Plugin SWC](#swc-plugins-experimental) ditambahkan.                                                                                                                |
+| `v12.1.0` | Menambahkan dukungan untuk Styled Components, Jest, Relay, Hapus Properti React, Dekorator Legacy, Hapus Console, dan jsxImportSource.                                                           |
+| `v12.0.0` | Kompilator Next.js [diperkenalkan](https://nextjs.org/blog/next-12).                                                                                                                             |

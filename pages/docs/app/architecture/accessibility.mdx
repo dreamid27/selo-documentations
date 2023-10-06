@@ -1,0 +1,36 @@
+---
+title: Aksesibilitas
+description: Fitur aksesibilitas bawaan Next.js.
+---
+
+# Aksesibilitas
+
+Tim Next.js berkomitmen untuk membuat Next.js dapat diakses oleh semua pengembang (dan pengguna akhir mereka). Dengan menambahkan fitur aksesibilitas ke Next.js secara default, kami bertujuan untuk membuat Web lebih inklusif bagi semua orang.
+
+## Pengumuman Rute
+
+Saat beralih antara halaman yang dirender di server (misalnya, dengan menggunakan tag `<a href>`), pembaca layar dan teknologi bantu lainnya akan mengumumkan judul halaman ketika halaman dimuat sehingga pengguna memahami bahwa halaman telah berubah.
+
+Selain navigasi halaman tradisional, Next.js juga mendukung transisi sisi klien untuk kinerja yang lebih baik (menggunakan `next/link`). Untuk memastikan bahwa transisi sisi klien juga diumumkan kepada teknologi bantu, Next.js menyertakan pengumum rute secara default.
+
+Pengumum rute Next.js mencari nama halaman yang akan diumumkan dengan cara memeriksa `document.title`, kemudian elemen `<h1>`, dan akhirnya path URL. Untuk pengalaman pengguna yang paling dapat diakses, pastikan setiap halaman dalam aplikasi Anda memiliki judul yang unik dan deskriptif.
+
+## Pemeriksaan Kode
+
+Next.js menyediakan pengalaman [ESLint terintegrasi](/docs/pages/building-your-application/configuring/eslint) secara bawaan, termasuk aturan khusus untuk Next.js. Secara default, Next.js menyertakan `eslint-plugin-jsx-a11y` untuk membantu mendeteksi masalah aksesibilitas secara dini, termasuk peringatan pada:
+
+- [aria-props](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/aria-props.md?rgh-link-date=2021-06-04T02%3A10%3A36Z)
+- [aria-proptypes](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/aria-proptypes.md?rgh-link-date=2021-06-04T02%3A10%3A36Z)
+- [aria-unsupported-elements](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/aria-unsupported-elements.md?rgh-link-date=2021-06-04T02%3A10%3A36Z)
+- [role-has-required-aria-props](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/role-has-required-aria-props.md?rgh-link-date=2021-06-04T02%3A10%3A36Z)
+- [role-supports-aria-props](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/role-supports-aria-props.md?rgh-link-date=2021-06-04T02%3A10%3A36Z)
+
+Contohnya, plugin ini membantu memastikan Anda menambahkan teks alternatif ke tag `img`, menggunakan atribut `aria-*` yang benar, menggunakan atribut `role` yang benar, dan lainnya.
+
+## Sumber Aksesibilitas
+
+- [Daftar periksa WCAG WebAIM](https://webaim.org/standards/wcag/checklist)
+- [Pedoman WCAG 2.1](https://www.w3.org/TR/WCAG21/)
+- [Proyek A11y](https://www.a11yproject.com/)
+- Periksa [rasio kontras warna](https://developer.mozilla.org/docs/Web/Accessibility/Understanding_WCAG/Perceivable/Color_contrast) antara elemen latar depan dan latar belakang
+- Gunakan [`prefers-reduced-motion`](https://web.dev/prefers-reduced-motion/) saat bekerja dengan animasi

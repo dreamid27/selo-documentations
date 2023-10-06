@@ -1,0 +1,72 @@
+---
+title: Dukungan Browser
+description: Dukungan browser dan fitur JavaScript yang didukung oleh Next.js.
+---
+
+# Dukungan Browser
+
+Next.js mendukung **browser modern** tanpa konfigurasi tambahan.
+
+- Chrome 64+
+- Edge 79+
+- Firefox 67+
+- Opera 51+
+- Safari 12+
+
+## Browserslist
+
+Jika Anda ingin menargetkan browser atau fitur tertentu, Next.js mendukung konfigurasi [Browserslist](https://browsersl.ist) dalam berkas `package.json` Anda. Next.js menggunakan konfigurasi Browserslist berikut secara default:
+
+tttjson filename="package.json"
+{
+"browserslist": [
+"chrome 64",
+"edge 79",
+"firefox 67",
+"opera 51",
+"safari 12"
+]
+}
+ttt
+
+## Polyfill
+
+Kami menyuntikkan [polyfill yang banyak digunakan](https://github.com/vercel/next.js/blob/canary/packages/next-polyfill-nomodule/src/index.js), termasuk:
+
+- [**fetch()**](https://developer.mozilla.org/docs/Web/API/Fetch_API) — Menggantikan: `whatwg-fetch` dan `unfetch`.
+- [**URL**](https://developer.mozilla.org/docs/Web/API/URL) — Menggantikan: paket [`url` (Node.js API)](https://nodejs.org/api/url.html).
+- [**Object.assign()**](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign) — Menggantikan: `object-assign`, `object.assign`, dan `core-js/object/assign`.
+
+Jika salah satu dependensi Anda termasuk polyfill ini, mereka akan dieliminasi secara otomatis dari build produksi untuk menghindari duplikasi.
+
+Selain itu, untuk mengurangi ukuran bundel, Next.js hanya akan memuat polyfill ini untuk browser yang membutuhkannya. Mayoritas lalu lintas web secara global tidak akan mengunduh polyfill ini.
+
+### Polyfill Kustom
+
+Jika kode Anda sendiri atau dependensi npm eksternal memerlukan fitur yang tidak didukung oleh browser target Anda (seperti IE 11), Anda perlu menambahkan polyfill sendiri.
+
+Dalam kasus ini, Anda harus menambahkan impor tingkat atas untuk **polyfill tertentu** yang Anda butuhkan dalam [Aplikasi Kustom Anda](/docs/pages/building-your-application/routing/custom-app) atau komponen individu.
+
+## Fitur Bahasa JavaScript
+
+Next.js memungkinkan Anda menggunakan fitur-fitur JavaScript terbaru secara langsung. Selain fitur-fitur ES6, Next.js juga mendukung:
+
+- [Async/await](https://github.com/tc39/ecmascript-asyncawait) (ES2017)
+- [Object Rest/Spread Properties](https://github.com/tc39/proposal-object-rest-spread) (ES2018)
+- [Dynamic `import()`](https://github.com/tc39/proposal-dynamic-import) (ES2020)
+- [Optional Chaining](https://github.com/tc39/proposal-optional-chaining) (ES2020)
+- [Nullish Coalescing](https://github.com/tc39/proposal-nullish-coalescing) (ES2020)
+- [Class Fields](https://github.com/tc39/proposal-class-fields) dan [Static Properties](https://github.com/tc39/proposal-static-class-features) (bagian dari proposal tahap 3)
+- dan banyak lagi!
+
+### Polyfill Sisi Server
+
+Selain `fetch()` di sisi klien, Next.js juga memasukkan polyfill `fetch()` dalam lingkungan Node.js di mana hal itu belum tersedia. Itu menggunakan `undici`, implementasi yang sama yang digunakan oleh Node.js itu sendiri. Anda dapat menggunakan `fetch()` dalam kode server Anda (seperti `getStaticProps`/`getServerSideProps`) tanpa menggunakan polyfill seperti `isomorphic-unfetch` atau `node-fetch`.
+
+### Fitur TypeScript
+
+Next.js memiliki dukungan TypeScript bawaan. [Pelajari lebih lanjut di sini](/docs/pages/building-your-application/configuring/typescript).
+
+### Menyesuaikan Konfigurasi Babel (Tingkat Lanjut)
+
+Anda dapat menyesuaikan konfigurasi Babel. [Pelajari lebih lanjut di sini](/docs/pages/building-your-application/configuring/babel).

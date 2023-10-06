@@ -1,0 +1,117 @@
+---
+title: Fast Refresh
+description: Fast Refresh adalah pengalaman pemuatan modul panas yang memberikan umpan balik seketika pada perubahan yang dilakukan pada komponen React Anda.
+---
+
+# Fast Refresh
+
+<details open>
+  <summary>Contoh</summary>
+
+- [Demo Fast Refresh](https://github.com/vercel/next.js/tree/canary/examples/fast-refresh-demo)
+
+</details>
+
+Fast Refresh adalah fitur Next.js yang memberikan umpan balik seketika pada
+perubahan yang dilakukan pada komponen React Anda. Fast Refresh diaktifkan secara default pada semua
+aplikasi Next.js versi **9.4 atau yang lebih baru**. Dengan Next.js Fast Refresh diaktifkan,
+sebagian besar perubahan harus terlihat dalam waktu satu detik, **tanpa kehilangan status komponen**.
+
+## Bagaimana Cara Kerjanya
+
+- Jika Anda mengedit file yang **hanya mengekspor komponen-komponen React**, Fast Refresh akan
+  memperbarui kode hanya untuk file tersebut, dan merender ulang komponen Anda. Anda dapat mengedit
+  apa saja di dalam file tersebut, termasuk gaya, logika render, penangan acara, atau
+  efek-efek.
+- Jika Anda mengedit file dengan ekspor yang _bukan_ komponen-komponen React, Fast Refresh
+  akan menjalankan ulang baik file tersebut maupun file lain yang mengimpor file tersebut. Jadi jika
+  baik `Button.js` dan `Modal.js` mengimpor `theme.js`, mengedit `theme.js` akan memperbarui
+  kedua komponen tersebut.
+- Terakhir, jika Anda **mengedit file** yang diimpor oleh file-fie luar dari
+  pohon React**, Fast Refresh **akan kembali ke pengambilan ulang sepenuhnya**. Anda
+  mungkin memiliki file yang merender komponen React tetapi juga mengekspor nilai
+  yang diimpor oleh **komponen non-React\*\*. Misalnya, mungkin komponen Anda juga mengekspor konstan,
+  dan file utilitas non-React mengimpornya. Dalam hal ini, pertimbangkan untuk memigrasikan konstan
+  tersebut ke file terpisah dan mengimpornya ke kedua file. Hal ini akan mengaktifkan kembali Fast Refresh
+  untuk bekerja. Kasus lain biasanya dapat diatasi dengan cara serupa.
+
+## Ketahanan Terhadap Kesalahan
+
+### Kesalahan Sintaksis
+
+Jika Anda membuat kesalahan sintaksis selama pengembangan, Anda dapat memperbaikinya dan menyimpan file
+kembali. Kesalahan tersebut akan hilang secara otomatis, sehingga Anda tidak perlu me-reload
+aplikasi. **Anda tidak akan kehilangan status komponen**.
+
+### Kesalahan Waktu Jalankan
+
+Jika Anda membuat kesalahan yang menyebabkan kesalahan waktu jalankan dalam komponen Anda,
+Anda akan disambut dengan lapisan tampilan kontekstual. Memperbaiki kesalahan akan secara otomatis
+menghilangkan lapisan tampilan tersebut, tanpa me-reload aplikasi.
+
+Status komponen akan tetap ada jika kesalahan tidak terjadi selama proses render. Jika
+kesalahan terjadi selama proses render, React akan meremount aplikasi Anda menggunakan
+kode yang diperbarui.
+
+Jika Anda memiliki [error boundaries](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+di aplikasi Anda (yang merupakan ide bagus untuk kesalahan yang halus di produksi), mereka
+akan mencoba merender ulang setelah kesalahan render. Hal ini berarti memiliki
+error boundary dapat mencegah Anda selalu direset ke status root aplikasi.
+Namun, perlu diingat bahwa batasan kesalahan sebaiknya tidak terlalu terperinci.
+Mereka digunakan oleh React di produksi dan harus selalu dirancang
+secara disengaja.
+
+## Batasan
+
+Fast Refresh mencoba untuk menjaga status React lokal dalam komponen yang Anda
+edit, tetapi hanya jika aman untuk melakukannya. Berikut beberapa alasan mengapa Anda mungkin melihat
+status lokal diatur ulang setiap kali mengedit file:
+
+- Status lokal tidak dipertahankan untuk komponen berbasis kelas (hanya komponen berfungsi
+  dan Hooks yang mempertahankan status).
+- File yang Anda edit mungkin memiliki ekspor _lainnya_ selain komponen React.
+- Terkadang, sebuah file akan mengekspor hasil panggilan komponen berperingkat tinggi
+  seperti `HOC(WrappedComponent)`. Jika komponen yang dikembalikan adalah
+  berkelas, statusnya akan diatur ulang.
+- Fungsi panah anonim seperti `export default () => <div />;` menyebabkan Fast Refresh tidak
+  mempertahankan status komponen lokal. Untuk basis kode besar, Anda dapat menggunakan kode transformasi [`name-default-component`](/docs/pages/building-your-application/upgrading/codemods#name-default-component).
+
+Seiring berjalannya waktu, semakin banyak kode Anda yang beralih ke komponen berfungsi dan Hooks, Anda dapat mengharapkan
+status dipertahankan dalam lebih banyak kasus.
+
+## Tips
+
+- Fast Refresh secara default mempertahankan status lokal React dalam komponen berfungsi (dan Hooks).
+- Terkadang Anda mungkin ingin _memaksa_ status untuk diatur ulang, dan komponen diatur ulang.
+  Ini bisa berguna jika Anda menyesuaikan animasi yang hanya terjadi saat mounting. Untuk melakukannya, Anda bisa menambahkan `// @refresh reset`
+  di mana saja dalam file yang Anda edit. Direktif ini hanya berlaku untuk file tersebut, dan
+  memberi petunjuk kepada Fast Refresh untuk mengatur ulang komponen yang didefinisikan dalam file tersebut setiap
+  kali mengedit.
+- Anda dapat menambahkan `console.log` atau `debugger;` ke dalam komponen yang Anda edit selama
+  pengembangan.
+- Ingatlah bahwa impor bersifat case sensitive. Baik fast maupun full refresh dapat gagal,
+  ketika impor Anda tidak cocok dengan nama file yang sebenarnya.
+  Sebagai contoh, `'./header'` vs `'./Header'`.
+
+## Fast Refresh dan Hooks
+
+Jika memungkinkan, Fast Refresh mencoba untuk menjaga status komponen Anda
+antara pengeditan. Khususnya, `useState` dan `useRef` menjaga nilai-nilai sebelumnya mereka selama Anda tidak mengubah argumen mereka atau urutan panggilan Hook
+tersebut.
+
+Hook dengan dependensi—seperti `useEffect`, `useMemo`, dan `useCallback`—akan
+_selalu_ diperbarui selama Fast Refresh berlangsung. Daftar dependensi mereka akan diabaikan
+selama Fast Refresh berlangsung.
+
+Sebagai contoh, ketika Anda mengedit `useMemo(() => x * 2, [x])` menjadi
+`useMemo(() => x * 10, [x])`, itu akan dijalankan ulang meskipun `x` (dependensinya)
+tidak berubah. Jika React tidak melakukannya, pengeditan Anda tidak akan tercermin pada
+layar!
+
+Terkadang, ini dapat menghasilkan hasil yang tidak diharapkan. Misalnya, bahkan `useEffect`
+dengan array dependensi kosong akan tetap dijalankan sekali selama Fast Refresh.
+
+Namun, menulis kode yang tahan terhadap kadang-kadang dijalankannya `useEffect` adalah praktik yang baik bahkan
+tanpa Fast Refresh. Ini akan memudahkan Anda untuk memperkenalkan dependensi baru ke dalamnya nanti
+dan ditegakkan oleh [React Strict Mode](/docs/pages/api-reference/next-config-js/reactStrictMode),
+yang sangat kami sarankan aktifkan.

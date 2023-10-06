@@ -1,0 +1,31 @@
+---
+title: Turbopack
+description: Turbopack adalah bundler inkremental yang dioptimalkan untuk JavaScript dan TypeScript, yang ditulis dalam Rust, dan terintegrasi dalam Next.js.
+---
+
+# Turbopack
+
+[Turbopack](https://turbo.build/pack) (beta) adalah bundler inkremental yang dioptimalkan untuk JavaScript dan TypeScript, yang ditulis dalam Rust, dan terintegrasi dalam Next.js.
+
+## Penggunaan
+
+Turbopack dapat digunakan dalam Next.js baik di direktori `pages` maupun `app` untuk pengembangan lokal yang lebih cepat. Untuk mengaktifkan Turbopack, gunakan flag `--turbo` saat menjalankan server pengembangan Next.js.
+
+```json filename="package.json" highlight={3}
+{
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
+```
+
+## Fitur yang Didukung
+
+Untuk mempelajari lebih lanjut tentang fitur-fitur yang saat ini didukung oleh Turbopack, lihat [dokumentasi](https://turbo.build/pack/docs/features).
+
+## Fitur yang Tidak Didukung
+
+Turbopack saat ini hanya mendukung `next dev` dan tidak mendukung `next build`. Kami saat ini sedang bekerja pada dukungan untuk proses pembangunan saat kami mendekati stabilitas.

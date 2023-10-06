@@ -152,11 +152,11 @@ export default function GlobalError({
 
 ### Penanganan Error Server
 
-Jika terjadi kesalahan dalam Server Component, Next.js akan meneruskan objek `Error` (yang telah dihilangkan informasi kesalahan sensitifnya saat produksi) ke file `error.js` terdekat sebagai prop `error`.
+Jika terjadi kesalahan dalam Server Component, Next.js akan meneruskan objek `Error` (yang telah dihilangkan informasi kesalahan sensitifnya saat production) ke file `error.js` terdekat sebagai prop `error`.
 
 #### Menyelamatkan Informasi Error Sensitif
 
-Selama produksi, objek `Error` yang diteruskan ke klien hanya mencakup properti `message` dan `digest` yang bersifat generik.
+Selama production, objek `Error` yang diteruskan ke klien hanya mencakup properti `message` dan `digest` yang bersifat generik.
 
 Ini adalah tindakan keamanan untuk menghindari kebocoran rincian yang mungkin sensitif yang terdapat dalam kesalahan kepada klien.
 

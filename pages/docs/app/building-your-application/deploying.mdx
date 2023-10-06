@@ -1,0 +1,170 @@
+---
+title: Deploying
+description: Pelajari cara menyajikan aplikasi Next.js Anda ke production, baik yang dikelola maupun yang di-hosting sendiri.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Deploying
+
+Selamat! Anda berada di sini karena Anda siap untuk menyajikan aplikasi Next.js Anda. Halaman ini akan menunjukkan cara menyajikan baik yang dikelola maupun yang di-hosting sendiri menggunakan [Next.js Build API](#nextjs-build-api).
+
+## Next.js Build API
+
+`next build` menghasilkan versi teroptimasi dari aplikasi Anda untuk production. Output standar ini mencakup:
+
+- Berkas HTML untuk halaman yang menggunakan `getStaticProps` atau [Optimisasi Statis Otomatis](/docs/pages/building-your-application/rendering/automatic-static-optimization)
+- Berkas CSS untuk gaya global atau gaya dengan lingkup individu
+- JavaScript untuk pra-rendering konten dinamis dari server Next.js
+- JavaScript untuk interaktivitas di sisi klien melalui React
+
+Output ini dihasilkan di dalam folder `.next`:
+
+- `.next/static/chunks/pages` – Setiap berkas JavaScript di dalam folder ini berkaitan dengan rute dengan nama yang sama. Misalnya, `.next/static/chunks/pages/about.js` akan menjadi berkas JavaScript yang dimuat saat melihat rute `/about` dalam aplikasi Anda.
+- `.next/static/media` – Gambar yang diimpor secara statis dari `next/image` di-hash dan disalin ke sini.
+- `.next/static/css` – Berkas CSS global untuk semua halaman dalam aplikasi Anda.
+- `.next/server/pages` – Titik masuk HTML dan JavaScript yang di-prerender dari server. Berkas `.nft.json` dibuat saat [Pelacakan Berkas Output](/docs/pages/api-reference/next-config-js/output) diaktifkan dan berisi semua jalur berkas yang bergantung pada halaman tertentu.
+- `.next/server/chunks` – Chunks JavaScript bersama yang digunakan di beberapa tempat dalam aplikasi Anda.
+- `.next/cache` – Output untuk cache pembuatan dan gambar yang di-cache, respons, dan halaman dari server Next.js. Menggunakan cache membantu mengurangi waktu pembuatan dan meningkatkan kinerja dalam memuat gambar
+
+Semua kode JavaScript di dalam `.next` telah **dikompilasi** dan bundel browser telah **diminimalkan** untuk membantu mencapai kinerja terbaik dan mendukung [semua peramban modern](/docs/architecture/supported-browsers).
+
+## Next.js yang Dikelola dengan Vercel
+
+[Vercel](https://vercel.com?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) adalah cara tercepat untuk menyajikan aplikasi Next.js Anda tanpa konfigurasi tambahan.
+
+Ketika menyajikan ke Vercel, platform tersebut [secara otomatis mendeteksi Next.js](https://vercel.com/solutions/nextjs?utm_source=next-site&utm_medium=docs&utm_campaign=next-website), menjalankan `next build`, dan mengoptimalkan output pembuatan untuk Anda, termasuk:
+
+- Mempertahankan aset yang di-cache antara penyajian jika tidak berubah
+- [Penyajian tak berubah](https://vercel.com/features/previews?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) dengan URL unik untuk setiap komit
+- [Halaman](/docs/pages/building-your-application/rendering/automatic-static-optimization) secara otomatis dioptimalkan secara statis, jika memungkinkan
+- Aset (JavaScript, CSS, gambar, font) di-kompres dan disajikan dari [Jaringan Global Edge](https://vercel.com/features/infrastructure?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)
+- [Rute API](/docs/pages/building-your-application/routing/api-routes) secara otomatis dioptimalkan sebagai [Fungsi Serverless](https://vercel.com/features/infrastructure?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) yang terisolasi dan dapat melipatgandakan
+- [Middleware](/docs/pages/building-your-application/routing/middleware) secara otomatis dioptimalkan sebagai [Fungsi Edge](https://vercel.com/features/edge-functions?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) yang tidak memiliki waktu beku dan segera aktif
+
+Selain itu, Vercel menyediakan fitur seperti:
+
+- Pemantauan kinerja otomatis dengan [Next.js Speed Insights](https://vercel.com/analytics?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)
+- HTTPS otomatis dan sertifikat SSL
+- CI/CD otomatis (melalui GitHub, GitLab, Bitbucket, dll.)
+- Dukungan untuk [Variabel Lingkungan](https://vercel.com/docs/environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)
+- Dukungan untuk [Domain Kustom](https://vercel.com/docs/custom-domains?utm_source=next-site&utm_medium=docs&utm_campaign=next-website)
+- Dukungan untuk [Optimisasi Gambar](/docs/pages/building-your-application/optimizing/images) dengan `next/image`
+- Penyajian global instan melalui `git push`
+
+[Sajikan aplikasi Next.js ke Vercel](https://vercel.com/new/git/external?repository-url=https://github.com/vercel/next.js/tree/canary/examples/hello-world&project-name=hello-world&repository-name=hello-world&utm_source=next-site&utm_medium=docs&utm_campaign=next-website) secara gratis untuk mencobanya.
+
+## Hosting Sendiri
+
+Anda dapat menyajikan Next.js dengan dukungan untuk semua fitur menggunakan Node.js atau Docker. Anda juga dapat melakukan Ekspor HTML Statis, yang [memiliki beberapa batasan](/docs/app/building-your-application/deploying/static-exports).
+
+### Server Node.js
+
+Next.js dapat di-hosting di penyedia hosting mana pun yang mendukung Node.js. Misalnya, [AWS EC2](https://aws.amazon.com/ec2/) atau [DigitalOcean Droplet](https://www.digitalocean.com/products/droplets/).
+
+Pertama, pastikan `package.json` Anda memiliki skrip `"build"` dan `"start"`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+Kemudian, jalankan `npm run build` untuk membangun aplikasi Anda. Terakhir, jalankan `npm run start` untuk memulai server Node.js. Server ini mendukung semua fitur Next.js.
+
+> Jika Anda menggunakan [`next/image`](/docs/pages/building-your-application/optimizing/images), pertimbangkan untuk menambahkan `sharp` untuk [Optimisasi Gambar](/docs/pages/building-your-application/optimizing/images) yang lebih unggul dalam lingkungan production dengan menjalankan `npm install sharp` di direktori proyek Anda. Di platform Linux, `sharp` mungkin memerlukan [konfigurasi tambahan](https://sharp.pixelplumbing.com/install#linux-memory-allocator) untuk mencegah penggunaan memori yang berlebihan.
+
+### Docker Image
+
+Next.js dapat di-hosting di penyedia hosting mana pun yang mendukung kontainer [Docker](https://www.docker.com/). Anda dapat menggunakan pendekatan ini saat menyajikan ke orchestrator kontainer seperti [Kubernetes](https://kubernetes.io/) atau [HashiCorp Nomad](https://www.nomadproject.io/), atau saat berjalan di dalam satu node di penyedia cloud mana pun.
+
+1. [Instal Docker](https://docs.docker.com/get-docker/) di mesin Anda
+1. Klon [contoh with-docker](https://github.com/vercel/next.js/tree/canary/examples/with-docker)
+1. Bangun kontainer Anda: `docker build -t nextjs-docker .`
+1. Jalankan kontainer Anda: `docker run -p 3000:3000 nextjs-docker`
+
+Jika Anda perlu menggunakan Variabel Lingkungan yang berbeda di berbagai lingkungan, periksa [contoh with-docker-multi-env](https://github.com/vercel/next.js/tree/canary/examples/with-docker-multi-env) kami.
+
+### Ekspor HTML Statis
+
+Jika Anda ingin melakukan ekspor HTML statis dari aplikasi Next.js Anda, ikuti petunjuk di [dokumentasi Ekspor HTML Statis](/docs/app/building-your-application/deploying/static-exports) kami.
+
+## Layanan Lain
+
+Layanan berikut mendukung Next.js `v12+`. Di bawah ini, Anda akan menemukan contoh atau panduan untuk menyajikan Next.js ke setiap layanan tersebut.
+
+### Server yang Dikelola
+
+- [AWS Copilot](https://aws.github.io/copilot-cli/)
+- [Digital Ocean App Platform](https://docs.digitalocean.com/tutorials/app-nextjs-deploy/)
+- [Google Cloud Run](https://github.com/vercel/next.js/tree/canary/examples/with-docker)
+- [Heroku](https://elements.heroku.com/buildpacks/mars/heroku-nextjs)
+- [Railway](https://docs.railway.app/getting-started)
+- [Render](https://render.com/docs/deploy-nextjs-app)
+
+> **Penting untuk diketahui**: Ada juga platform yang dikelola yang memungkinkan Anda menggunakan Dockerfile seperti yang ditunjukkan dalam [contoh di atas](#docker-image).
+
+### Hanya Statis
+
+Layanan berikut hanya mendukung penyajian Next.js menggunakan [`output: 'export'`](/docs/app/building-your-application/deploying/static-exports).
+
+- [GitHub Pages](https://github.com/vercel/next.js/tree/canary/examples/github-pages)
+
+Anda juga dapat menyajikan output dari [`output: 'export'`](/docs/app/building-your-application/deploying/static-exports) secara manual ke penyedia hosting statis apa pun, seringkali melalui pipa CI/CD Anda seperti GitHub Actions, Jenkins, AWS CodeBuild, Circle CI, Azure Pipelines, dan lainnya.
+
+### Serverless
+
+- [AWS Amplify](https://aws.amazon.com/blogs/mobile/amplify-next-js-13/)
+- [Azure Static Web Apps](https://learn.microsoft.com/en-us/azure/static-web-apps/nextjs)
+- [Cloudflare Pages](https://developers.cloudflare.com/pages/framework-guides/deploy-a-nextjs-site/)
+- [Firebase](https://firebase.google.com/docs/hosting/nextjs)
+- [Netlify](https://docs.netlify.com/integrations/frameworks/next-js)
+- [Terraform](https://github.com/milliHQ/terraform-aws-next-js)
+- [SST](https://docs.sst.dev/start/nextjs)
+
+> **Penting untuk diketahui**: Tidak semua penyedia serverless mengimplementasikan [Next.js Build API](#nextjs-build-api) dari `next start`. Harap periksa dengan penyedia tersebut untuk melihat fitur apa yang didukung.
+
+## Pembaruan Otomatis
+
+Ketika Anda menyajikan aplikasi Next.js Anda, Anda ingin melihat versi terbaru tanpa perlu me-refresh.
+
+Next.js akan secara otomatis memuat versi terbaru dari aplikasi Anda di latar belakang saat perutean. Untuk navigasi di sisi klien, `next/link` akan sementara berfungsi seperti tag `<a>` normal.
+
+> **Penting untuk diketahui**: Jika halaman baru (dengan versi lama) sudah di-prefetch oleh `next/link`, Next.js akan menggunakan versi lama. Navigasi ke halaman yang _tidak_ di-prefetch (dan tidak di-cache di tingkat CDN) akan memuat versi terbaru.
+
+## Penutupan Manual yang Elegan
+
+Ketika menyajikan sendiri, Anda mungkin ingin menjalankan kode saat server ditutup pada sinyal `SIGTERM` atau `SIGINT`.
+
+Anda dapat mengatur variabel lingkungan `NEXT_MANUAL_SIG_HANDLE` ke `true` dan kemudian mendaftarkan handler untuk sinyal tersebut di dalam file `_document.js` Anda. Anda perlu mendaftarkan variabel lingkungan ini langsung dalam skrip `package.json`, bukan dalam file `.env`.
+
+> **Penting untuk diketahui**: Penanganan sinyal manual tidak tersedia di `next dev`.
+
+```json filename="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "NEXT_MANUAL_SIG_HANDLE=true next start"
+  }
+}
+```
+
+```js filename="pages/_document.js"
+if (process.env.NEXT_MANUAL_SIG_HANDLE) {
+  // ini sebaiknya ditambahkan di _document kustom Anda
+  process.on('SIGTERM', () => {
+    console.log('Menerima SIGTERM: ', 'membersihkan');
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('Menerima SIGINT: ', 'membersihkan');
+    process.exit(0);
+  });
+}
+```

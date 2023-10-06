@@ -135,12 +135,12 @@ Jika Anda menggunakan `eslint-plugin-next` dalam proyek di mana Next.js tidak di
 
 ## Melintasi Direktori dan File Kustom
 
-Secara default, Next.js akan menjalankan ESLint untuk semua file dalam direktori `pages/`, `app/`, `components/`, `lib/`, dan `src/`. Namun, Anda dapat menentukan direktori mana yang akan digunakan opsi `dirs` dalam konfigurasi `eslint` di `next.config.js` untuk build produksi:
+Secara default, Next.js akan menjalankan ESLint untuk semua file dalam direktori `pages/`, `app/`, `components/`, `lib/`, dan `src/`. Namun, Anda dapat menentukan direktori mana yang akan digunakan opsi `dirs` dalam konfigurasi `eslint` di `next.config.js` untuk build production:
 
 ```js filename="next.config.js"
 module.exports = {
   eslint: {
-    dirs: ['pages', 'utils'], // Hanya menjalankan ESLint pada direktori 'pages' dan 'utils' selama build produksi (next build)
+    dirs: ['pages', 'utils'], // Hanya menjalankan ESLint pada direktori 'pages' dan 'utils' selama build production (next build)
   },
 };
 ```

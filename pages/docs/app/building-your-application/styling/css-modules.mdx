@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }) {
 Modul CSS adalah _fitur opsional_ dan **hanya diaktifkan untuk file dengan ekstensi `.module.css`**.
 Lembar gaya `<link>` biasa dan file CSS global masih didukung.
 
-Dalam produksi, semua file Modul CSS akan secara otomatis digabungkan menjadi file `.css` yang **diminimalkan dan dibagi kode**.
+Dalam production, semua file Modul CSS akan secara otomatis digabungkan menjadi file `.css` yang **diminimalkan dan dibagi kode**.
 File-file `.css` ini mewakili jalur eksekusi panas dalam aplikasi Anda, memastikan jumlah CSS minimal yang dimuat untuk aplikasi Anda untuk melukis.
 
 ## Gaya Global
@@ -134,5 +134,5 @@ export default function RootLayout({ children }) {
 Next.js menyertakan fitur tambahan untuk meningkatkan pengalaman penulisan penambahan gaya:
 
 - Saat berjalan secara lokal dengan `next dev`, stylesheet lokal (baik global maupun Modul CSS) akan memanfaatkan [Fast Refresh](/docs/architecture/fast-refresh) untuk langsung mencerminkan perubahan saat penyuntingan disimpan.
-- Saat membangun untuk produksi dengan `next build`, file CSS akan digabungkan menjadi file `.css` yang lebih sedikit dan diminimalkan untuk mengurangi jumlah permintaan jaringan yang diperlukan untuk mengambil gaya.
-- Jika Anda menonaktifkan JavaScript, gaya tetap akan dimuat dalam build produksi (`next start`). Namun, JavaScript tetap diperlukan untuk `next dev` agar dapat mengaktifkan [Fast Refresh](/docs/architecture/fast-refresh).
+- Saat membangun untuk production dengan `next build`, file CSS akan digabungkan menjadi file `.css` yang lebih sedikit dan diminimalkan untuk mengurangi jumlah permintaan jaringan yang diperlukan untuk mengambil gaya.
+- Jika Anda menonaktifkan JavaScript, gaya tetap akan dimuat dalam build production (`next start`). Namun, JavaScript tetap diperlukan untuk `next dev` agar dapat mengaktifkan [Fast Refresh](/docs/architecture/fast-refresh).

@@ -1,0 +1,553 @@
+---
+title: Migrasi dari Vite
+description: Pelajari cara melakukan migrasi aplikasi React Anda yang sudah ada dari Vite ke Next.js.
+---
+
+# Migrasi dari Vite
+
+Panduan ini akan membantu Anda melakukan migrasi aplikasi Vite yang sudah ada ke Next.js.
+
+## Mengapa Beralih?
+
+Ada beberapa alasan mengapa Anda mungkin ingin beralih dari Vite ke Next.js:
+
+1. **Waktu pemuatan halaman awal yang lambat**: Jika Anda telah membangun aplikasi Anda dengan [plugin Vite
+   default untuk React](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react),
+   aplikasi Anda adalah aplikasi hanya sisi klien. Aplikasi hanya sisi klien, juga dikenal sebagai
+   aplikasi satu halaman (SPA), sering mengalami waktu pemuatan halaman awal yang lambat. Ini
+   terjadi karena beberapa alasan:
+   1. Browser harus menunggu kode React dan seluruh bundel aplikasi Anda untuk diunduh
+      dan dijalankan sebelum kode Anda dapat mengirimkan permintaan untuk memuat beberapa data.
+   2. Kode aplikasi Anda tumbuh dengan setiap fitur baru dan dependensi tambahan yang Anda tambahkan.
+2. **Tidak ada pemecahan kode otomatis**: Masalah sebelumnya tentang waktu pemuatan yang lambat bisa
+   dikelola sedikit dengan pemecahan kode. Namun, jika Anda mencoba melakukan pemecahan kode secara
+   manual, Anda seringkali akan membuat performa menjadi lebih buruk. Mudah untuk tanpa sadar
+   memperkenalkan air terjun jaringan saat melakukan pemecahan kode secara manual. Next.js menyediakan
+   pemecahan kode otomatis yang sudah terintegrasi ke dalam router-nya.
+3. **Air terjun jaringan**: Penyebab umum performa yang buruk terjadi saat aplikasi melakukan
+   permintaan klien-server berurutan untuk mengambil data. Pola umum untuk mengambil data di SPA
+   adalah awalnya merender placeholder, lalu mengambil data setelah komponen telah dimuat.
+   Sayangnya, ini berarti bahwa komponen anak yang mengambil data tidak dapat mulai mengambil data
+   sampai komponen induk telah selesai memuat data sendiri. Pada Next.js,
+   [masalah ini diatasi](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md#no-client-server-waterfalls)
+   dengan pengambilan data di Komponen Server.
+4. **Status pengisian yang cepat dan disengaja**: Berkat dukungan bawaan untuk
+   [Streaming dengan Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense),
+   dengan Next.js, Anda dapat lebih berencana tentang bagian mana dari UI Anda yang ingin Anda muat
+   terlebih dahulu dan dalam urutan apa tanpa memperkenalkan air terjun jaringan. Ini memungkinkan
+   Anda untuk membangun halaman yang lebih cepat untuk dimuat dan juga menghilangkan
+   [pergeseran tata letak](https://web.dev/cls/).
+5. **Pilih strategi pengambilan data**: Tergantung pada kebutuhan Anda, Next.js memungkinkan Anda untuk memilih
+   strategi pengambilan data pada halaman dan komponen. Anda dapat memutuskan untuk mengambil data
+   saat waktu pembuatan, saat waktu permintaan pada server, atau pada sisi klien. Misalnya, Anda
+   dapat mengambil data dari CMS Anda dan merender posting blog Anda saat waktu pembuatan, yang
+   kemudian dapat di-cache secara efisien pada CDN.
+6. **Middleware**: [Middleware Next.js](/docs/app/building-your-application/routing/middleware)
+   memungkinkan Anda menjalankan kode di server sebelum permintaan selesai. Ini sangat berguna untuk
+   menghindari munculnya konten tidak terotentikasi saat pengguna mengunjungi halaman yang hanya
+   dapat diakses oleh pengguna yang terotentikasi dengan mengarahkan pengguna ke halaman login.
+   Middleware juga berguna untuk eksperimen dan internasionalisasi.
+7. **Optimisasi Terintegrasi**: Gambar, font, dan skrip pihak ketiga sering memiliki dampak besar
+   pada performa aplikasi. Next.js dilengkapi dengan komponen terintegrasi yang secara otomatis
+   mengoptimalkannya.
+
+## Langkah Migrasi
+
+Tujuan kami dalam migrasi ini adalah mendapatkan aplikasi Next.js yang berfungsi secepat mungkin,
+sehingga Anda dapat mengadopsi fitur-fitur Next.js secara bertahap. Untuk memulai, kita akan tetap
+mempertahankan aplikasi sebagai aplikasi hanya sisi klien (SPA) tanpa mengganti router yang sudah
+ada. Ini membantu mengurangi kemungkinan terjadi masalah selama proses migrasi dan mengurangi konflik
+penggabungan.
+
+### Langkah 1: Pasang Dependensi Next.js
+
+Hal pertama yang perlu Anda lakukan adalah memasang `next` sebagai dependensi:
+
+```bash filename="Terminal"
+npm install next@latest
+```
+
+### Langkah 2: Buat Berkas Konfigurasi Next.js
+
+Buat berkas `next.config.mjs` di akar proyek Anda. Berkas ini akan berisi
+[opsi konfigurasi Next.js](/docs/app/api-reference/next-config-js).
+
+```js filename="next.config.mjs"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export', // Menghasilkan Aplikasi Satu Halaman (SPA).
+  distDir: './dist', // Mengubah direktori keluaran build menjadi `./dist/`.
+};
+
+export default nextConfig;
+```
+
+> **Baik untuk diketahui:** Anda dapat menggunakan ekstensi `.js` atau `.mjs` untuk berkas konfigurasi Next.js Anda.
+
+### Langkah 3: Perbarui Konfigurasi TypeScript
+
+Jika Anda menggunakan TypeScript, Anda perlu memperbarui berkas `tsconfig.json` Anda dengan perubahan
+berikut agar sesuai dengan Next.js. Jika Anda tidak menggunakan TypeScript, Anda dapat melewati
+langkah ini.
+
+1. Hapus [referensi proyek](https://www.typescriptlang.org/tsconfig#references) ke `tsconfig.node.json`.
+2. Tambahkan `./dist/types/**/*.ts` dan `./next-env.d.ts` ke dalam array [`include`](https://www.typescriptlang.org/tsconfig#include).
+3. Tambahkan `./node_modules` ke dalam array [`exclude`](https://www.typescriptlang.org/tsconfig#exclude).
+4. Tambahkan `{ "name": "next" }` ke dalam array [`plugins` dalam `compilerOptions`](https://www.typescriptlang.org/tsconfig#plugins): `"plugins": [{ "name": "next" }]`
+5. Tetapkan [`esModuleInterop`](https://www.typescriptlang.org/tsconfig#esModuleInterop) menjadi `true`: `"esModuleInterop": true`
+6. Tetapkan [`jsx`](https://www.typescriptlang.org/tsconfig#jsx) menjadi `preserve`: `"jsx": "preserve"`
+7. Tetapkan [`allowJs`](https://www.typescriptlang.org/tsconfig#allowJs) menjadi `true`: `"allowJs": true`
+8. Tetapkan [`forceConsistentCasingInFileNames`](https://www.typescriptlang.org/tsconfig#forceConsistentCasingInFileNames) menjadi `true`: `"forceConsistentCasingInFileNames": true`
+9. Tetapkan [`incremental`](https://www.typescriptlang.org/tsconfig#incremental) menjadi `true`: `"incremental": true`
+
+Berikut adalah contoh `tsconfig.json` yang berfungsi dengan perubahan tersebut:
+
+```json filename="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "plugins": [{ "name": "next" }]
+  },
+  "include": ["./src", "./dist/types/**/*.ts", "./next-env.d.ts"],
+  "exclude": ["./node_modules"]
+}
+```
+
+Anda dapat menemukan informasi lebih lanjut tentang konfigurasi TypeScript di
+[docs Next.js](/docs/app/building-your-application/configuring/typescript#typescript-plugin).
+
+### Langkah 4: Buat Tata Letak Utama
+
+Aplikasi Next.js [Router Aplikasi](/docs/app) harus mencakup berkas
+[tata letak utama](/docs/app/building-your-application/routing/pages-and-layouts#root-layout-required),
+yang merupakan [Komponen Server React](/docs/app/building-your-application/rendering/server-components)
+yang akan mengelilingi semua halaman dalam aplikasi Anda. Berkas ini didefinisikan pada tingkat
+teratas direktori `app`.
+
+Setara terdekat dengan berkas tata letak utama dalam aplikasi Vite adalah berkas `index.html`,
+yang berisi tag `<html>`, `<head>`, dan `<body>` Anda.
+
+Dalam langkah ini, Anda akan mengonversi berkas `index.html` Anda menjadi berkas tata letak utama:
+
+1. Buat direktori `app` baru dalam direktori `src` Anda.
+2. Buat berkas `layout.tsx` baru di dalam direktori `app` tersebut:
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return null;
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return null;
+}
+```
+
+> **Baik untuk diketahui**: Anda dapat menggunakan ekstensi `.js`, `.jsx`, atau `.tsx` untuk berkas tata letak.
+
+3. Salin konten berkas `index.html` Anda ke dalam komponen `<RootLayout>` yang sudah dibuat sebelumnya sambil
+   mengganti tag `body.div#root` dan `body.script` dengan `<div id="root">{children}</div>`:
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+4. Next.js sudah termasuk [meta charset](https://developer.mozilla.org/docs/Web/HTML/Element/meta#charset) dan
+   [meta viewport](https://developer.mozilla.org/docs/Web/HTML/Viewport_meta_tag) secara default, sehingga Anda
+   dapat dengan aman menghapusnya dari tag `<head>` Anda:
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+5. Semua [berkas metadata](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)
+   seperti `favicon.ico`, `icon.png`, `robots.txt` secara otomatis ditambahkan ke tag `<head>` aplikasi selama
+   Anda meletakkannya di tingkat atas direktori `app`. Setelah memindahkan
+   [semua berkas yang didukung](/docs/app/building-your-application/optimizing/metadata#file-based-metadata)
+   ke dalam direktori `app`, Anda dapat dengan aman menghapus tag `<link>` mereka:
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <title>My App</title>
+        <meta name="description" content="My App is a..." />
+      </head>
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+6. Terakhir, Next.js dapat mengelola tag `<head>` terakhir Anda dengan
+   [Metadata API](/docs/app/building-your-application/optimizing/metadata). Pindahkan informasi metadata
+   terakhir Anda ke dalam objek yang diekspor
+   [`metadata`](/docs/app/api-reference/functions/generate-metadata#metadata-object):
+
+```tsx filename="app/layout.tsx" switcher
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My App',
+  description: 'My App is a...',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export const metadata = {
+  title: 'My App',
+  description: 'My App is a...',
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <div id="root">{children}</div>
+      </body>
+    </html>
+  );
+}
+```
+
+Dengan perubahan di atas, Anda beralih dari mendeklarasikan semua hal di berkas `index.html` ke pendekatan
+berbasis konvensi Next.js yang sudah terintegrasi ke dalam kerangka kerja
+([Metadata API](/docs/app/building-your-application/optimizing/metadata)). Pendekatan ini memungkinkan Anda
+untuk lebih mudah meningkatkan SEO dan berbagi web halaman Anda.
+
+### Langkah 5: Buat Halaman Titik Masuk
+
+Pada Next.js, Anda mendeklarasikan titik masuk aplikasi Anda dengan membuat berkas `page.tsx`. Yang paling
+setara dari berkas ini dalam Vite adalah berkas `main.tsx`. Pada langkah ini, Anda akan menyiapkan titik masuk
+aplikasi Anda.
+
+1. **Buat direktori `[[...slug]]` dalam direktori `app` Anda.**
+
+Karena dalam panduan ini kami pertama-tama ingin mengatur Next.js kami sebagai aplikasi satu halaman (Single Page Application),
+Anda perlu agar titik masuk aplikasi Anda menangkap semua rute yang mungkin dari aplikasi Anda. Untuk itu,
+buat direktori `[[...slug]]` baru dalam direktori `app` Anda.
+
+Direktori ini disebut [segment rute opsional](/docs/app/building-your-application/routing/dynamic-routes#optional-catch-all-segments).
+Next.js menggunakan router berbasis sistem berkas di mana
+[direktori digunakan untuk mendefinisikan rute](/docs/app/building-your-application/routing/defining-routes#creating-routes).
+Direktori istimewa ini akan memastikan bahwa semua rute aplikasi Anda akan diarahkan ke berkas `page.tsx` yang
+berisi direktori ini.
+
+2. **Buat berkas `page.tsx` baru di dalam direktori `app/[[...slug]]` dengan konten berikut:**
+
+```tsx filename="app/[[...slug]]/page.tsx" switcher
+'use client';
+
+import dynamic from 'next/dynamic';
+import '../../index.css';
+
+const App = dynamic(() => import('../../App'), { ssr: false });
+
+export default function Page() {
+  return <App />;
+}
+```
+
+```jsx filename="app/[[...slug]]/page.js" switcher
+'use client';
+
+import dynamic from 'next/dynamic';
+import '../../index.css';
+
+const App = dynamic(() => import('../../App'), { ssr: false });
+
+export default function Page() {
+  return <App />;
+}
+```
+
+> **Baik untuk diketahui**: Anda dapat menggunakan ekstensi `.js`, `.jsx`, atau `.tsx` untuk berkas halaman.
+
+Berkas ini berisi komponen `<Page>` yang ditandai sebagai
+[Komponen Klien](/docs/app/building-your-application/rendering/client-components) oleh direktif `'use client'`.
+Tanpa direktif itu, komponen tersebut akan menjadi
+[Komponen Server](/docs/app/building-your-application/rendering/server-components).
+
+Di Next.js, Komponen Klien [diprarender ke HTML](/docs/app/building-your-application/rendering/client-components#how-are-client-components-rendered)
+di server sebelum dikirimkan ke klien, tetapi karena kami ingin terlebih dahulu memiliki aplikasi yang hanya
+dihalaman klien, Anda perlu memberi tahu Next.js untuk menonaktifkan prerendering untuk komponen `<App>` dengan
+mengimpornya secara dinamis dengan opsi `ssr` yang diatur ke `false`.
+
+```tsx
+const App = dynamic(() => import('../../App'), { ssr: false });
+```
+
+### Langkah 6: Memperbarui Impor Gambar Statis
+
+Next.js menangani impor gambar statis dengan sedikit perbedaan dari Vite. Dengan Vite, mengimpor file gambar akan mengembalikan URL publiknya sebagai string:
+
+```tsx filename="App.tsx"
+import gambar from './img.png'; // `gambar` akan menjadi '/assets/img.2d8efhg.png' di produksi
+
+export default function App() {
+  return <img src={gambar} />;
+}
+```
+
+Dengan Next.js, impor gambar statis mengembalikan objek. Objek tersebut kemudian dapat digunakan langsung dengan komponen `<Image>` Next.js, atau Anda dapat menggunakan properti `src` objek dengan tag `<img>` yang sudah ada.
+
+Komponen `<Image>` memiliki manfaat tambahan berupa
+[optimasi gambar otomatis](/docs/app/building-your-application/optimizing/images). Komponen `<Image>`
+secara otomatis mengatur atribut `width` dan `height` dari tag `<img>` yang dihasilkan berdasarkan
+dimensi gambar. Hal ini mencegah pergeseran tata letak saat gambar dimuat. Namun, hal ini dapat
+menyebabkan masalah jika aplikasi Anda berisi gambar dengan salah satu dimensinya hanya diatur
+tanpa yang lain diatur ke `auto`. Ketika tidak diatur ke `auto`, dimensi akan default ke nilai atribut dimensi `<img>`, yang dapat membuat gambar terlihat distorsi.
+
+Menjaga tag `<img>` akan mengurangi jumlah perubahan dalam aplikasi Anda dan mencegah masalah di atas.
+Namun, Anda tetap ingin beralih ke komponen `<Image>` nantinya untuk memanfaatkan
+optimasi otomatis.
+
+1. **Konversi jalur impor absolut untuk gambar yang diimpor dari `/public` menjadi impor relatif:**
+
+```tsx
+// Sebelum
+import logo from '/logo.png';
+
+// Setelah
+import logo from '../public/logo.png';
+```
+
+2. **Berikan properti `src` gambar daripada seluruh objek gambar ke tag `<img>` Anda:**
+
+```tsx
+// Sebelum
+<img src={logo} />
+
+// Setelah
+<img src={logo.src} />
+```
+
+> **Peringatan:** Jika Anda menggunakan TypeScript, Anda mungkin akan menghadapi kesalahan tipe saat mengakses properti `src`. Anda dapat mengabaikannya dengan aman untuk saat ini. Mereka akan diperbaiki pada akhir panduan ini.
+
+### Langkah 7: Migrasi Variabel Lingkungan
+
+Next.js mendukung variabel lingkungan `.env`
+[environment variables](/docs/app/building-your-application/configuring/environment-variables)
+yang mirip dengan Vite. Perbedaan utamanya adalah awalan yang digunakan untuk mengekspos variabel lingkungan di sisi klien.
+
+- Ubah semua variabel lingkungan dengan awalan `VITE_` menjadi `NEXT_PUBLIC_`.
+
+Vite mengekspos beberapa variabel lingkungan bawaan pada objek `import.meta.env` khusus yang
+tidak didukung oleh Next.js. Anda perlu memperbarui penggunaannya seperti berikut:
+
+- `import.meta.env.MODE` ⇒ `process.env.NODE_ENV`
+- `import.meta.env.PROD` ⇒ `process.env.NODE_ENV === 'production'`
+- `import.meta.env.DEV` ⇒ `process.env.NODE_ENV !== 'production'`
+- `import.meta.env.SSR` ⇒ `typeof window !== 'undefined'`
+
+Next.js juga tidak menyediakan variabel lingkungan `BASE_URL` bawaan. Namun, Anda masih dapat
+mengonfigurasi satu jika Anda membutuhkannya:
+
+1. **Tambahkan yang berikut ke file `.env` Anda:**
+
+```bash filename=".env"
+# ...
+NEXT_PUBLIC_BASE_PATH="/some-base-path"
+```
+
+2. **Setel [`basePath`](/docs/app/api-reference/next-config-js/basePath) ke `process.env.NEXT_PUBLIC_BASE_PATH` di file `next.config.mjs` Anda:**
+
+```js filename="next.config.mjs"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export', // Menghasilkan Aplikasi Satu Halaman (SPA).
+  distDir: './dist', // Mengubah direktori output build menjadi `./dist/`.
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH, // Menetapkan jalur dasar ke `/some-base-path`.
+};
+
+export default nextConfig;
+```
+
+3. **Perbarui penggunaan `import.meta.env.BASE_URL` menjadi `process.env.NEXT_PUBLIC_BASE_PATH`**
+
+### Langkah 8: Perbarui Skrip di `package.json`
+
+Anda sekarang seharusnya dapat menjalankan aplikasi Anda untuk menguji apakah Anda berhasil beralih ke Next.js. Tetapi sebelum itu, Anda perlu memperbarui skrip di `package.json` Anda dengan perintah terkait Next.js, dan tambahkan `.next` dan `next-env.d.ts` ke `.gitignore` Anda:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+```txt filename=".gitignore"
+# ...
+.next
+next-env.d.ts
+```
+
+Sekarang jalankan `npm run dev`, dan buka [`http://localhost:3000`](http://localhost:3000). Anda seharusnya
+melihat aplikasi Anda sekarang berjalan di Next.js.
+
+Jika aplikasi Anda mengikuti konfigurasi Vite yang konvensional, ini semua yang perlu Anda lakukan
+untuk memiliki versi berfungsi dari aplikasi Anda.
+
+> **Contoh:** Lihat [pull request ini](https://github.com/inngest/vite-to-nextjs/pull/1) untuk contoh
+> aplikasi Vite yang beralih ke Next.js.
+
+### Langkah 9: Pembersihan
+
+Anda sekarang dapat membersihkan kode Anda dari artefak terkait Vite:
+
+- Hapus `main.tsx`
+- Hapus `index.html`
+- Hapus `vite-env.d.ts`
+- Hapus `tsconfig.node.json`
+- Hapus `vite.config.ts`
+- Uninstall dependensi Vite
+
+## Langkah Selanjutnya
+
+Jika semuanya berjalan sesuai rencana, sekarang Anda memiliki aplikasi Next.js yang berfungsi sebagai
+aplikasi satu halaman. Namun, Anda belum memanfaatkan sebagian besar manfaat Next.js, tetapi Anda
+sekarang dapat mulai membuat perubahan bertahap untuk memanfaatkan semua manfaat tersebut. Inilah yang mungkin ingin Anda lakukan selanjutnya:
+
+- Migrasi dari React Router ke [Pemantauan Aplikasi Next.js](/docs/app/building-your-application/routing) untuk mendapatkan:
+  - Pemisahan kode otomatis
+  - [Pemantauan Server-Pemantauan](/docs/app/building-your-application/routing/loading-ui-and-streaming)
+  - [Komponen Server React](/docs/app/building-your-application/rendering/server-components)
+- [Mengoptimalkan gambar dengan komponen `<Image>`](/docs/app/building-your-application/optimizing/images)
+- [Mengoptimalkan font dengan `next/font`](/docs/app/building-your-application/optimizing/fonts)
+- [Mengoptimalkan skrip pihak ketiga dengan komponen `<Script>`](/docs/app/building-your-application/optimizing/scripts)
+- [Perbarui konfigurasi ESLint Anda untuk mendukung aturan Next.js](/docs/app/building-your-application/configuring/eslint)

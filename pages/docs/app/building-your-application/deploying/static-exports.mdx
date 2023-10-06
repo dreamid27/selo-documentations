@@ -1,0 +1,320 @@
+---
+title: Ekspor Statis
+description: Next.js memungkinkan Anda untuk memulai sebagai situs statis atau Single-Page Application (SPA), kemudian opsional untuk meng-upgrade menggunakan fitur yang memerlukan server.
+---
+
+# Ekspor Statis
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js memungkinkan Anda untuk memulai sebagai situs statis atau Single-Page Application (SPA), kemudian opsional untuk meng-upgrade menggunakan fitur yang memerlukan server.
+
+Ketika menjalankan `next build`, Next.js akan menghasilkan file HTML per rute. Dengan memecah SPA yang ketat menjadi file HTML individu, Next.js dapat menghindari memuat kode JavaScript yang tidak perlu di sisi klien, mengurangi ukuran bundel dan memungkinkan waktu muat halaman yang lebih cepat.
+
+Karena Next.js mendukung ekspor statis ini, itu dapat di-deploy dan di-hosting pada server web apa pun yang dapat menyajikan aset statis HTML/CSS/JS.
+
+## Konfigurasi
+
+Untuk mengaktifkan ekspor statis, ubah mode output di dalam `next.config.js`:
+
+```js filename="next.config.js" highlight={5}
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
+  output: 'export',
+
+  // Optional: Change links `/me` -> `/me/` and emit `/me.html` -> `/me/index.html`
+  // trailingSlash: true,
+
+  // Optional: Prevent automatic `/me` -> `/me/`, instead preserve `href`
+  // skipTrailingSlashRedirect: true,
+
+  // Optional: Change the output directory `out` -> `dist`
+  // distDir: 'dist',
+};
+
+module.exports = nextConfig;
+```
+
+Setelah menjalankan `next build`, Next.js akan menghasilkan folder `out` yang berisi aset HTML/CSS/JS untuk aplikasi Anda.
+
+## Fitur yang Didukung
+
+Inti dari Next.js telah dirancang untuk mendukung ekspor statis.
+
+### Komponen Server
+
+Ketika Anda menjalankan `next build` untuk menghasilkan ekspor statis, Server Components yang dikonsumsi di dalam direktori `app` akan dijalankan selama proses build, mirip dengan generasi situs statis tradisional.
+
+Komponen yang dihasilkan akan dirender ke dalam HTML statis untuk muatan halaman awal dan muatan statis untuk navigasi klien antara rute. Tidak ada perubahan yang diperlukan untuk Server Components Anda saat menggunakan ekspor statis, kecuali jika mereka mengonsumsi [fungsi server dinamis](#fitur-yang-tidak-didukung).
+
+```tsx filename="app/page.tsx" switcher
+export default async function Page() {
+  // Pemanggilan ini akan dijalankan di server selama `next build`
+  const res = await fetch('https://api.example.com/...');
+  const data = await res.json();
+
+  return <main>...</main>;
+}
+```
+
+### Komponen Klien
+
+Jika Anda ingin melakukan pengambilan data di sisi klien, Anda dapat menggunakan Komponen Klien dengan [SWR](https://github.com/vercel/swr) untuk memori-kan permintaan.
+
+```tsx filename="app/other/page.tsx" switcher
+'use client';
+
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+export default function Page() {
+  const { data, error } = useSWR(
+    `https://jsonplaceholder.typicode.com/posts/1`,
+    fetcher
+  );
+  if (error) return 'Gagal memuat';
+  if (!data) return 'Memuat...';
+
+  return data.title;
+}
+```
+
+```jsx filename="app/other/page.js" switcher
+'use client';
+
+import useSWR from 'swr';
+
+const fetcher = (url) => fetch(url).then((r) => r.json());
+
+export default function Page() {
+  const { data, error } = useSWR(
+    `https://jsonplaceholder.typicode.com/posts/1`,
+    fetcher
+  );
+  if (error) return 'Gagal memuat';
+  if (!data) return 'Memuat...';
+
+  return data.title;
+}
+```
+
+Karena transisi rute terjadi di sisi klien, ini berperilaku seperti SPA tradisional. Sebagai contoh, rute indeks berikut memungkinkan Anda untuk menavigasi ke berbagai posting di sisi klien:
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <>
+      <h1>Halaman Indeks</h1>
+      <hr />
+
+      <ul>
+        <li>
+          <Link href="/post/1">Posting 1</Link>
+        </li>
+        <li>
+          <Link href="/post/2">Posting 2</Link>
+        </li>
+      </ul>
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <>
+      <h1>Halaman Indeks</h1>
+      <p>
+        <Link href="/other">Halaman Lain</Link>
+      </p>
+    </>
+  );
+}
+```
+
+### Optimisasi Gambar
+
+[Optimisasi Gambar](/docs/app/building-your-application/optimizing/images) melalui `next/image` dapat digunakan dengan ekspor statis dengan mendefinisikan loader gambar kustom di `next.config.js`. Sebagai contoh, Anda dapat mengoptimalkan gambar dengan layanan seperti Cloudinary:
+
+```js filename="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'export',
+  images: {
+    loader: 'custom',
+    loaderFile: './my-loader.ts',
+  },
+};
+
+module.exports = nextConfig;
+```
+
+Loader kustom ini akan menentukan cara mengambil gambar dari sumber remote. Sebagai contoh, loader berikut akan membangun URL untuk Cloudinary:
+
+```ts filename="my-loader.ts" switcher
+export default function cloudinaryLoader({
+  src,
+  width,
+  quality,
+}: {
+  src: string;
+  width: number;
+  quality?: number;
+}) {
+  const params = ['f_auto', 'c_limit', `w_${width}`, `q_${quality || 'auto'}`];
+  return `https://res.cloudinary.com/demo/image/upload/${params.join(
+    ','
+  )}${src}`;
+}
+```
+
+```js filename="my-loader.js" switcher
+export default function cloudinaryLoader({ src, width, quality }) {
+  const params = ['f_auto', 'c_limit', `w_${width}`, `q_${quality || 'auto'}`];
+  return `https://res.cloudinary.com/demo/image/upload/${params.join(
+    ','
+  )}${src}`;
+}
+```
+
+Kemudian Anda dapat menggunakan `next/image` dalam aplikasi Anda, mendefinisikan path relatif ke gambar di Cloudinary:
+
+```tsx filename="app/page.tsx" switcher
+import Image from 'next/image';
+
+export default function Page() {
+  return (
+    <Image alt="kura-kura" src="/kura-kura.jpg" width={300} height={300} />
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Image from 'next/image';
+
+export default function Page() {
+  return (
+    <Image alt="kura-kura" src="/kura-kura.jpg" width={300} height={300} />
+  );
+}
+```
+
+### Penanganan Rute
+
+Penanganan Rute akan merender respons statis saat menjalankan `next build`. Hanya verba HTTP `GET` yang didukung. Ini dapat digunakan untuk menghasilkan file HTML, JSON, TXT, atau file lainnya dari data yang di-cache atau tidak di-cache. Sebagai contoh:
+
+```ts filename="app/data.json/route.ts" switcher
+export async function GET() {
+  return Response.json({ name: 'Lee' });
+}
+```
+
+```js filename="app/data.json/route.js" switcher
+export async function GET() {
+  return Response.json({ name: 'Lee' });
+}
+```
+
+File di atas `app/data.json/route.ts` akan dirender ke file statis selama `next build`, menghasilkan `data.json` yang berisi `{ name: 'Lee' }`.
+
+Jika Anda perlu membaca nilai dinamis dari permintaan yang masuk, Anda tidak dapat menggunakan ekspor statis.
+
+### API Peramban
+
+Komponen Klien di-pre-render ke HTML selama `next build`. Karena [API Web](https://developer.mozilla.org/docs/Web/API) seperti `window`, `localStorage`, dan `navigator` tidak tersedia di server, Anda perlu mengakses API ini dengan aman hanya saat berjalan di peramban. Sebagai contoh:
+
+```jsx
+'use client';
+
+import { useEffect } from 'react';
+
+export default function ClientComponent() {
+  useEffect(() => {
+    // Anda sekarang memiliki akses ke `window`
+    console.log(window.innerHeight);
+  }, [])
+
+  return ...;
+}
+```
+
+## Fitur yang Tidak Didukung
+
+Fitur yang memerlukan server Node.js, atau logika dinamis yang tidak dapat dihitung selama proses build, **tidak** didukung:
+
+- [Rute Dinamis](/docs/app/building-your-application/routing/dynamic-routes) dengan `dynamicParams: true`
+- [Rute Dinamis](/docs/app/building-your-application/routing/dynamic-routes) tanpa `generateStaticParams()`
+- [Penanganan Rute](/docs/app/building-your-application/routing/route-handlers) yang mengandalkan Permintaan
+- [Cookies](/docs/app/api-reference/functions/cookies)
+- [Penulisan Ulang (Rewrites)](/docs/app/api-reference/next-config-js/rewrites)
+- [Pengalihan (Redirects)](/docs/app/api-reference/next-config-js/redirects)
+- [Header](/docs/app/api-reference/next-config-js/headers)
+- [Middleware](/docs/app/building-your-application/routing/middleware)
+- [Pembaruan Statis Bertahap (Incremental Static Regeneration)](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating)
+- [Optimisasi Gambar](/docs/app/building-your-application/optimizing/images) dengan `loader` default
+- [Mode Draft](/docs/app/building-your-application/configuring/draft-mode)
+
+Mencoba menggunakan salah satu fitur ini dengan `next dev` akan menghasilkan error
+
+, mirip dengan mengatur opsi [`dynamic`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic) ke `error` dalam layout utama.
+
+```jsx
+export const dynamic = 'error';
+```
+
+## Penyiaran
+
+Dengan ekspor statis, Next.js dapat di-deploy dan di-hosting pada server web apa pun yang dapat menyajikan aset statis HTML/CSS/JS.
+
+Ketika menjalankan `next build`, Next.js akan menghasilkan ekspor statis ke dalam folder `out`. Penggunaan `next export` tidak lagi diperlukan. Sebagai contoh, katakanlah Anda memiliki rute-rute berikut:
+
+- `/`
+- `/blog/[id]`
+
+Setelah menjalankan `next build`, Next.js akan menghasilkan file-file berikut:
+
+- `/out/index.html`
+- `/out/404.html`
+- `/out/blog/post-1.html`
+- `/out/blog/post-2.html`
+
+Jika Anda menggunakan host statis seperti Nginx, Anda dapat mengonfigurasi penulisan ulang dari permintaan masuk ke file-file yang benar:
+
+```nginx filename="nginx.conf"
+server {
+  listen 80;
+  server_name acme.com;
+
+  root /var/www/out;
+
+  location / {
+      try_files $uri $uri.html $uri/ =404;
+  }
+
+  # Ini diperlukan ketika `trailingSlash: false`.
+  # Anda dapat menghilangkannya ketika `trailingSlash: true`.
+  location /blog/ {
+      rewrite ^/blog/(.*)$ /blog/$1.html break;
+  }
+
+  error_page 404 /404.html;
+  location = /404.html {
+      internal;
+  }
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `v13.4.0` | App Router (Stable) menambahkan dukungan ekspor statis yang ditingkatkan, termasuk penggunaan React Server Components dan Penanganan Rute. |
+| `v13.3.0` | `next export` sudah usang dan digantikan dengan `"output": "export"`                                                                       |

@@ -101,7 +101,7 @@ setupAnalyticsService(env.NEXT_PUBLIC_ANALYTICS_ID);
 
 Secara umum, hanya diperlukan satu file `.env.local`. Namun, terkadang Anda mungkin ingin menambahkan beberapa nilai default untuk lingkungan `development` (`next dev`) atau `production` (`next start`).
 
-Next.js memungkinkan Anda untuk mengatur nilai default di dalam `.env` (semua lingkungan), `.env.development` (lingkungan pengembangan), dan `.env.production` (lingkungan produksi).
+Next.js memungkinkan Anda untuk mengatur nilai default di dalam `.env` (semua lingkungan), `.env.development` (lingkungan pengembangan), dan `.env.production` (lingkungan production).
 
 `.env.local` selalu mengesampingkan nilai default yang diatur.
 
@@ -121,7 +121,7 @@ vercel env pull .env.local
 
 ## Environtment Variabel Uji
 
-Selain lingkungan `development` dan `production`, ada pilihan ketiga yang tersedia: `test`. Dengan cara yang sama Anda dapat mengatur nilai default untuk lingkungan pengembangan atau produksi, Anda dapat melakukannya juga dengan file `.env.test` untuk lingkungan `testing` (meskipun ini tidak seumum dua yang sebelumnya). Next.js tidak akan memuat variabel lingkungan dari `.env.development` atau `.env.production` dalam lingkungan `testing`.
+Selain lingkungan `development` dan `production`, ada pilihan ketiga yang tersedia: `test`. Dengan cara yang sama Anda dapat mengatur nilai default untuk lingkungan pengembangan atau production, Anda dapat melakukannya juga dengan file `.env.test` untuk lingkungan `testing` (meskipun ini tidak seumum dua yang sebelumnya). Next.js tidak akan memuat variabel lingkungan dari `.env.development` atau `.env.production` dalam lingkungan `testing`.
 
 Ini berguna ketika menjalankan tes dengan alat seperti `jest` atau `cypress` di mana Anda perlu mengatur variabel lingkungan tertentu hanya untuk tujuan pengujian. Nilai default uji akan dimuat jika `NODE_ENV` diatur ke `test`, meskipun biasanya Anda tidak perlu melakukannya secara manual karena alat pengujian akan menanganinya untuk Anda.
 

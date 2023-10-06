@@ -189,9 +189,9 @@ Sejak `v10.2.1`, Next.js mendukung [pemeriksaan tipe bertahap](https://www.types
 
 ## Mengabaikan Kesalahan Tipe TypeScript
 
-Next.js gagal membangun produksi Anda (`next build`) ketika kesalahan TypeScript hadir dalam proyek Anda.
+Next.js gagal membangun production Anda (`next build`) ketika kesalahan TypeScript hadir dalam proyek Anda.
 
-Jika Anda ingin Next.js memproduksi kode produksi dengan bahaya bahkan ketika aplikasi Anda memiliki kesalahan, Anda dapat menonaktifkan langkah pemeriksaan tipe bawaan.
+Jika Anda ingin Next.js memproduction kode production dengan bahaya bahkan ketika aplikasi Anda memiliki kesalahan, Anda dapat menonaktifkan langkah pemeriksaan tipe bawaan.
 
 Jika dinonaktifkan, pastikan Anda menjalankan pemeriksaan tipe sebagai bagian dari proses pembangunan atau distribusi Anda, jika tidak ini bisa sangat berbahaya.
 
@@ -201,7 +201,7 @@ Buka `next.config.js` dan aktifkan opsi `ignoreBuildErrors` dalam konfigurasi `t
 module.exports = {
   typescript: {
     // !! PERINGATAN !!
-    // Dengan berbahaya memungkinkan pembangunan produksi berhasil selesai bahkan jika
+    // Dengan berbahaya memungkinkan pembangunan production berhasil selesai bahkan jika
     // proyek Anda memiliki kesalahan jenis.
     // !! PERINGATAN !!
     ignoreBuildErrors: true,

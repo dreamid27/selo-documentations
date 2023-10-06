@@ -1,0 +1,311 @@
+---
+title: Codemods
+description: Gunakan codemods untuk meng-upgrade kode Next.js Anda saat fitur baru dirilis.
+---
+
+# Codemods
+
+Codemods adalah transformasi yang dijalankan secara programatik pada kode Anda. Hal ini memungkinkan sejumlah besar perubahan diterapkan secara otomatis tanpa harus secara manual mengubah setiap file.
+
+Next.js menyediakan transformasi Codemod untuk membantu meng-upgrade kode Next.js Anda saat API diperbarui atau sudah tidak digunakan lagi.
+
+## Penggunaan
+
+Di terminal Anda, navigasi (`cd`) ke dalam folder proyek Anda, kemudian jalankan:
+
+```bash filename="Terminal"
+npx @next/codemod <transform> <path>
+```
+
+Gantilah `<transform>` dan `<path>` dengan nilai yang sesuai.
+
+- `transform` - nama transformasi
+- `path` - file atau direktori yang akan diubah
+- `--dry` - Lakukan uji coba, tidak ada kode yang akan diedit
+- `--print` - Cetak output yang telah diubah untuk dibandingkan
+
+## Codemods Next.js
+
+### 13.2
+
+#### Gunakan Font Bawaan
+
+##### `built-in-next-font`
+
+```bash filename="Terminal"
+npx @next/codemod@latest built-in-next-font .
+```
+
+Codemod ini akan menghapus paket `@next/font` dan mengubah impor `@next/font` menjadi `next/font` yang sudah ada.
+
+Misalnya:
+
+```js
+import { Inter } from '@next/font/google';
+```
+
+Akan diubah menjadi:
+
+```js
+import { Inter } from 'next/font/google';
+```
+
+### 13.0
+
+#### Ubah Nama Impor Next Image
+
+##### `next-image-to-legacy-image`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-image-to-legacy-image .
+```
+
+Mengubah nama aman impor `next/image` dalam aplikasi Next.js yang sudah ada versi 10, 11, atau 12 menjadi `next/legacy/image` di Next.js versi 13. Juga mengubah `next/future/image` menjadi `next/image`.
+
+Misalnya:
+
+```jsx filename="pages/index.js"
+import Image1 from 'next/image';
+import Image2 from 'next/future/image';
+
+export default function Home() {
+  return (
+    <div>
+      <Image1 src="/test.jpg" width="200" height="300" />
+      <Image2 src="/test.png" width="500" height="400" />
+    </div>
+  );
+}
+```
+
+Akan diubah menjadi:
+
+```jsx filename="pages/index.js"
+// 'next/image' menjadi 'next/legacy/image'
+import Image1 from 'next/legacy/image';
+// 'next/future/image' menjadi 'next/image'
+import Image2 from 'next/image';
+
+export default function Home() {
+  return (
+    <div>
+      <Image1 src="/test.jpg" width="200" height="300" />
+      <Image2 src="/test.png" width="500" height="400" />
+    </div>
+  );
+}
+```
+
+#### Migrasi ke Komponen Gambar Baru
+
+##### `next-image-experimental`
+
+```bash filename="Terminal"
+npx @next/codemod@latest next-image-experimental .
+```
+
+Migrasi berbahaya dari `next/legacy/image` ke `next/image` yang baru dengan menambahkan gaya inline dan menghapus prop yang tidak digunakan.
+
+- Menghapus prop `layout` dan menambahkan `style`.
+- Menghapus prop `objectFit` dan menambahkan `style`.
+- Menghapus prop `objectPosition` dan menambahkan `style`.
+- Menghapus prop `lazyBoundary`.
+- Menghapus prop `lazyRoot`.
+
+#### Hapus Tag `<a>` Dari Komponen Tautan
+
+##### `new-link`
+
+```bash filename="Terminal"
+npx @next/codemod@latest new-link .
+```
+
+Hapus tag `<a>` di dalam [Komponen Tautan](/docs/app/api-reference/components/link), atau tambahkan prop `legacyBehavior` ke Tautan yang tidak dapat diperbaiki secara otomatis.
+
+Misalnya:
+
+```jsx
+<Link href="/about">
+  <a>About</a>
+</Link>
+// akan diubah menjadi
+<Link href="/about">
+  About
+</Link>
+
+<Link href="/about">
+  <a onClick={() => console.log('clicked')}>About</a>
+</Link>
+// akan diubah menjadi
+<Link href="/about" onClick={() => console.log('clicked')}>
+  About
+</Link>
+```
+
+Dalam kasus di mana perbaikan otomatis tidak dapat diterapkan, prop `legacyBehavior` akan ditambahkan. Ini memungkinkan aplikasi Anda tetap berfungsi menggunakan perilaku lama untuk tautan tertentu.
+
+```jsx
+const Component = () => <a>About</a>
+
+<Link href="/about">
+  <Component />
+</Link>
+// menjadi
+<Link href="/about" legacyBehavior>
+  <Component />
+</Link>
+```
+
+### 11
+
+#### Migrasi dari CRA (Create React App)
+
+##### `cra-to-next`
+
+```bash filename="Terminal"
+npx @next/codemod cra-to-next
+```
+
+Migrasi proyek Create React App ke Next.js; membuat Pages Router dan konfigurasi yang diperlukan untuk mencocokkan perilaku. Rendering hanya di sisi klien digunakan pada awalnya untuk mencegah kompatibilitas rusak akibat penggunaan `window` selama SSR dan dapat diaktifkan dengan lancar untuk mengizinkan adopsi bertahap fitur-fitur khusus Next.js.
+
+Harap bagikan masukan terkait transformasi ini [dalam diskusi ini](https://github.com/vercel/next.js/discussions/25858).
+
+### 10
+
+#### Tambahkan Impor React
+
+##### `add-missing-react-import`
+
+```bash filename="Terminal"
+npx @next/codemod add-missing-react-import
+```
+
+Mengubah file yang tidak mengimpor `React` untuk menyertakan impor tersebut agar [transformasi JSX React yang baru](https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html) dapat berfungsi.
+
+Misalnya:
+
+```jsx filename="my-component.js"
+export default class Home extends React.Component {
+  render() {
+    return <div>Hello World</div>;
+  }
+}
+```
+
+Akan diubah menjadi:
+
+```jsx filename="my-component.js"
+import React from 'react';
+export default class Home extends React.Component {
+  render() {
+    return <div>Hello World</div>;
+  }
+}
+```
+
+### 9
+
+#### Ubah Komponen Tanpa Nama Menjadi Komponen Bernama
+
+##### `name-default-component`
+
+```bash filename="Terminal"
+npx @next/codemod name-default-component
+```
+
+**Versi 9 dan setelahnya.**
+
+Mengubah komponen tanpa nama menjadi komponen bernama untuk memastikan mereka berfungsi dengan [Fast Refresh](https://nextjs.org/blog/next-9-4#fast-refresh).
+
+Misalnya:
+
+```jsx filename="my-component.js"
+export default function () {
+  return <div>Hello World</div>;
+}
+```
+
+Akan diubah menjadi:
+
+```jsx filename="my-component.js"
+export default function MyComponent() {
+  return <div>Hello World</div>;
+}
+```
+
+Komponen akan memiliki nama yang berformat camel-case berdasarkan nama file, dan juga berfungsi dengan fungsi panah.
+
+### 8
+
+#### Ubah HOC AMP Menjadi Konfigurasi Halaman
+
+##### `withamp-to-config`
+
+```bash filename="Terminal"
+npx @next/codemod withamp-to-config
+```
+
+Mengubah HOC `withAmp` menjadi konfigurasi halaman Next.js 9.
+
+Misalnya:
+
+```js
+// Sebelum
+import { withAmp } from 'next/amp';
+
+function Home() {
+  return <h1>My AMP Page</h1>;
+}
+
+export default withAmp(Home);
+```
+
+```js
+// Sesudah
+export default function Home() {
+  return <h1>My AMP Page</h1>;
+}
+
+export const config = {
+  amp: true,
+};
+```
+
+### 6
+
+#### Gunakan `withRouter`
+
+##### `url-to-withrouter`
+
+```bash filename="Terminal"
+npx @next/codemod url-to-withrouter
+```
+
+Mengubah properti `url` yang sudah tidak digunakan lagi yang secara otomatis disuntikkan pada halaman-halaman tingkat atas ke `withRouter` dan properti `router` yang disuntikkan olehnya. Baca lebih lanjut di sini: [https://nextjs.org/docs/messages/url-deprecated](/docs/messages/url-deprecated)
+
+Misalnya:
+
+```js filename="From"
+import React from 'react';
+export default class extends React.Component {
+  render() {
+    const { pathname } = this.props.url;
+    return <div>Current pathname: {pathname}</div>;
+  }
+}
+```
+
+```js filename="To"
+import React from 'react';
+import { withRouter } from 'next/router';
+export default withRouter(
+  class extends React.Component {
+    render() {
+      const { pathname } = this.props.router;
+      return <div>Current pathname: {pathname}</div>;
+    }
+  }
+);
+```
+
+Ini adalah satu kasus. Semua kasus yang diubah (dan diuji) dapat ditemukan di [direktori `__testfixtures__`](https://github.com/vercel/next.js/tree/canary/packages/next-codemod/transforms/__testfixtures__/url-to-withrouter).

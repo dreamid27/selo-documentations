@@ -5,5 +5,7 @@
   "caching": "Caching",
   "styling": "Styling",
   "optimizing": "Optimasi",
-  "configuring": "Konfigurasi"
+  "configuring": "Konfigurasi",
+  "deploying": "Deploying",
+  "upgrading": "Memperbarui"
 }

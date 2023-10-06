@@ -237,7 +237,7 @@ Page.getLayout = function getLayout(page) {
 - Pindahkan konten dari `DashboardLayout` ke dalam [Komponen Klien](/docs/app/building-your-application/rendering/client-components) baru untuk mempertahankan perilaku direktori `pages`.
 
   ```jsx filename="app/dashboard/DashboardLayout.js"
-  'gunakan client'; // direktif ini harus berada di atas file, sebelum impor apa pun.
+  'use client'; // direktif ini harus berada di atas file, sebelum impor apa pun.
 
   // Ini adalah Komponen Klien
   export default function DashboardLayout({ children }) {
@@ -345,11 +345,11 @@ Kami merekomendasikan memecah migrasi halaman menjadi dua langkah utama:
 
 **Langkah 1: Buat Komponen Klien Baru**
 
-- Buat file terpisah baru di dalam direktori `app` (misalnya, `app/home-page.tsx` atau sejenisnya) yang mengekspor Komponen Klien. Untuk mendefinisikan Komponen Klien, tambahkan direktif `'gunakan client'` di bagian atas file (sebelum impor apa pun).
+- Buat file terpisah baru di dalam direktori `app` (misalnya, `app/home-page.tsx` atau sejenisnya) yang mengekspor Komponen Klien. Untuk mendefinisikan Komponen Klien, tambahkan direktif `'use client'` di bagian atas file (sebelum impor apa pun).
 - Pindahkan komponen halaman yang diekspor secara default dari `pages/index.js` ke `app/home-page.tsx`.
 
 ```tsx filename="app/home-page.tsx" switcher
-'gunakan client';
+'use client';
 
 // Ini adalah Komponen Klien. Ini menerima data sebagai props dan
 // memiliki akses ke state dan efek seperti Komponen Halaman
@@ -366,7 +366,7 @@ export default function HomePage({ recentPosts }) {
 ```
 
 ```jsx filename="app/home-page.js" switcher
-'gunakan client';
+'use client';
 
 // Ini adalah Komponen Klien. Ini menerima data sebagai props dan
 // memiliki akses ke state dan efek seperti Komponen Halaman

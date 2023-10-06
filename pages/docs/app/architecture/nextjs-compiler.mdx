@@ -30,7 +30,7 @@ Kami sedang bekerja untuk memindahkan `babel-plugin-styled-components` ke Kompil
 
 Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `next.config.js` Anda:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
 compiler: {
 // lihat https://styled-components.com/docs/tooling#babel-plugin untuk informasi lebih lanjut tentang opsi-opsi.
@@ -59,7 +59,7 @@ pure?: boolean,
 },
 },
 }
-ttt
+```
 
 `minify`, `transpileTemplateLiterals`, dan `pure` belum diimplementasikan. Anda dapat mengikuti perkembangannya [di sini](https://github.com/vercel/next.js/issues/30802). Transformasi `ssr` dan `displayName` adalah persyaratan utama untuk menggunakan `styled-components` di Next.js.
 
@@ -76,38 +76,38 @@ Kompilator Next.js mengubah pengujian Anda dan menyederhanakan konfigurasi Jest 
 
 Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jest.config.js` Anda:
 
-tttjs filename="jest.config.js"
-const nextJest = require('next/jest')
+```js filename="jest.config.js"
+const nextJest = require('next/jest');
 
 // Menyediakan path ke aplikasi Next.js Anda yang akan mengaktifkan pemuatan next.config.js dan file .env
-const createJestConfig = nextJest({ dir: './' })
+const createJestConfig = nextJest({ dir: './' });
 
 // Konfigurasi kustom apa pun yang ingin Anda lewatkan ke Jest
 const customJestConfig = {
-setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-}
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+};
 
 // createJestConfig diekspor dengan cara ini untuk memastikan bahwa next/jest dapat memuat konfigurasi Next.js, yang bersifat asinkron
-module.exports = createJestConfig(customJestConfig)
-ttt
+module.exports = createJestConfig(customJestConfig);
+```
 
 ### Relay
 
 Untuk mengaktifkan dukungan [Relay](https://relay.dev/):
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-compiler: {
-relay: {
-// Ini harus sesuai dengan relay.config.js
-src: './',
-artifactDirectory: './**generated**',
-language: 'typescript',
-eagerEsModules: false,
-},
-},
-}
-ttt
+  compiler: {
+    relay: {
+      // Ini harus sesuai dengan relay.config.js
+      src: './',
+      artifactDirectory: './**generated**',
+      language: 'typescript',
+      eagerEsModules: false,
+    },
+  },
+};
+```
 
 > **Perlu diketahui**: Dalam Next.js, semua file JavaScript dalam direktori `pages` dianggap sebagai rute. Jadi, untuk `relay-compiler`, Anda perlu menentukan pengaturan konfigurasi `artifactDirectory` di luar `pages`, jika tidak `relay-compiler` akan menghasilkan file di samping file sumber dalam direktori `__generated__`, dan file ini akan dianggap sebagai rute, yang akan merusak pembangunan produksi.
 
@@ -117,25 +117,25 @@ Memungkinkan untuk menghapus properti JSX. Ini sering digunakan untuk pengujian.
 
 Untuk menghapus properti yang cocok dengan regex default `^data-test`:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-compiler: {
-reactRemoveProperties: true,
-},
-}
-ttt
+  compiler: {
+    reactRemoveProperties: true,
+  },
+};
+```
 
 Untuk menghapus properti kustom:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-compiler: {
-// Regex yang didefinisikan di sini diproses dalam Rust sehingga sintaksnya berbeda dari
-// `RegExp` JavaScript. Lihat https://docs.rs/regex.
-reactRemoveProperties: { properties: ['^data-custom$'] },
-},
-}
-ttt
+  compiler: {
+    // Regex yang didefinisikan di sini diproses dalam Rust sehingga sintaksnya berbeda dari
+    // `RegExp` JavaScript. Lihat https://docs.rs/regex.
+    reactRemoveProperties: { properties: ['^data-custom$'] },
+  },
+};
+```
 
 ### Hapus Console
 
@@ -143,25 +143,25 @@ Transformasi ini memungkinkan untuk menghapus semua panggilan `console.*` dalam 
 
 Hapus semua panggilan `console.*`:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-compiler: {
-removeConsole: true,
-},
-}
-ttt
+  compiler: {
+    removeConsole: true,
+  },
+};
+```
 
 Hapus keluaran `console.*` kecuali `console.error`:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-compiler: {
-removeConsole: {
-exclude: ['error'],
-},
-},
-}
-ttt
+  compiler: {
+    removeConsole: {
+      exclude: ['error'],
+    },
+  },
+};
+```
 
 ### Dekorator Legacy
 
@@ -171,13 +171,13 @@ Bendera ini hanya didukung untuk kompatibilitas dengan aplikasi yang ada. Kami t
 
 Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jsconfig.json` atau `tsconfig.json` Anda:
 
-tttjs
+```js
 {
 "compilerOptions": {
 "experimentalDecorators": true
 }
 }
-ttt
+```
 
 ### importSource
 
@@ -185,13 +185,13 @@ Next.js secara otomatis akan mendeteksi `jsxImportSource` di `jsconfig.json` ata
 
 Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `jsconfig.json` atau `tsconfig.json` Anda:
 
-tttjs
+```js
 {
 "compilerOptions": {
 "jsxImportSource": "theme-ui"
 }
 }
-ttt
+```
 
 ### Emotion
 
@@ -199,7 +199,7 @@ Kami sedang bekerja untuk memindahkan `@emotion/babel-plugin` ke Kompilator Next
 
 Pertama, perbarui ke versi terbaru Next.js: `npm install next@latest`. Kemudian, perbarui file `next.config.js` Anda:
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 
 module.exports = {
 compiler: {
@@ -230,7 +230,7 @@ styledBaseImport?: [string, string],
 },
 },
 }
-ttt
+```
 
 ### Peminyakan
 
@@ -238,21 +238,21 @@ Kompilator swc Next.js digunakan untuk peminyakan secara default sejak v13. Ini 
 
 Jika Terser masih diperlukan karena alasan tertentu, ini dapat dikonfigurasi.
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-swcMinify: false,
-}
-ttt
+  swcMinify: false,
+};
+```
 
 ### Transpilasi Modul
 
 Next.js dapat secara otomatis melakukan transpilasi dan bundling dependensi dari paket lokal (seperti monorepos) atau dari dependensi eksternal (`node_modules`). Ini menggantikan paket `next-transpile-modules`.
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-transpilePackages: ['@acme/ui', 'lodash-es'],
-}
-ttt
+  transpilePackages: ['@acme/ui', 'lodash-es'],
+};
+```
 
 ### Impor Modular
 
@@ -264,13 +264,13 @@ Opsi ini telah digantikan oleh [`optimizePackageImports`](/docs/app/api-referenc
 
 Anda dapat menghasilkan jejak transformasi internal SWC sebagai format [acara jejak](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?mode=html#%21=) chromium.
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-experimental: {
-swcTraceProfiling: true,
-},
-}
-ttt
+  experimental: {
+    swcTraceProfiling: true,
+  },
+};
+```
 
 Setelah diaktifkan, swc akan menghasilkan jejak dengan nama `swc-trace-profile-${timestamp}.json` di bawah `.next/`. Pemutar jejak chromium (chrome://tracing/, https://ui.perfetto.dev/), atau pemutar flamegraph yang kompatibel (https://www.speedscope.app/) dapat memuat dan memvisualisasikan jejak yang dihasilkan.
 
@@ -278,20 +278,20 @@ Setelah diaktifkan, swc akan menghasilkan jejak dengan nama `swc-trace-profile-$
 
 Anda dapat mengkonfigurasi transformasi swc untuk menggunakan dukungan plugin eksperimental SWC yang ditulis dalam wasm untuk menyesuaikan perilaku transformasi.
 
-tttjs filename="next.config.js"
+```js filename="next.config.js"
 module.exports = {
-experimental: {
-swcPlugins: [
-[
-'plugin',
-{
-...pluginOptions,
-},
-],
-],
-},
-}
-ttt
+  experimental: {
+    swcPlugins: [
+      [
+        'plugin',
+        {
+          ...pluginOptions,
+        },
+      ],
+    ],
+  },
+};
+```
 
 `swcPlugins` menerima array dari tupel untuk mengkonfigurasi plugin. Sebuah tupel untuk plugin berisi path ke plugin dan objek untuk konfigurasi plugin. Path ke plugin dapat berupa nama modul npm atau path absolut ke binary `.wasm` itu sendiri.
 

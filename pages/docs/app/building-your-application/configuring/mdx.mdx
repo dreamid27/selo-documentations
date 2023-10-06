@@ -1,0 +1,346 @@
+---
+title: MDX
+description: Pelajari cara mengkonfigurasi MDX untuk menulis JSX dalam berkas markdown Anda.
+---
+
+# MDX
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak sebaiknya dibungkus dalam sebuah komponen. */}
+
+[Markdown](https://daringfireball.net/projects/markdown/syntax) adalah bahasa markup ringan yang digunakan untuk memformat teks. Ini memungkinkan Anda menulis menggunakan sintaks teks biasa dan mengonversinya menjadi HTML yang valid secara struktural. Biasanya digunakan untuk menulis konten di situs web dan blog.
+
+Anda menulis...
+
+```md
+Saya **suka** menggunakan [Next.js](https://nextjs.org/)
+```
+
+Keluaran:
+
+```html
+<p>
+  Saya <strong>suka</strong> menggunakan
+  <a href="https://nextjs.org/">Next.js</a>
+</p>
+```
+
+[MDX](https://mdxjs.com/) adalah superset dari markdown yang memungkinkan Anda menulis [JSX](https://react.dev/learn/writing-markup-with-jsx) langsung dalam berkas markdown Anda. Ini adalah cara kuat untuk menambahkan interaktivitas dinamis dan menyematkan komponen React dalam konten Anda.
+
+Next.js dapat mendukung konten MDX lokal di dalam aplikasi Anda, serta berkas MDX jarak jauh yang diambil secara dinamis di server. Plugin Next.js menangani transformasi markdown dan komponen React menjadi HTML, termasuk dukungan untuk penggunaan dalam Komponen Server (default di App Router).
+
+## `@next/mdx`
+
+Paket `@next/mdx` digunakan untuk mengkonfigurasi Next.js agar dapat memproses markdown dan MDX. **Ini mengambil data dari berkas lokal**, memungkinkan Anda membuat halaman dengan ekstensi `.mdx`, langsung di direktori `/pages` atau `/app` Anda.
+
+Mari kita lihat bagaimana cara mengkonfigurasi dan menggunakan MDX dengan Next.js.
+
+## Memulai
+
+Pasang paket yang diperlukan untuk merender MDX:
+
+```bash filename="Terminal"
+npm install @next/mdx @mdx-js/loader @mdx-js/react @types/mdx
+```
+
+Buat berkas `mdx-components.tsx` di root aplikasi Anda (folder induk `app/` atau `src/`):
+
+> **Baik untuk diketahui**: `mdx-components.tsx` diperlukan untuk menggunakan MDX dengan App Router dan tidak akan berfungsi tanpanya.
+
+```tsx filename="mdx-components.tsx" switcher
+import type { MDXComponents } from 'mdx/types';
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    ...components,
+  };
+}
+```
+
+```js filename="mdx-components.js" switcher
+export function useMDXComponents(components) {
+  return {
+    ...components,
+  };
+}
+```
+
+Perbarui berkas `next.config.js` di root proyek Anda untuk mengonfigurasi penggunaan MDX:
+
+```js filename="next.config.js"
+const withMDX = require('@next/mdx')();
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Konfigurasi `pageExtensions`` untuk menyertakan berkas MDX
+  pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  // Opsional, tambahkan konfigurasi Next.js lainnya di bawah ini
+};
+
+module.exports = withMDX(nextConfig);
+```
+
+Kemudian, buat halaman MDX baru dalam direktori `/app`:
+
+```txt
+  projek-anda
+  ├── app
+  │   └── halaman-myx-saya
+  │       └── halaman.mdx
+  └── package.json
+```
+
+Sekarang Anda dapat menggunakan markdown dan mengimpor komponen React langsung di dalam halaman MDX Anda:
+
+```mdx
+import { KomponenSaya } from 'komponen-saya';
+
+# Selamat datang di halaman MDX saya!
+
+Ini adalah beberapa teks **tebal** dan _miring_.
+
+Ini adalah daftar dalam markdown:
+
+- Satu
+- Dua
+- Tiga
+
+Lihat komponen React saya:
+
+<KomponenSaya />
+```
+
+Berpindah ke rute `/halaman-myx-saya` akan menampilkan MDX yang di-render.
+
+## MDX Jarak Jauh
+
+Jika berkas markdown atau MDX Anda atau konten berada _di tempat lain_, Anda dapat mengambilnya secara dinamis di server. Ini berguna untuk konten yang disimpan dalam folder lokal yang terpisah, CMS, database, atau di mana saja.
+
+Ada dua paket komunitas populer untuk mengambil konten MDX:
+
+- [`next-mdx-remote`](https://github.com/hashicorp/next-mdx-remote#react-server-components-rsc--nextjs-app-directory-support)
+- [`contentlayer`](https://www.contentlayer.dev/)
+
+> **Baik untuk diketahui**: Silakan lanjutkan dengan hati-hati. MDX dikompilasi menjadi JavaScript dan dieksekusi di server. Anda hanya boleh mengambil konten MDX dari sumber yang terpercaya, jika tidak dapat mengakibatkan eksekusi kode dari jarak jauh (RCE).
+
+Contoh berikut menggunakan `next-mdx-remote`:
+
+```tsx filename="app/my-mdx-page-remote/page.tsx" switcher
+import { MDXRemote } from 'next-mdx-remote/rsc';
+
+export default async function RemoteMdxPage() {
+  // Teks MDX - bisa berasal dari berkas lokal, database, CMS, fetch, di mana saja...
+  const res = await fetch('https://...');
+  const markdown = await res.text();
+  return <MDXRemote source={markdown} />;
+}
+```
+
+```jsx filename="app/my-mdx-page-remote/page.js" switcher
+import { MDXRemote } from 'next-mdx-remote/rsc';
+
+export default async function RemoteMdxPage() {
+  // Teks MDX - bisa berasal dari berkas lokal, database, CMS, fetch, di mana saja...
+  const res = await fetch('https://...');
+  const markdown = await res.text();
+  return <MDXRemote source={markdown} />;
+}
+```
+
+Berpindah ke rute `/my-mdx-page-remote` akan menampilkan MDX yang di-render.
+
+## Tata Letak
+
+Untuk berbagi tata letak di antara halaman MDX, Anda dapat menggunakan [dukungan tata letak bawaan
+
+](/docs/app/building-your-application/routing/pages-and-layouts#layouts) dengan App Router.
+
+```tsx filename="app/my-mdx-page/layout.tsx" switcher
+export default function MdxLayout({ children }: { children: React.ReactNode }) {
+  // Buat tata letak atau gaya bersama di sini
+  return <div style={{ color: 'biru' }}>{children}</div>;
+}
+```
+
+```jsx filename="app/my-mdx-page/layout.js" switcher
+export default function MdxLayout({ children }) {
+  // Buat tata letak atau gaya bersama di sini
+  return <div style={{ color: 'biru' }}>{children}</div>;
+}
+```
+
+## Plugin Remark dan Rehype
+
+Anda dapat menyediakan plugin `remark` dan `rehype` secara opsional untuk mengubah konten MDX.
+
+Misalnya, Anda dapat menggunakan `remark-gfm` untuk mendukung Markdown berbasis GitHub.
+
+Karena ekosistem `remark` dan `rehype` hanya mendukung ESM, Anda perlu menggunakan berkas konfigurasi `next.config.mjs`.
+
+```js filename="next.config.mjs"
+import remarkGfm from 'remark-gfm';
+import createMDX from '@next/mdx';
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Konfigurasi `pageExtensions`` untuk menyertakan berkas MDX
+  pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+  // Opsional, tambahkan konfigurasi Next.js lainnya di bawah ini
+};
+
+const withMDX = createMDX({
+  // Tambahkan plugin markdown di sini, sesuai keinginan
+  options: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [],
+  },
+});
+
+// Gabungkan konfigurasi MDX dengan konfigurasi Next.js
+export default withMDX(nextConfig);
+```
+
+## Frontmatter
+
+Frontmatter adalah pasangan kunci/nilai mirip YAML yang dapat digunakan untuk menyimpan data tentang sebuah halaman. `@next/mdx` **tidak** mendukung frontmatter secara default, meskipun ada banyak solusi untuk menambahkan frontmatter ke konten MDX Anda, seperti:
+
+- [remark-frontmatter](https://github.com/remarkjs/remark-frontmatter)
+- [gray-matter](https://github.com/jonschlinkert/gray-matter).
+
+Untuk mengakses metadata halaman dengan `@next/mdx`, Anda dapat mengekspor objek meta dari dalam berkas `.mdx`:
+
+```mdx
+export const meta = {
+  author: 'John Doe',
+};
+
+# Halaman MDX saya
+```
+
+## Elemen Kustom
+
+Salah satu aspek yang menyenangkan dari menggunakan markdown adalah bahwa itu sesuai dengan elemen `HTML` native, sehingga penulisan cepat dan intuitif:
+
+```md
+Ini adalah daftar dalam markdown:
+
+- Satu
+- Dua
+- Tiga
+```
+
+Di atas menghasilkan `HTML` berikut:
+
+```html
+<p>Ini adalah daftar dalam markdown:</p>
+
+<ul>
+  <li>Satu</li>
+  <li>Dua</li>
+  <li>Tiga</li>
+</ul>
+```
+
+Ketika Anda ingin menata elemen Anda sendiri untuk tampilan kustom di situs web atau aplikasi Anda, Anda dapat menggunakan shortcode. Ini adalah komponen kustom Anda sendiri yang sesuai dengan elemen `HTML`.
+
+Untuk melakukannya, buka berkas `mdx-components.tsx` di root aplikasi Anda dan tambahkan elemen kustom:
+
+```tsx filename="mdx-components.tsx" switcher
+import type { MDXComponents } from 'mdx/types';
+import Image from 'next/image';
+
+// Berkas ini memungkinkan Anda menyediakan komponen React kustom
+// untuk digunakan dalam berkas MDX. Anda dapat mengimpor dan menggunakan
+// komponen React apa pun yang Anda inginkan, termasuk gaya inline,
+// komponen dari perpustakaan lain, dan lainnya.
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    // Memungkinkan penyesuaian komponen bawaan, misalnya untuk menambahkan gaya.
+    h1: ({ children }) => <h1 style={{ fontSize: '100px' }}>{children}</h1>,
+    img: (props) => (
+      <Image
+        sizes="100vw"
+        style={{ width: '100%', height: 'auto' }}
+        {...props}
+      />
+    ),
+    ...components,
+  };
+}
+```
+
+```js filename="mdx-components.js" switcher
+import Image from 'next/image';
+
+// Berkas ini memungkinkan Anda menyediakan komponen React kustom
+// untuk digunakan dalam berkas MDX. Anda dapat mengimpor dan menggunakan
+// komponen React apa pun yang Anda inginkan, termasuk gaya inline,
+// komponen dari perpustakaan lain, dan lainnya.
+
+export function useMDXComponents(components) {
+  return {
+    // Memungkinkan penyesuaian komponen bawaan, misalnya untuk menambahkan gaya.
+    h1: ({ children }) => <h1 style={{ fontSize: '100px' }}>{children}</h1>,
+    img: (props) => (
+      <Image
+        sizes="100vw"
+        style={{ width: '100%', height: 'auto' }}
+        {...props}
+      />
+    ),
+    ...components,
+  };
+}
+```
+
+## Deep Dive: Bagaimana cara Anda mengubah markdown menjadi HTML?
+
+React tidak secara alami memahami markdown. Teks markdown perlu diubah terlebih dahulu menjadi HTML. Ini dapat dicapai dengan `remark` dan `rehype`.
+
+`remark` adalah ekosistem alat seputar markdown. `rehype` sama, tet
+
+api untuk HTML. Misalnya, potongan kode berikut mengubah markdown menjadi HTML:
+
+```js
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeStringify from 'rehype-stringify';
+
+main();
+
+async function main() {
+  const file = await unified()
+    .use(remarkParse) // Ubah menjadi AST markdown
+    .use(remarkRehype) // Ubah menjadi AST HTML
+    .use(rehypeSanitize) // Bersihkan input HTML
+    .use(rehypeStringify) // Ubah AST menjadi HTML yang diserialkan
+    .process('Halo, Next.js!');
+
+  console.log(String(file)); // <p>Halo, Next.js!</p>
+}
+```
+
+Ekosistem `remark` dan `rehype` mengandung plugin untuk [penyorotan sintaksis](https://github.com/atomiks/rehype-pretty-code), [link ke heading](https://github.com/rehypejs/rehype-autolink-headings), [menghasilkan daftar isi](https://github.com/remarkjs/remark-toc), dan lainnya.
+
+Ketika menggunakan `@next/mdx` seperti yang ditunjukkan di atas, Anda **tidak perlu** menggunakan `remark` atau `rehype` secara langsung, karena hal ini akan dihandle untuk Anda. Kami menjelaskan hal ini di sini untuk pemahaman yang lebih dalam tentang apa yang dilakukan paket `@next/mdx` di bawahnya.
+
+## Menggunakan Kompiler MDX berbasis Rust (Eksperimental)
+
+Next.js mendukung kompiler MDX baru yang ditulis dengan Rust. Kompiler ini masih dalam tahap eksperimental dan tidak disarankan untuk digunakan di produksi. Untuk menggunakan kompiler baru ini, Anda perlu mengonfigurasi `next.config.js` saat Anda meneruskannya ke `withMDX`:
+
+```js filename="next.config.js"
+module.exports = withMDX({
+  experimental: {
+    mdxRs: true,
+  },
+});
+```
+
+## Tautan Berguna
+
+- [MDX](https://mdxjs.com)
+- [`@next/mdx`](https://www.npmjs.com/package/@next/mdx)
+- [remark](https://github.com/remarkjs/remark)
+- [rehype](https://github.com/rehypejs/rehype)

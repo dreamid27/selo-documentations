@@ -1,0 +1,306 @@
+---
+title: ESLint
+description: Next.js menyediakan pengalaman ESLint yang terintegrasi secara default. Aturan kesesuaian ini membantu Anda menggunakan Next.js dengan cara yang optimal.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+import { CheckCircle, XCircle } from '@phosphor-icons/react';
+
+# ESLint
+
+Next.js menyediakan pengalaman [ESLint](https://eslint.org/) yang terintegrasi langsung. Tambahkan `next lint` sebagai skrip ke `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "lint": "next lint"
+  }
+}
+```
+
+Kemudian jalankan `npm run lint` atau `yarn lint`:
+
+```bash filename="Terminal"
+yarn lint
+```
+
+Jika Anda belum memiliki ESLint dikonfigurasi dalam aplikasi Anda, Anda akan dipandu melalui proses instalasi dan konfigurasi.
+
+```bash filename="Terminal"
+yarn lint
+```
+
+> Anda akan melihat prompt seperti ini:
+>
+> ? Bagaimana Anda ingin mengkonfigurasi ESLint?
+>
+> ❯ Ketat (direkomendasikan)  
+> Dasar  
+> Batal
+
+Salah satu dari tiga opsi berikut dapat dipilih:
+
+- **Ketat**: Termasuk konfigurasi ESLint dasar Next.js bersama dengan aturan [setel inti Web Vitals](#core-web-vitals) yang lebih ketat. Ini adalah konfigurasi yang direkomendasikan untuk pengembang yang mengatur ESLint untuk pertama kalinya.
+
+  ```json filename=".eslintrc.json"
+  {
+    "extends": "next/core-web-vitals"
+  }
+  ```
+
+- **Dasar**: Termasuk konfigurasi ESLint dasar Next.js.
+
+  ```json filename=".eslintrc.json"
+  {
+    "extends": "next"
+  }
+  ```
+
+- **Batal**: Tidak termasuk konfigurasi ESLint apa pun. Pilih opsi ini hanya jika Anda berencana untuk mengatur konfigurasi ESLint kustom Anda sendiri.
+
+Jika salah satu dari dua opsi konfigurasi dipilih, Next.js akan secara otomatis menginstal `eslint` dan `eslint-config-next` sebagai dependensi dalam aplikasi Anda dan membuat file `.eslintrc.json` di root proyek Anda yang berisi konfigurasi yang Anda pilih.
+
+Anda sekarang dapat menjalankan `next lint` setiap kali Anda ingin menjalankan ESLint untuk menangkap kesalahan. Setelah ESLint diatur, itu juga akan berjalan secara otomatis selama setiap pembangunan (`next build`). Kesalahan akan membuat build gagal, sementara peringatan tidak.
+
+> Jika Anda tidak ingin ESLint berjalan selama `next build`, lihat dokumentasi [Menyembunyikan ESLint](/docs/app/api-reference/next-config-js/eslint).
+
+Kami merekomendasikan menggunakan [integrasi yang sesuai](https://eslint.org/docs/user-guide/integrations#editors) untuk melihat peringatan dan kesalahan langsung di editor kode Anda selama pengembangan.
+
+## Konfigurasi ESLint
+
+Konfigurasi default (`eslint-config-next`) mencakup semua yang Anda butuhkan untuk memiliki pengalaman linting yang optimal di Next.js. Jika Anda belum memiliki ESLint dikonfigurasi dalam aplikasi Anda, kami sarankan menggunakan `next lint` untuk mengatur ESLint bersama dengan konfigurasi ini.
+
+> Jika Anda ingin menggunakan `eslint-config-next` bersamaan dengan konfigurasi ESLint lainnya, lihat bagian [Konfigurasi Tambahan](#additional-configurations) untuk mempelajari cara melakukannya tanpa menyebabkan konflik.
+
+Rule-set yang direkomendasikan dari plugin ESLint berikut digunakan dalam `eslint-config-next`:
+
+- [`eslint-plugin-react`](https://www.npmjs.com/package/eslint-plugin-react)
+- [`eslint-plugin-react-hooks`](https://www.npmjs.com/package/eslint-plugin-react-hooks)
+- [`eslint-plugin-next`](https://www.npmjs.com/package/@next/eslint-plugin-next)
+
+Ini akan mengambil keutamaan atas konfigurasi dari `next.config.js`.
+
+## Plugin ESLint
+
+Next.js menyediakan plugin ESLint, [`eslint-plugin-next`](https://www.npmjs.com/package/@next/eslint-plugin-next), yang sudah termasuk dalam konfigurasi dasar untuk menangkap masalah umum dalam aplikasi Next.js. Set lengkap aturan sebagai berikut:
+
+<CheckCircle size={18} color="green" weight="fill" /> Diaktifkan dalam konfigurasi
+yang direkomendasikan
+
+|                                                       | Aturan                                                                                                                   | Deskripsi                                                                                                            |
+| :---------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/google-font-display](/docs/messages/google-font-display)                                                     | Memaksakan perilaku font-display dengan Google Fonts.                                                                |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/google-font-preconnect](/docs/messages/google-font-preconnect)                                               | Pastikan `preconnect` digunakan dengan Google Fonts.                                                                 |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/inline-script-id](/docs/messages/inline-script-id)                                                           | Memaksakan atribut `id` pada komponen `next/script` dengan konten inline.                                            |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/next-script-for-ga](/docs/messages/next-script-for-ga)                                                       | Pilih komponen `next/script` saat menggunakan skrip inline untuk Google Analytics.                                   |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-assign-module-variable](/docs/messages/no-assign-module-variable)                                         | Mencegah penugasan ke variabel `module`.                                                                             |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-async-client-component](/docs/messages/no-async-client-component)                                         | Mencegah komponen klien dari menjadi fungsi async.                                                                   |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-before-interactive-script-outside-document](/docs/messages/no-before-interactive-script-outside-document) | Mencegah penggunaan strategi `beforeInteractive` dari `next/script` di luar `pages/_document.js`.                    |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-css-tags](/docs/messages/no-css-tags)                                                                     | Mencegah tag stylesheet manual.                                                                                      |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-document-import-in-page](/docs/messages/no-document-import-in-page)                                       | Mencegah mengimpor `next/document` di luar `pages/_document.js`.                                                     |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-duplicate-head](/docs/messages/no-duplicate-head)                                                         | Mencegah penggunaan berulang dari `<Head>` di `pages/_document.js`.                                                  |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-head-element](/docs/messages/no-head-element)                                                             | Mencegah penggunaan elemen `<head>`.                                                                                 |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-head-import-in-document](/docs/messages/no-head-import-in-document)                                       | Mencegah penggunaan `next/head` di `pages/_document.js`.                                                             |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-html-link-for-pages](/docs/messages/no-html-link-for-pages)                                               | Mencegah penggunaan elemen `<a>` untuk menavigasi ke halaman Next.js internal.                                       |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-img-element](/docs/messages/no-img-element)                                                               | Mencegah penggunaan elemen `<img>` karena LCP lebih lambat dan bandwidth lebih tinggi.                               |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-page-custom-font](/docs/messages/no-page-custom-font)                                                     | Mencegah font kustom hanya halaman.                                                                                  |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-script-component-in-head](/docs/messages/no-script-component-in-head)                                     | Mencegah penggunaan `next/script` di komponen `next/head`.                                                           |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-styled-jsx-in-document](/docs/messages/no-styled-jsx-in-document)                                         | Mencegah penggunaan `styled-jsx` di `pages/_document.js`.                                                            |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-sync-scripts](/docs/messages/no-sync-scripts)                                                             | Mencegah skrip sinkron.                                                                                              |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-title-in-document-head](/docs/messages/no-title-in-document-head)                                         | Mencegah penggunaan `<title>` dengan komponen `Head` dari `next/document`.                                           |
+| <CheckCircle size={18} color="green" weight="fill" /> | @next/next/no-typos                                                                                                      | Mencegah kesalahan umum dalam [fungsi pengambilan data Next.js](/docs/pages/building-your-application/data-fetching) |
+| <CheckCircle size={18} color="green" weight="fill" /> | [@next/next/no-unwanted-polyfillio](/docs/messages/no-unwanted-polyfillio)                                               | Mencegah polyfill ganda dari Polyfill.io.                                                                            |
+
+Jika Anda sudah memiliki ESLint dikonfigurasi dalam aplikasi Anda, kami sarankan memperpanjang dari plugin ini langsung daripada mengikutsertakan `eslint-config-next` kecuali beberapa kondisi terpenuhi. Lihat [Aturan Plugin yang Direkomendasikan](#recommended-plugin-ruleset) untuk mempelajari lebih lanjut.
+
+### Pengaturan Kustom
+
+#### `rootDir`
+
+Jika Anda menggunakan `eslint-plugin-next` dalam proyek di mana Next.js tidak diinstal di direktori root Anda (seperti monorepo), Anda dapat memberi tahu `eslint-plugin-next` di mana menemukan aplikasi Next.js Anda menggunakan properti `settings` dalam `.eslintrc` Anda:
+
+```json filename=".eslintrc.json"
+{
+  "extends": "next",
+  "settings": {
+    "next": {
+      "rootDir": "packages/my-app/"
+    }
+  }
+}
+```
+
+`rootDir` dapat berupa path (relatif atau absolut), glob (mis., `"packages/*/"`), atau array path dan/atau glob.
+
+## Melintasi Direktori dan File Kustom
+
+Secara default, Next.js akan menjalankan ESLint untuk semua file dalam direktori `pages/`, `app/`, `components/`, `lib/`, dan `src/`. Namun, Anda dapat menentukan direktori mana yang akan digunakan opsi `dirs` dalam konfigurasi `eslint` di `next.config.js` untuk build produksi:
+
+```js filename="next.config.js"
+module.exports = {
+  eslint: {
+    dirs: ['pages', 'utils'], // Hanya menjalankan ESLint pada direktori 'pages' dan 'utils' selama build produksi (next build)
+  },
+};
+```
+
+Demikian pula, flag `--dir` dan `--file` dapat digunakan untuk `next lint` untuk melintasi direktori dan file tertentu:
+
+```bash filename="Terminal"
+next lint --dir pages --dir utils --file bar.js
+```
+
+## Caching
+
+Untuk meningkatkan performa, informasi file yang diproses oleh ESLint di-cache secara default. Ini disimpan di dalam `.next/cache` atau di direktori build yang Anda tentukan [direktori build](/docs/app/api-reference/next-config-js/distDir). Jika Anda menyertakan aturan ESLint apa pun yang bergantung pada lebih dari konten satu file sumber dan perlu menonaktifkan cache, gunakan flag `--no-cache` dengan `next lint`.
+
+```bash filename="Terminal"
+next lint --no-cache
+```
+
+## Menonaktifkan Aturan
+
+Jika Anda ingin mengubah atau menonaktifkan aturan yang disediakan oleh plugin yang didukung (`react`, `react-hooks`, `next`), Anda dapat mengubahnya langsung menggunakan properti `rules` dalam `.eslintrc` Anda:
+
+```json filename=".eslintrc.json"
+{
+  "extends": "next",
+  "rules": {
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-page-custom-font": "off"
+  }
+}
+```
+
+### Core Web Vitals
+
+Setel aturan `next/core-web-vitals` diaktifkan saat `next lint` dijalankan untuk pertama kalinya dan opsi **ketat** dipilih.
+
+```json filename=".eslintrc.json"
+{
+  "extends": "next/core-web-vitals"
+}
+```
+
+`next/core-web-vitals` memperbarui `eslint-plugin-next` untuk menghasilkan kesalahan pada beberapa aturan yang merupakan peringatan secara default jika mereka memengaruhi [Core Web Vitals](https://web.dev/vitals/).
+
+> Titik masuk `next/core-web-vitals` sudah termasuk secara otomatis untuk aplikasi baru yang dibangun dengan [Create Next App](/docs/app/api-reference/create-next-app).
+
+## Penggunaan dengan Alat Lain
+
+### Prettier
+
+ESLint juga berisi aturan pemformatan kode, yang bisa bertentangan dengan konfigurasi [Prettier](https://prettier.io/) Anda yang sudah ada. Kami sarankan untuk menyertakan [eslint-config-prettier](https://github.com/prettier/eslint-config-prettier) dalam konfigurasi ESLint Anda agar ESLint dan Prettier dapat bekerja bersama.
+
+Pertama, instal dependensinya:
+
+```bash filename="Terminal"
+npm install --save-dev eslint-config-prettier
+
+yarn add --dev eslint-config-prettier
+
+pnpm add --save-dev eslint-config-prettier
+
+bun add --dev eslint-config-prettier
+```
+
+Kemudian, tambahkan `prettier` ke konfigurasi ESLint Anda yang sudah ada:
+
+```json filename=".eslintrc.json"
+{
+  "extends": ["next", "prettier"]
+}
+```
+
+### lint-staged
+
+Jika Anda ingin menggunakan `next lint` dengan [lint-staged](https://github.com/okonet/lint-staged) untuk menjalankan linter pada file git yang di-staged, Anda harus menambahkan berikut ini ke file `.lintstagedrc.js` di root proyek Anda untuk menentukan penggunaan flag `--file`.
+
+```js filename=".lintstagedrc.js"
+const path = require('path');
+
+const buildEslintCommand = (filenames) =>
+  `next lint --fix --file ${filenames
+    .map((f) => path.relative(process.cwd(), f))
+    .join(' --file ')}`;
+
+module.exports = {
+  '*.{js,jsx,ts,tsx}': [buildEslintCommand],
+};
+```
+
+## Migrasi Konfigurasi yang Sudah Ada
+
+### Aturan Plugin yang Direkomendasikan
+
+Jika Anda sudah memiliki ESLint dikonfigurasi dalam aplikasi Anda dan salah satu dari kondisi berikut terpenuhi:
+
+- Anda sudah memiliki satu atau lebih plugin berikut sudah terinstalasi (baik secara terpisah atau melalui konfigurasi lain seperti `airbnb` atau `react-app`):
+  - `react`
+  - `react-hooks`
+  - `jsx-a11y`
+  - `import`
+- Anda telah mendefinisikan `parserOptions` tertentu yang berbeda dari konfigurasi Babel yang diatur dalam Next.js (ini tidak direkomendasikan kecuali Anda telah [mengkustomisasi konfigurasi Babel Anda](/docs/pages/building-your-application/configuring/babel))
+- Anda sudah memiliki `eslint-plugin-import` terinstalasi dengan Node.js dan/atau [resolver](https://github.com/benmosher/eslint-plugin-import#resolvers) TypeScript yang didefinisikan untuk menangani impor
+
+Kemudian kami sarankan untuk menghapus pengaturan ini jika Anda lebih suka dengan cara pengaturan ini dikonfigurasi dalam [`eslint-config-next`](https://github.com/vercel/next.js/blob/canary/packages/eslint-config-next/index.js) atau memperpanjang langsung dari plugin ESLint Next.js daripada mengimpor plugin yang sama atau parser di beberapa konfigurasi.
+
+```js
+module.exports = {
+  extends: [
+    'next',
+    // Contoh penghapusan berbagai plugin yang sama
+    'plugin:react/recommended', // Ini akan tumpang tindih dengan plugin yang telah ada di `eslint-config-next`
+  ],
+};
+```
+
+```json
+{
+  "parserOptions": {
+    // Contoh penghapusan `parserOptions` yang berbeda
+    "ecmaVersion": 6 // Ini akan tumpang tindih dengan parser yang telah ada di `eslint-config-next`
+  }
+}
+```
+
+Dengan menghapus atau mengkustomisasi pengaturan tersebut, Anda dapat menghindari potensi konflik yang mungkin timbul saat menjalankan ESLint dengan banyak konfigurasi yang berbeda.
+
+## Mematikan Linting Selama Pembangunan
+
+Linting dijalankan selama setiap build (`next build`) secara default. Jika Anda ingin menonaktifkannya selama build, Anda dapat menggunakan opsi `lint` dalam `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  eslint: {
+    // Menonaktifkan linting selama build
+    ignoreDuringBuilds: true,
+  },
+};
+```
+
+## Menggunakan ESLint dengan TypeScript
+
+Next.js sudah mendukung penggunaan TypeScript tanpa harus mengonfigurasi apa pun. Ini berarti jika Anda memutuskan untuk menggunakan TypeScript, ESLint akan mendukungnya secara otomatis tanpa perlu penyesuaian tambahan. Jika Anda perlu mengonfigurasi ESLint lebih lanjut, Anda dapat melakukannya seperti yang dijelaskan dalam bagian [Konfigurasi ESLint](#eslint-configuration).
+
+Untuk informasi lebih lanjut tentang penggunaan TypeScript dalam aplikasi Next.js, lihat [Penggunaan TypeScript](/docs/advanced-features/typescript).
+
+## Pemecahan Masalah
+
+Jika Anda mengalami kesalahan saat menjalankan `next lint` atau memiliki pertanyaan lain tentang penggunaan ESLint dalam aplikasi Next.js Anda, pertama-tama pastikan Anda telah mengikuti langkah-langkah dalam dokumentasi ini dengan benar.
+
+Jika Anda masih mengalami masalah, Anda dapat mencoba menjalankan `next lint` dengan flag `--debug` untuk mendapatkan informasi lebih lanjut tentang apa yang bisa salah:
+
+```bash filename="Terminal"
+next lint --debug
+```
+
+Jika Anda mengalami masalah saat menggunakan konfigurasi ESLint yang kompleks, seperti menggabungkan `eslint-config-next` dengan konfigurasi yang ada, Anda mungkin ingin mencari bantuan di komunitas Next.js atau dalam komunitas ESLint yang lebih umum.
+
+## Contoh
+
+Berikut adalah beberapa contoh penggunaan ESLint dalam aplikasi Next.js:
+
+- [Contoh Penggunaan Next.js dan ESLint](https://github.com/vercel/next.js/tree/canary/examples/with-eslint)
+- [Contoh Penggunaan TypeScript dan ESLint](https://github.com/vercel/next.js/tree/canary/examples/with-typescript-eslint)

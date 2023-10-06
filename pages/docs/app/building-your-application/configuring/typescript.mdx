@@ -1,0 +1,218 @@
+---
+title: TypeScript
+description: Next.js menyediakan pengalaman pengembangan berbasis TypeScript untuk membangun aplikasi React Anda.
+---
+
+import Image from '../../../../../components/image';
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Typescript
+
+Next.js menyediakan pengalaman pengembangan berbasis TypeScript untuk membangun aplikasi React Anda.
+
+Ini dilengkapi dengan dukungan TypeScript bawaan untuk menginstal otomatis paket yang diperlukan dan mengkonfigurasi pengaturan yang tepat.
+
+Serta [Plugin TypeScript](#typescript-plugin) untuk editor Anda.
+
+> **🎥 Tonton:** Pelajari tentang plugin TypeScript bawaan → [YouTube (3 menit)](https://www.youtube.com/watch?v=pqMqn9fKEf8)
+
+## Proyek Baru
+
+`create-next-app` sekarang sudah menyertakan TypeScript secara default.
+
+```bash filename="Terminal"
+npx create-next-app@latest
+```
+
+## Proyek yang Sudah Ada
+
+Tambahkan TypeScript ke proyek Anda dengan mengganti nama file menjadi `.ts` / `.tsx`. Jalankan `next dev` dan `next build` untuk menginstal otomatis dependensi yang diperlukan dan menambahkan file `tsconfig.json` dengan opsi konfigurasi yang direkomendasikan.
+
+Jika Anda sudah memiliki file `jsconfig.json`, salin opsi kompilator `paths` dari `jsconfig.json` lama ke file `tsconfig.json` yang baru, dan hapus file `jsconfig.json` yang lama.
+
+## Plugin TypeScript
+
+Next.js menyertakan plugin TypeScript khusus dan pemeriksa tipe yang dapat digunakan oleh VSCode dan editor kode lainnya untuk pemeriksaan tipe tingkat lanjut dan otomatisasi penulisan kode.
+
+Anda dapat mengaktifkan plugin ini di VS Code dengan cara:
+
+1. Membuka palet perintah (`Ctrl/⌘` + `Shift` + `P`)
+2. Mencari "TypeScript: Select TypeScript Version"
+3. Memilih "Use Workspace Version"
+
+<Image
+  alt="Palet Perintah TypeScript"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftypescript-command-palette.png&w=3840&q=75&dpl=dpl_7yYUfuJhASxJ9drL8HR8sTNhTiFj"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftypescript-command-palette.png&w=3840&q=75&dpl=dpl_7yYUfuJhASxJ9drL8HR8sTNhTiFj"
+  width="1600"
+  height="637"
+/>
+
+Sekarang, saat mengedit file, plugin kustom ini akan diaktifkan. Saat menjalankan `next build`, pemeriksa tipe kustom akan digunakan.
+
+### Fitur Plugin
+
+Plugin TypeScript dapat membantu dengan:
+
+- Memberikan peringatan jika nilai yang tidak valid untuk [opsi konfigurasi segmen](/docs/app/api-reference/file-conventions/route-segment-config) dilewatkan.
+- Menampilkan opsi yang tersedia dan dokumentasi konteks.
+- Memastikan direktif `use client` digunakan dengan benar.
+- Memastikan kait klien (seperti `useState`) hanya digunakan dalam Komponen Klien.
+
+> **Baik untuk diketahui**: Fitur lebih akan ditambahkan di masa depan.
+
+## Versi Minimum TypeScript
+
+Sangat disarankan untuk menggunakan setidaknya `v4.5.2` dari TypeScript untuk mendapatkan fitur sintaksis seperti [modifikasi jenis pada nama impor](https://devblogs.microsoft.com/typescript/announcing-typescript-4-5/#type-on-import-names) dan [peningkatan kinerja](https://devblogs.microsoft.com/typescript/announcing-typescript-4-5/#real-path-sync-native).
+
+## Tautan dengan Tipe Statis
+
+Next.js dapat membuat tautan dengan tipe statis untuk mencegah pengejaan salah dan kesalahan lainnya saat menggunakan `next/link`, meningkatkan keamanan tipe saat menavigasi antara halaman.
+
+Untuk mengaktifkan fitur ini, `experimental.typedRoutes` perlu diaktifkan dan proyek harus menggunakan TypeScript.
+
+```js filename="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    typedRoutes: true,
+  },
+};
+
+module.exports = nextConfig;
+```
+
+Next.js akan menghasilkan definisi tautan di dalam `.next/types` yang berisi informasi tentang semua rute yang ada dalam aplikasi Anda, yang kemudian dapat digunakan oleh TypeScript untuk memberikan umpan balik di editor Anda tentang tautan yang tidak valid.
+
+Saat ini, dukungan eksperimental mencakup segala literal string, termasuk segmen dinamis. Untuk string yang bukan literal, saat ini Anda perlu secara manual melakukan pengecoran `href` dengan `as Route`:
+
+```tsx
+import type { Route } from 'next';
+import Link from 'next/link'
+
+// Tidak ada kesalahan TypeScript jika href adalah rute yang valid
+<Link href="/about" />
+<Link href="/blog/nextjs" />
+<Link href={`/blog/${slug}`} />
+<Link href={('/blog' + slug) as Route} />
+
+// Kesalahan TypeScript jika href bukan rute yang valid
+<Link href="/aboot" />
+```
+
+Untuk menerima `href` dalam komponen kustom yang mengelilingi `next/link`, gunakan generic:
+
+```tsx
+import type { Route } from 'next';
+import Link from 'next/link';
+
+function Card<T extends string>({ href }: { href: Route<T> | URL }) {
+  return (
+    <Link href={href}>
+      <div>Kartu Saya</div>
+    </Link>
+  );
+}
+```
+
+> **Bagaimana ini bekerja?**
+>
+> Saat menjalankan `next dev` atau `next build`, Next.js menghasilkan file `.d.ts` tersembunyi di dalam `.next` yang berisi informasi tentang semua rute yang ada dalam aplikasi Anda (semua rute yang valid sebagai tipe `href` dari `Link`). File `.d.ts` ini disertakan dalam `tsconfig.json` dan kompilator TypeScript akan memeriksa `.d.ts` itu dan memberikan umpan balik di editor Anda tentang tautan yang tidak valid.
+
+## Keamanan Tipe End-to-End
+
+Next.js 13 memiliki **keamanan tipe yang ditingkatkan**. Ini mencakup:
+
+1. **Tidak ada serialisasi data antara fungsi pengambilan dan halaman**: Anda dapat `fetch` langsung di komponen, tata letak, dan halaman di server. Data ini _tidak perlu_ diserialisasi (dikonversi menjadi string) untuk digunakan di sisi klien untuk konsumsi dalam React. Sebagai gantinya, karena `app` menggunakan Komponen Server secara default, kita dapat menggunakan nilai seperti `Date`, `Map`, `Set`, dan lainnya tanpa langkah tambahan. Sebelumnya, Anda perlu secara manual mengetik batas antara server dan klien dengan jenis khusus Next.js.
+2. **Alur data yang disederhanakan antara komponen**: Dengan penghapusan `_app` yang mendukung tata letak root, sekarang lebih mudah memvisualisasikan alur data antara komponen dan halaman. Sebelumnya, aliran data antara `pages` individu dan `_app` sulit untuk diketik dan dapat memperkenalkan bug yang membingungkan. Dengan [pengambilan data bersama](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating) di Next.js 13, ini bukan lagi masalah.
+
+[Pengambilan Data di Next.js](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating) sekarang memberikan keamanan tipe yang mendekati akhir-ke-akhir sebanyak mungkin tanpa merinci database atau pemilih konten Anda.
+
+Kita dapat mengetik data respons seperti yang diharapkan dengan TypeScript biasa. Contohnya:
+
+```tsx filename="app/page.tsx"
+async function getData() {
+  const res = await fetch('https://api.example.com/...');
+  // Nilai kembali *tidak* diserialisasi
+  // Anda dapat mengembalikan Date, Map, Set, dll.
+  return res.json();
+}
+
+export default async function Page() {
+  const name = await getData();
+
+  return '...';
+}
+```
+
+Untuk keamanan tipe end-to-end yang _lengkap_, ini juga memerlukan dukungan database atau penyedia konten Anda untuk mendukung TypeScript. Ini bisa melalui penggunaan [ORM](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) atau pembuat kueri tipe aman.
+
+## Kesalahan Tipe TypeScript Komponen Server Async
+
+Untuk menggunakan Komponen Server `async` dengan TypeScript, pastikan Anda menggunakan TypeScript `5.1.3` atau lebih tinggi dan `@types/react` `18.2.8` atau lebih tinggi.
+
+Jika Anda menggunakan versi TypeScript yang lebih lama, Anda mungkin akan melihat kesalahan tipe `'Promise<Element>' is not a valid JSX element`. Memperbarui ke versi terbaru TypeScript dan `@types/react` harus memecahkan masalah ini.
+
+## Mengirim Data Antara Komponen Server & Klien
+
+Saat mengirim data antara Komponen Server dan Klien melalui props, data masih diserialisasi (dikonversi menjadi string) untuk digunakan di browser. Namun, itu tidak memerlukan tipe khusus. Ini diketik sama seperti saat mengirim props lainnya antara komponen.
+
+Selain itu, ada lebih sedikit kode yang akan diserialisasi, karena data yang tidak dirender tidak melintasi antara server dan klien (tetap berada di server). Ini hanya mungkin sekarang melalui dukungan untuk Komponen Server.
+
+## Alias Path dan baseUrl
+
+Next.js secara otomatis mendukung opsi `"paths"` dan `"baseUrl"` dalam `tsconfig.json`.
+
+Anda dapat mempelajari lebih lanjut tentang fitur ini di [Dokumentasi Alias Path Modul](/docs/app/building-your-application/configuring/absolute-imports-and-module-aliases).
+
+## Pemeriksaan Tipe next.config.js
+
+File `next.config.js` harus berupa file JavaScript karena tidak dianalisis oleh Babel atau TypeScript, namun Anda dapat menambahkan beberapa pemeriksaan tipe dalam IDE Anda menggunakan JSDoc seperti di bawah ini:
+
+```js
+// @ts-check
+
+/**
+ * @type {import('next').NextConfig}
+ **/
+const nextConfig = {
+  /* opsi konfigurasi di sini */
+};
+
+module.exports = nextConfig;
+```
+
+## Pemeriksaan Tipe Incremental
+
+Sejak `v10.2.1`, Next.js mendukung [pemeriksaan tipe bertahap](https://www.typescriptlang.org/tsconfig#incremental) ketika diaktifkan dalam `tsconfig.json` Anda, ini dapat membantu mempercepat pemeriksaan tipe dalam aplikasi yang lebih besar.
+
+## Mengabaikan Kesalahan Tipe TypeScript
+
+Next.js gagal membangun produksi Anda (`next build`) ketika kesalahan TypeScript hadir dalam proyek Anda.
+
+Jika Anda ingin Next.js memproduksi kode produksi dengan bahaya bahkan ketika aplikasi Anda memiliki kesalahan, Anda dapat menonaktifkan langkah pemeriksaan tipe bawaan.
+
+Jika dinonaktifkan, pastikan Anda menjalankan pemeriksaan tipe sebagai bagian dari proses pembangunan atau distribusi Anda, jika tidak ini bisa sangat berbahaya.
+
+Buka `next.config.js` dan aktifkan opsi `ignoreBuildErrors` dalam konfigurasi `typescript`:
+
+```js filename="next.config.js"
+module.exports = {
+  typescript: {
+    // !! PERINGATAN !!
+    // Dengan berbahaya memungkinkan pembangunan produksi berhasil selesai bahkan jika
+    // proyek Anda memiliki kesalahan jenis.
+    // !! PERINGATAN !!
+    ignoreBuildErrors: true,
+  },
+};
+```
+
+## Perubahan Versi
+
+| Versi     | Perubahan                                                                                                                                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `v13.2.0` | Tautan dengan tipe statis tersedia dalam mode beta.                                                                                                    |
+| `v12.0.0` | [SWC](/docs/architecture/nextjs-compiler) sekarang digunakan secara default untuk mengkompilasi TypeScript dan TSX untuk pembangunan yang lebih cepat. |
+| `v10.2.1` | Dukungan [pemeriksaan tipe bertahap](https://www.typescriptlang.org/tsconfig#incremental) ditambahkan ketika diaktifkan dalam `tsconfig.json` Anda.    |

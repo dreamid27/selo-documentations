@@ -1,0 +1,201 @@
+---
+title: Kebijakan Keamanan Konten
+description: Pelajari cara mengatur Kebijakan Keamanan Konten (CSP) untuk aplikasi Next.js Anda.
+related:
+  links:
+    - app/building-your-application/routing/middleware
+    - app/api-reference/functions/headers
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Kebijakan Keamanan Konten
+
+[Kebijakan Keamanan Konten (CSP)](https://developer.mozilla.org/docs/Web/HTTP/CSP) penting untuk melindungi aplikasi Next.js Anda dari berbagai ancaman keamanan seperti cross-site scripting (XSS), clickjacking, dan serangan penyisipan kode lainnya.
+
+Dengan menggunakan CSP, para pengembang dapat menentukan asal yang diperbolehkan untuk sumber konten, skrip, stylesheet, gambar, font, objek, media (audio, video), iframes, dan lainnya.
+
+<details>
+  <summary>Contoh</summary>
+
+- [CSP Ketat](https://github.com/vercel/next.js/tree/canary/examples/with-strict-csp)
+
+</details>
+
+## Nonce
+
+[Nonce](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce) adalah string karakter unik dan acak yang dibuat untuk digunakan sekali. Ini digunakan bersamaan dengan CSP untuk memungkinkan secara selektif beberapa skrip atau gaya inline tertentu untuk dieksekusi, mengabaikan direktif CSP yang ketat.
+
+### Mengapa menggunakan nonce?
+
+Meskipun CSP dirancang untuk memblokir skrip berbahaya, ada skenario sah di mana skrip inline diperlukan. Dalam kasus seperti itu, nonce menawarkan cara untuk mengizinkan skrip ini dieksekusi jika memiliki nonce yang benar.
+
+### Menambahkan nonce dengan Middleware
+
+[Middleware](/docs/app/building-your-application/routing/middleware) memungkinkan Anda untuk menambahkan header dan menghasilkan nonce sebelum halaman dirender.
+
+Setiap kali sebuah halaman dilihat, nonce baru harus dibuat. Ini berarti bahwa Anda **harus menggunakan rendering dinamis untuk menambahkan nonce**.
+
+Sebagai contoh:
+
+tttts filename="middleware.ts" switcher
+import { NextRequest, NextResponse } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+    style-src 'self' 'nonce-${nonce}';
+    img-src 'self' blob: data:;
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    block-all-mixed-content;
+    upgrade-insecure-requests;
+`
+
+const requestHeaders = new Headers(request.headers)
+requestHeaders.set('x-nonce', nonce)
+requestHeaders.set(
+'Content-Security-Policy',
+// Mengganti karakter pembaris baru dan spasi
+cspHeader.replace(/\s{2,}/g, ' ').trim()
+)
+
+return NextResponse.next({
+headers: requestHeaders,
+request: {
+headers: requestHeaders,
+},
+})
+}
+ttt
+
+tttjs filename="middleware.js" switcher
+import { NextResponse } from 'next/server'
+
+export function middleware(request) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+    style-src 'self' 'nonce-${nonce}';
+    img-src 'self' blob: data:;
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    block-all-mixed-content;
+    upgrade-insecure-requests;
+`
+
+const requestHeaders = new Headers(request.headers)
+requestHeaders.set('x-nonce', nonce)
+requestHeaders.set(
+'Content-Security-Policy',
+// Mengganti karakter pembaris baru dan spasi
+cspHeader.replace(/\s{2,}/g, ' ').trim()
+)
+
+return NextResponse.next({
+headers: requestHeaders,
+request: {
+headers: requestHeaders,
+},
+})
+}
+ttt
+
+Secara default, Middleware berjalan pada semua permintaan. Anda dapat menyaring Middleware untuk berjalan pada path tertentu menggunakan [`matcher`](/docs/app/building-your-application/routing/middleware#matcher).
+
+Kami menyarankan untuk mengabaikan pencocokan prefetch (dari `next/link`) dan aset statis yang tidak memerlukan header CSP.
+
+tttts filename="middleware.ts" switcher
+export const config = {
+matcher: [
+/\*
+_ Cocokkan semua path permintaan kecuali yang dimulai dengan:
+_ - api (rute API)
+_ - \_next/static (file statis)
+_ - \_next/image (file optimasi gambar)
+_ - favicon.ico (file favicon)
+_/
+{
+source: '/((?!api|\_next/static|\_next/image|favicon.ico).\*)',
+missing: [
+{ type: 'header', key: 'next-router-prefetch' },
+{ type: 'header', key: 'purpose', value: 'prefetch' },
+],
+},
+],
+}
+ttt
+
+tttjs filename="middleware.js" switcher
+export const config = {
+matcher: [
+/\*
+_ Cocokkan semua path permintaan kecuali yang dimulai dengan:
+_ - api (rute API)
+_ - \_next/static (file statis)
+_ - \_next/image (file optimasi gambar)
+_ - favicon.ico (file favicon)
+_/
+{
+source: '/((?!api|\_next/static|\_next/image|favicon.ico).\*)',
+missing: [
+{ type: 'header', key: 'next-router-prefetch' },
+{ type: 'header', key: 'purpose', value: 'prefetch' },
+],
+},
+],
+}
+ttt
+
+### Membaca nonce
+
+Anda sekarang dapat membaca nonce dari [Komponen Server](/docs/app/building-your-application/rendering/server-components) menggunakan [`headers`](/docs/app/api-reference/functions/headers):
+
+ttttsx filename="app/page.tsx" switcher
+import { headers } from 'next/headers'
+import Script from 'next/script'
+
+export default function Page() {
+  const nonce = headers().get('x-nonce')
+
+return (
+
+<Script
+      src="https://www.googletagmanager.com/gtag/js"
+      strategy="afterInteractive"
+      nonce={nonce}
+    />
+)
+}
+ttt
+
+tttjsx filename="app/page.jsx" switcher
+import { headers } from 'next/headers'
+import Script from 'next/script'
+
+export default function Page() {
+  const nonce = headers().get('x-nonce')
+
+return (
+<Script
+      src="https://www.googletagmanager.com/gtag/js"
+      strategy="afterInteractive"
+      nonce={nonce}
+    />
+)
+}
+ttt
+
+## Riwayat Versi
+
+Kami menyarankan menggunakan `v13.4.20+` dari Next.js untuk menangani dan menerapkan nonce dengan benar.
+

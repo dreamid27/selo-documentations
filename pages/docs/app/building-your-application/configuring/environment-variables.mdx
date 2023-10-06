@@ -1,0 +1,161 @@
+---
+title: Environtment Variabel
+description: Pelajari cara menambahkan dan mengakses variabel lingkungan dalam aplikasi Next.js Anda.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Environtment Variabel
+
+<details>
+  <summary>Contoh</summary>
+
+- [Environtment Variabel](https://github.com/vercel/next.js/tree/canary/examples/environment-variables)
+
+</details>
+
+Next.js dilengkapi dengan dukungan bawaan untuk variabel lingkungan, yang memungkinkan Anda untuk melakukan hal berikut:
+
+- [Menggunakan `.env.local` untuk memuat variabel lingkungan](#memuat-variabel-lingkungan)
+- [Menggabungkan variabel lingkungan untuk browser dengan awalan `NEXT_PUBLIC_`](#menggabungkan-variabel-lingkungan-untuk-browser)
+
+## Memuat Environtment Variabel
+
+Next.js memiliki dukungan bawaan untuk memuat variabel lingkungan dari `.env.local` ke `process.env`.
+
+```txt filename=".env.local"
+DB_HOST=localhost
+DB_USER=myuser
+DB_PASS=mypassword
+```
+
+Ini memuat `process.env.DB_HOST`, `process.env.DB_USER`, dan `process.env.DB_PASS` ke lingkungan Node.js secara otomatis, memungkinkan Anda menggunakannya dalam [Penangan Rute](/docs/app/building-your-application/routing/route-handlers).
+
+Contoh:
+
+```js filename="app/api/route.js"
+export async function GET() {
+  const db = await myDB.connect({
+    host: process.env.DB_HOST,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASS,
+  });
+  // ...
+}
+```
+
+### Merujuk ke Variabel Lainnya
+
+Next.js secara otomatis akan memperluas variabel yang menggunakan `$` untuk merujuk ke variabel lain, misalnya `$VARIABLE` dalam file `.env*` Anda. Ini memungkinkan Anda merujuk ke rahasia lain. Contohnya:
+
+```txt filename=".env"
+TWITTER_USER=nextjs
+TWITTER_URL=https://twitter.com/$TWITTER_USER
+```
+
+Pada contoh di atas, `process.env.TWITTER_URL` akan diatur menjadi `https://twitter.com/nextjs`.
+
+> **Baik untuk diketahui**: Jika Anda perlu menggunakan variabel dengan `$` dalam nilai sebenarnya, itu harus dihindari, misalnya `\$`.
+
+## Menggabungkan Environtment Variabel untuk Browser
+
+Variabel lingkungan non-`NEXT_PUBLIC_` hanya tersedia dalam lingkungan Node.js, artinya tidak dapat diakses oleh browser (klien berjalan dalam _lingkungan_ yang berbeda).
+
+Untuk membuat nilai variabel lingkungan dapat diakses dalam browser, Next.js dapat "menggabungkan" nilai tersebut, pada saat pembuatan, ke bundel js yang dikirimkan ke klien, menggantikan semua referensi ke `process.env.[variable]` dengan nilai yang diinisiasi secara keras. Untuk melakukan ini, Anda hanya perlu menambahkan awalan variabel dengan `NEXT_PUBLIC_`. Misalnya:
+
+```txt filename="Terminal"
+NEXT_PUBLIC_ANALYTICS_ID=abcdefghijk
+```
+
+Ini akan memberi tahu Next.js untuk menggantikan semua referensi ke `process.env.NEXT_PUBLIC_ANALYTICS_ID` dalam lingkungan Node.js dengan nilai dari lingkungan di mana Anda menjalankan `next build`, memungkinkan Anda menggunakannya di mana saja dalam kode Anda. Nilai tersebut akan diinisiasi ke dalam setiap JavaScript yang dikirimkan ke browser.
+
+> **Catatan**: Setelah dibangun, aplikasi Anda tidak akan lagi merespons perubahan pada variabel lingkungan ini. Misalnya, jika Anda menggunakan pipa Heroku untuk mempromosikan slug yang dibangun di satu lingkungan ke lingkungan lain, atau jika Anda membangun dan mendistribusikan satu gambar Docker ke beberapa lingkungan, semua variabel `NEXT_PUBLIC_` akan membeku dengan nilai yang dinilai saat waktu pembuatan proyek. Jika Anda memerlukan akses ke nilai lingkungan waktu jalannya, Anda harus menyiapkan API sendiri untuk menyediakannya kepada klien (baik sesuai permintaan atau selama inisialisasi).
+
+```js filename="pages/index.js"
+import setupAnalyticsService from '../lib/my-analytics-service';
+
+// 'NEXT_PUBLIC_ANALYTICS_ID' dapat digunakan di sini karena diawali oleh 'NEXT_PUBLIC_'.
+// Itu akan diubah saat waktu pembuatan menjadi `setupAnalyticsService('abcdefghijk')`.
+setupAnalyticsService(process.env.NEXT_PUBLIC_ANALYTICS_ID);
+
+function HomePage() {
+  return <h1>Hello World</h1>;
+}
+
+export default HomePage;
+```
+
+Perhatikan bahwa pencarian dinamis tidak akan diinisiasi, misalnya:
+
+```js
+// Ini TIDAK akan diinisiasi, karena menggunakan variabel
+const varName = 'NEXT_PUBLIC_ANALYTICS_ID';
+setupAnalyticsService(process.env[varName]);
+
+// Ini TIDAK akan diinisiasi, karena menggunakan variabel
+const env = process.env;
+setupAnalyticsService(env.NEXT_PUBLIC_ANALYTICS_ID);
+```
+
+## Environtment Variabel Default
+
+Secara umum, hanya diperlukan satu file `.env.local`. Namun, terkadang Anda mungkin ingin menambahkan beberapa nilai default untuk lingkungan `development` (`next dev`) atau `production` (`next start`).
+
+Next.js memungkinkan Anda untuk mengatur nilai default di dalam `.env` (semua lingkungan), `.env.development` (lingkungan pengembangan), dan `.env.production` (lingkungan produksi).
+
+`.env.local` selalu mengesampingkan nilai default yang diatur.
+
+> **Baik untuk diketahui**: File-file `.env`, `.env.development`, dan `.env.production` harus dimasukkan dalam repositori Anda karena mereka mendefinisikan nilai default. **`.env*.local` harus ditambahkan ke `.gitignore`**, karena file-file tersebut dimaksudkan untuk diabaikan. `.env.local` adalah tempat di mana rahasia dapat disimpan.
+
+## Environtment Variabel di Vercel
+
+Ketika mendeploy aplikasi Next.js Anda ke [Vercel](https://vercel.com), Environtment Variabel dapat dikonfigurasi [di Pengaturan Proyek](https://vercel.com/docs/concepts/projects/environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website).
+
+Semua jenis Environtment Variabel harus dikonfigurasi di sana. Bahkan Environtment Variabel yang digunakan dalam Pengembangan dapat [diunduh ke perangkat lokal Anda](https://vercel.com/docs/concepts/projects/environment-variables#development-environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website) setelahnya.
+
+Jika Anda telah mengonfigurasi [Environtment Variabel Pengembangan](https://vercel.com/docs/concepts/projects/environment-variables#development-environment-variables?utm_source=next-site&utm_medium=docs&utm_campaign=next-website), Anda dapat menariknya ke `.env.local` untuk penggunaan pada mesin lokal dengan perintah berikut:
+
+```bash filename="Terminal"
+vercel env pull .env.local
+```
+
+## Environtment Variabel Uji
+
+Selain lingkungan `development` dan `production`, ada pilihan ketiga yang tersedia: `test`. Dengan cara yang sama Anda dapat mengatur nilai default untuk lingkungan pengembangan atau produksi, Anda dapat melakukannya juga dengan file `.env.test` untuk lingkungan `testing` (meskipun ini tidak seumum dua yang sebelumnya). Next.js tidak akan memuat variabel lingkungan dari `.env.development` atau `.env.production` dalam lingkungan `testing`.
+
+Ini berguna ketika menjalankan tes dengan alat seperti `jest` atau `cypress` di mana Anda perlu mengatur variabel lingkungan tertentu hanya untuk tujuan pengujian. Nilai default uji akan dimuat jika `NODE_ENV` diatur ke `test`, meskipun biasanya Anda tidak perlu melakukannya secara manual karena alat pengujian akan menanganinya untuk Anda.
+
+Ada perbedaan kecil antara lingkungan `test`, dan kedua lingkungan `development` dan `production` yang perlu Anda ingat: `.env.local` tidak akan dimuat, seperti yang Anda harapkan agar pengujian menghasilkan hasil yang sama untuk semua orang. Dengan cara ini, setiap eksekusi tes akan menggunakan nilai lingkungan default yang sama di seluruh eksekusi yang berbeda dengan mengabaikan `.env.local` Anda (yang dimaksudkan untuk menggantikan setelan default).
+
+> **Baik untuk diketahui**: serupa dengan Environtment Variabel Default, file `.env.test` harus dimasukkan dalam repositori Anda, tetapi `.env.test.local` tidak, karena `.env*.local` dimaksudkan untuk diabaikan melalui `.gitignore`.
+
+Ketika menjalankan tes unit, Anda dapat memastikan untuk memuat variabel lingkungan Anda dengan cara yang sama seperti yang dilakukan Next.js dengan memanfaatkan fungsi `loadEnvConfig` dari paket `@next/env`.
+
+```js
+// Dapat digunakan dalam file persiapan global Jest atau sejenisnya untuk pengaturan pengujian Anda
+import { loadEnvConfig } from '@next/env';
+
+export default async () => {
+  const projectDir = process.cwd();
+  loadEnvConfig(projectDir);
+};
+```
+
+## Urutan Pemuatan Environtment Variabel
+
+Variabel lingkungan dicari di tempat-tempat berikut, secara berurutan, berhenti begitu variabel ditemukan.
+
+1. `process.env`
+2. `.env.$(NODE_ENV).local`
+3. `.env.local` (Tidak diperiksa ketika `NODE_ENV` adalah `test`.)
+4. `.env.$(NODE_ENV)`
+5. `.env`
+
+Misalnya, jika `NODE_ENV` adalah `development` dan Anda mendefinisikan variabel dalam `.env.development.local` dan `.env`, nilai dalam `.env.development.local` akan digunakan.
+
+> **Baik untuk diketahui**: Nilai yang diperbolehkan untuk `NODE_ENV` adalah `production`, `development`, dan `test`.
+
+## Baik untuk diketahui
+
+- Jika Anda menggunakan direktori [`/src`](/docs/app/building-your-application/configuring/src-directory), file-file `.env.*` harus tetap berada di akar proyek Anda.
+- Jika variabel lingkungan `NODE_ENV` belum ditetapkan, Next.js secara otomatis menetapkan `development` saat menjalankan perintah `next dev`, atau `production` untuk semua perintah lainnya.

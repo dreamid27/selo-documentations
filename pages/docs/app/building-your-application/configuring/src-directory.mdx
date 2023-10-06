@@ -1,0 +1,36 @@
+---
+title: Direktori src
+description: Simpan halaman di bawah direktori `src` sebagai alternatif dari direktori root `pages`.
+related:
+  links:
+    - app/building-your-application/routing/colocation
+---
+
+import Image from '@/components/image';
+
+# Direktori src
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Sebagai alternatif untuk memiliki direktori khusus Next.js `app` atau `pages` di root proyek Anda, Next.js juga mendukung pola umum menempatkan kode aplikasi di bawah direktori `src`.
+
+Ini memisahkan kode aplikasi dari file konfigurasi proyek yang sebagian besar berada di root proyek, yang lebih disukai oleh beberapa individu dan tim.
+
+Untuk menggunakan direktori `src`, pindahkan folder Router `app` atau folder Router `pages` ke `src/app` atau `src/pages` masing-masing.
+
+<Image
+  alt="Struktur folder contoh dengan direktori `src`"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-src-directory.png&w=3840&q=75&dpl=dpl_CDLkXo2QS6CyukKCbDf9yarsu98r"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Fproject-organization-src-directory.png&w=3840&q=75&dpl=dpl_CDLkXo2QS6CyukKCbDf9yarsu98r"
+  width="1600"
+  height="687"
+/>
+
+> **Baik untuk diketahui**
+>
+> - Direktori `/public` sebaiknya tetap berada di root proyek Anda.
+> - File konfigurasi seperti `package.json`, `next.config.js`, dan `tsconfig.json` sebaiknya tetap berada di root proyek Anda.
+> - File `.env.*` sebaiknya tetap berada di root proyek Anda.
+> - `src/app` atau `src/pages` akan diabaikan jika `app` atau `pages` ada di direktori root.
+> - Jika Anda menggunakan `src`, Anda kemungkinan juga akan memindahkan folder aplikasi lainnya seperti `/components` atau `/lib`.
+> - Jika Anda menggunakan Tailwind CSS, Anda perlu menambahkan awalan `/src` ke file `tailwind.config.js` dalam [bagian konten](https://tailwindcss.com/docs/content-configuration).

@@ -1,0 +1,167 @@
+---
+title: Impor Absolute dan Alias Path Modul
+description: Konfigurasikan alias path modul yang memungkinkan Anda untuk memetakan ulang path impor tertentu.
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+# Impor Absolute dan Alias Path Modul
+
+<details>
+  <summary>Contoh</summary>
+
+- [Impor Absolute dan Alias](https://github.com/vercel/next.js/tree/canary/examples/with-absolute-imports)
+
+</details>
+
+Next.js memiliki dukungan bawaan untuk opsi `"paths"` dan `"baseUrl"` dari file `tsconfig.json` dan `jsconfig.json`.
+
+Opsi ini memungkinkan Anda memberi alias direktori proyek ke path absolut, sehingga memudahkan impor modul. Sebagai contoh:
+
+```tsx
+// sebelumnya
+import { Button } from '../../../components/button';
+
+// setelahnya
+import { Button } from '@/components/button';
+```
+
+> **Baik untuk diketahui**: `create-next-app` akan meminta Anda untuk mengonfigurasi opsi-opsi ini.
+
+## Impor Absolute
+
+Opsi konfigurasi `baseUrl` memungkinkan Anda untuk mengimpor langsung dari root proyek.
+
+Contoh konfigurasi ini:
+
+```json filename="tsconfig.json or jsconfig.json"
+{
+  "compilerOptions": {
+    "baseUrl": "."
+  }
+}
+```
+
+```tsx filename="components/button.tsx" switcher
+export default function Button() {
+  return <button>Klik saya</button>;
+}
+```
+
+```jsx filename="components/button.js" switcher
+export default function Button() {
+  return <button>Klik saya</button>;
+}
+```
+
+```tsx filename="app/page.tsx" switcher
+import Button from 'components/button';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Button from 'components/button';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+## Alias Modul
+
+Selain mengonfigurasi path `baseUrl`, Anda dapat menggunakan opsi `"paths"` untuk "alias" path modul.
+
+Sebagai contoh, konfigurasi berikut memetakan `@/components/*` ke `components/*`:
+
+```json filename="tsconfig.json or jsconfig.json"
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/components/*": ["components/*"]
+    }
+  }
+}
+```
+
+```tsx filename="components/button.tsx" switcher
+export default function Button() {
+  return <button>Klik saya</button>;
+}
+```
+
+```jsx filename="components/button.js" switcher
+export default function Button() {
+  return <button>Klik saya</button>;
+}
+```
+
+```tsx filename="app/page.tsx" switcher
+import Button from '@/components/button';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Button from '@/components/button';
+
+export default function HomePage() {
+  return (
+    <>
+      <h1>Hello World</h1>
+      <Button />
+    </>
+  );
+}
+```
+
+Setiap `"paths"` bersifat relatif terhadap lokasi `baseUrl`. Sebagai contoh:
+
+```json
+// tsconfig.json atau jsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": "src/",
+    "paths": {
+      "@/styles/*": ["styles/*"],
+      "@/components/*": ["components/*"]
+    }
+  }
+}
+```
+
+```jsx
+// pages/index.js
+import Button from '@/components/button';
+import '@/styles/styles.css';
+import Helper from 'utils/helper';
+
+export default function HomePage() {
+  return (
+    <Helper>
+      <h1>Hello World</h1>
+      <Button />
+    </Helper>
+  );
+}
+```

@@ -1,0 +1,248 @@
+---
+title: Mode Draf
+description: Next.js memiliki mode draf untuk beralih antara halaman statis dan dinamis. Anda dapat mempelajari cara kerjanya dengan App Router di sini.
+---
+
+# Mode Draf
+
+Render statis berguna ketika halaman Anda mengambil data dari CMS tanpa kepala. Namun, ini tidak ideal ketika Anda menulis draf di CMS kepala dan ingin melihat draf segera di halaman Anda. Anda ingin Next.js merender halaman-halaman ini pada **saat permintaan** alih-alih saat build dan mengambil konten draf alih-alih konten yang diterbitkan. Anda ingin Next.js beralih ke [rendering dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering) hanya untuk kasus khusus ini.
+
+Next.js memiliki fitur yang disebut **Mode Draf** yang memecahkan masalah ini. Berikut adalah instruksi tentang cara menggunakannya.
+
+## Langkah 1: Buat dan Akses Pengolah Rute
+
+Pertama, buat [Pengolah Rute](/docs/app/building-your-application/routing/route-handlers). Ini bisa memiliki nama apa saja - misalnya, `app/api/draft/route.ts`
+
+Kemudian, impor `draftMode` dari `next/headers` dan panggil metode `enable()`.
+
+```ts filename="app/api/draft/route.ts" switcher
+// pengolah rute mengaktifkan mode draf
+import { draftMode } from 'next/headers';
+
+export async function GET(request: Request) {
+  draftMode().enable();
+  return new Response('Mode draf diaktifkan');
+}
+```
+
+```js filename="app/api/draft/route.js" switcher
+// pengolah rute mengaktifkan mode draf
+import { draftMode } from 'next/headers';
+
+export async function GET(request) {
+  draftMode().enable();
+  return new Response('Mode draf diaktifkan');
+}
+```
+
+Ini akan mengatur **cookie** untuk mengaktifkan mode draf. Permintaan berikutnya yang mengandung cookie ini akan memicu **Mode Draf** mengubah perilaku untuk halaman-halaman yang dibangkitkan secara statis (lebih lanjut tentang ini nanti).
+
+Anda dapat mengujinya secara manual dengan mengunjungi `/api/draft` dan melihat alat pengembang browser Anda. Perhatikan header respons `Set-Cookie` dengan cookie bernama `__prerender_bypass`.
+
+### Akses dengan Aman dari CMS Kepala Anda
+
+Dalam prakteknya, Anda ingin memanggil Pengolah Rute ini dengan _aman_ dari CMS kepala Anda. Langkah-langkah khusus akan bervariasi tergantung pada CMS kepala mana yang Anda gunakan, tetapi berikut adalah beberapa langkah umum yang bisa Anda ambil.
+
+Langkah-langkah ini mengasumsikan bahwa CMS kepala yang Anda gunakan mendukung pengaturan **URL draf kustom**. Jika tidak, Anda masih bisa menggunakan metode ini untuk mengamankan URL draf Anda, tetapi Anda perlu membangun dan mengakses URL draf secara manual.
+
+**Pertama**, Anda harus membuat **token rahasia** menggunakan generator token pilihan Anda. Rahasia ini hanya akan diketahui oleh aplikasi Next.js Anda dan CMS kepala Anda. Rahasia ini mencegah orang yang tidak memiliki akses ke CMS Anda untuk mengakses URL draf.
+
+**Kedua**, jika CMS kepala Anda mendukung pengaturan URL draf kustom, tentukan yang berikut sebagai URL draf. Ini mengasumsikan bahwa Pengolah Rute Anda berlokasi di `app/api/draft/route.ts`
+
+```bash filename="Terminal"
+https://<situs-anda>/api/draft?secret=<token>&slug=<path>
+```
+
+- `<situs-anda>` seharusnya menjadi domain deployment Anda.
+- `<token>` harus digantikan dengan token rahasia yang Anda hasilkan.
+- `<path>` seharusnya menjadi path untuk halaman yang ingin Anda lihat. Jika Anda ingin melihat `/posts/foo`, maka Anda harus menggunakan `&slug=/posts/foo`.
+
+CMS kepala Anda mungkin memungkinkan Anda untuk menyertakan variabel dalam URL draf sehingga `<path>` dapat diatur secara dinamis berdasarkan data CMS seperti ini: `&slug=/posts/{entry.fields.slug}`
+
+**Terakhir**, dalam Pengolah Rute:
+
+- Periksa apakah rahasia cocok dan parameter `slug` ada (jika tidak, permintaan harus gagal).
+- Panggil `draftMode.enable()` untuk mengatur cookie.
+- Kemudian, alihkan browser ke path yang ditentukan oleh `slug`.
+
+```ts filename="app/api/draft/route.ts" switcher
+// pengolah rute dengan rahasia dan slug
+import { draftMode } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+export async function GET(request: Request) {
+  // Mem-parsing parameter string query
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get('secret');
+  const slug = searchParams.get('slug');
+
+  // Periksa rahasia dan parameter slug
+  // Rahasia ini hanya seharusnya diketahui oleh pengolah rute ini dan CMS
+  if (secret !== 'TOKEN_RAHASIA_ANDA' || !slug) {
+    return new Response('Token tidak valid', { status: 401 });
+  }
+
+  // Mengambil data dari CMS kepala untuk memeriksa apakah `slug` yang diberikan ada
+  // getPostBySlug akan mengimplementasikan logika pengambilan yang diperlukan ke CMS kepala
+  const post = await getPostBySlug(slug);
+
+  // Jika slug tidak ada, mencegah mode draf diaktifkan
+  if (!post) {
+    return new Response('Slug tidak valid', { status: 401 });
+  }
+
+  // Mengaktifkan Mode Draf dengan mengatur cookie
+  draftMode().enable();
+
+  // Alihkan ke path dari post yang diambil
+  // Kami tidak mengalihkan ke searchParams.slug karena itu bisa mengakibatkan kerentanan open redirect
+  redirect(post.slug);
+}
+```
+
+```js filename="app/api/draft/route.js" switcher
+// pengolah rute dengan rahasia dan slug
+import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
+
+export async function GET(request) {
+  // Mem-parsing parameter string query
+  const { searchParams } = new URL(request.url)
+  const secret = searchParams.get('secret')
+  const slug = searchParams.get('slug')
+
+  // Periksa rahasia dan parameter slug
+  // Rahasia ini hanya seharusnya diketahui oleh peng
+
+olah rute ini dan CMS
+  if (secret !== 'TOKEN_RAHASIA_ANDA' || !slug) {
+    return new Response('Token tidak valid', { status: 401 })
+  }
+
+  // Mengambil data dari CMS kepala untuk memeriksa apakah `slug` yang diberikan ada
+  // getPostBySlug akan mengimplementasikan logika pengambilan yang diperlukan ke CMS kepala
+  const post = await getPostBySlug(slug)
+
+  // Jika slug tidak ada, mencegah mode draf diaktifkan
+  if (!post) {
+    return new Response('Slug tidak valid', { status: 401 })
+  }
+
+  // Mengaktifkan Mode Draf dengan mengatur cookie
+  draftMode().enable()
+
+  // Alihkan ke path dari post yang diambil
+  // Kami tidak mengalihkan ke searchParams.slug karena itu bisa mengakibatkan kerentanan open redirect
+  redirect(post.slug)
+}
+```
+
+Jika berhasil, maka browser akan dialihkan ke path yang ingin Anda lihat dengan cookie mode draf.
+
+## Langkah 2: Perbarui Halaman
+
+Langkah berikutnya adalah memperbarui halaman Anda untuk memeriksa nilai `draftMode().isEnabled`.
+
+Jika Anda meminta halaman yang memiliki cookie yang diatur, maka data akan diambil pada **saat permintaan** (bukan pada saat build).
+
+Selain itu, nilai `isEnabled` akan bernilai `true`.
+
+```tsx filename="app/page.tsx" switcher
+// halaman yang mengambil data
+import { draftMode } from 'next/headers';
+
+async function getData() {
+  const { isEnabled } = draftMode();
+
+  const url = isEnabled
+    ? 'https://draft.example.com'
+    : 'https://production.example.com';
+
+  const res = await fetch(url);
+
+  return res.json();
+}
+
+export default async function Page() {
+  const { title, desc } = await getData();
+
+  return (
+    <main>
+      <h1>{title}</h1>
+      <p>{desc}</p>
+    </main>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+// halaman yang mengambil data
+import { draftMode } from 'next/headers';
+
+async function getData() {
+  const { isEnabled } = draftMode();
+
+  const url = isEnabled
+    ? 'https://draft.example.com'
+    : 'https://production.example.com';
+
+  const res = await fetch(url);
+
+  return res.json();
+}
+
+export default async function Page() {
+  const { title, desc } = await getData();
+
+  return (
+    <main>
+      <h1>{title}</h1>
+      <p>{desc}</p>
+    </main>
+  );
+}
+```
+
+Itu saja! Jika Anda mengakses Pengolah Rute draf (dengan `secret` dan `slug`) dari CMS kepala Anda atau secara manual, Anda sekarang harus dapat melihat konten draf. Dan jika Anda memperbarui draf Anda tanpa menerbitkannya, Anda harus dapat melihat draf tersebut.
+
+Atur ini sebagai URL draf di CMS kepala Anda atau akses secara manual, dan Anda harus dapat melihat draf.
+
+```bash filename="Terminal"
+https://<situs-anda>/api/draft?secret=<token>&slug=<path>
+```
+
+## Lebih Lanjut
+
+### Hapus Cookie Mode Draf
+
+Secara default, sesi Mode Draf berakhir ketika browser ditutup.
+
+Untuk menghapus cookie Mode Draf secara manual, buat Pengolah Rute yang memanggil `draftMode().disable()`:
+
+```ts filename="app/api/disable-draft/route.ts" switcher
+import { draftMode } from 'next/headers';
+
+export async function GET(request: Request) {
+  draftMode().disable();
+  return new Response('Mode draf dinonaktifkan');
+}
+```
+
+```js filename="app/api/disable-draft/route.js" switcher
+import { draftMode } from 'next/headers';
+
+export async function GET(request) {
+  draftMode().disable();
+  return new Response('Mode draf dinonaktifkan');
+}
+```
+
+Kemudian, kirim permintaan ke `/api/disable-draft` untuk memanggil Pengolah Rute. Jika Anda memanggil rute ini menggunakan [`next/link`](/docs/app/api-reference/components/link), Anda harus melewati `prefetch={false}` untuk mencegah menghapus cookie secara tidak sengaja saat prefetch.
+
+### Unik per `next build`
+
+Nilai cookie bypass baru akan dihasilkan setiap kali Anda menjalankan `next build`.
+
+Ini memastikan bahwa cookie bypass tidak dapat ditebak.
+
+> **Baik untuk diketahui**: Untuk menguji Mode Draf secara lokal melalui HTTP, browser Anda perlu mengizinkan cookie pihak ketiga dan akses penyimpanan lokal.

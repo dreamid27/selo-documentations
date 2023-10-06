@@ -1,0 +1,10 @@
+{
+  "src-typescript": "Typescript",
+  "eslint": "ESLint",
+  "environment-variables": "Environment Variabel",
+  "absolute-imports-and-module-aliases": "Impor Absolute dan Alias Path Modul",
+  "mdx": "MDX",
+  "src-directory": "Direktori src",
+  "draft-mode": "Mode Draft",
+  "content-security-policy": "Kebijakan Keamanan Konten"
+}

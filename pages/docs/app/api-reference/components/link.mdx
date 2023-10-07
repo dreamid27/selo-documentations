@@ -1,0 +1,333 @@
+---
+title: <Link>
+description: Aktifkan navigasi cepat di sisi klien dengan komponen bawaan `next/link`.
+---
+
+{/* Konten dari dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama apa pun sebaiknya tidak dibungkus dalam komponen. */}
+
+# Link
+
+<details>
+  <summary>Contoh</summary>
+
+- [Halo Dunia](https://github.com/vercel/next.js/tree/canary/examples/hello-world)
+- [className Aktif pada Link](https://github.com/vercel/next.js/tree/canary/examples/active-class-name)
+
+</details>
+
+`<Link>` adalah komponen React yang memperluas elemen HTML `<a>` untuk menyediakan [prefetching](/docs/app/building-your-application/routing/linking-and-navigating#1-prefetching) dan navigasi sisi klien antar rute. Ini adalah cara utama untuk berpindah antar rute di Next.js.
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return <Link href="/dashboard">Dasbor</Link>;
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return <Link href="/dashboard">Dasbor</Link>;
+}
+```
+
+## Properti
+
+Berikut adalah ringkasan properti yang tersedia untuk Komponen Link:
+
+| Properti                 | Contoh              | Tipe              | Diperlukan |
+| ------------------------ | ------------------- | ----------------- | ---------- |
+| [`href`](#href-required) | `href="/dashboard"` | String atau Objek | Ya         |
+| [`replace`](#replace)    | `replace={false}`   | Boolean           | -          |
+| [`scroll`](#scroll)      | `scroll={false}`    | Boolean           | -          |
+| [`prefetch`](#prefetch)  | `prefetch={false}`  | Boolean           | -          |
+
+> **Perlu diketahui**: Atribut-atribut tag `<a>` seperti `className` atau `target="_blank"` dapat ditambahkan ke `<Link>` sebagai properti dan akan disampaikan ke elemen `<a>` yang mendasarinya.
+
+### `href` (wajib)
+
+Path atau URL untuk navigasi.
+
+```jsx
+<Link href="/dashboard">Dasbor</Link>
+```
+
+`href` juga dapat menerima objek, misalnya:
+
+```jsx
+// Navigasi ke /about?name=test
+<Link
+  href={{
+    pathname: '/about',
+    query: { name: 'test' },
+  }}
+>
+  Tentang
+</Link>
+```
+
+### `replace`
+
+**Defaultnya `false`.** Ketika `true`, `next/link` akan menggantikan status riwayat saat ini daripada menambahkan URL baru ke dalam [tumpukan riwayat](https://developer.mozilla.org/docs/Web/API/History_API) peramban.
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" replace>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" replace>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+### `scroll`
+
+**Defaultnya `true`.** Perilaku default dari `<Link>` adalah menggulir ke atas rute baru atau menjaga posisi gulir untuk navigasi mundur dan maju. Ketika `false`, `next/link` tidak akan menggulir ke atas halaman setelah navigasi.
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" scroll={false}>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" scroll={false}>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+### `prefetch`
+
+**Defaultnya `true`.** Ketika `true`, `next/link` akan melakukan prefetch halaman (yang ditandai oleh `href`) di latar belakang. Ini berguna untuk meningkatkan kinerja navigasi sisi klien. Setiap `<Link />` dalam viewport (awalnya atau melalui gulir) akan dimuat sebelumnya.
+
+Prefetch dapat dinonaktifkan dengan mengirimkan `prefetch={false}`. Prefetching hanya diaktifkan pada mode produksi.
+
+```tsx filename="app/page.tsx" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" prefetch={false}>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+import Link from 'next/link';
+
+export default function Page() {
+  return (
+    <Link href="/dashboard" prefetch={false}>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+## Contoh
+
+### Menghubungkan ke Rute Dinamis
+
+Untuk rute dinamis, berguna menggunakan template literals untuk membuat jalur tautan.
+
+Misalnya, Anda dapat menghasilkan daftar tautan ke rute dinamis `app/blog/[slug]/page.js`:
+
+```jsx filename="app/blog/page.js"
+import Link from 'next/link';
+
+function Page({ posts }) {
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### Jika anaknya adalah komponen kustom yang membungkus elemen `<a>`
+
+Jika anak dari `Link` adalah komponen kustom yang membungkus elemen `<a>`, Anda harus menambahkan `passHref` ke `Link`. Ini diperlukan jika Anda menggunakan perpustakaan seperti [styled-components](https://styled-components.com/). Tanpa ini, elemen `<a>` tidak akan memiliki atribut `href`, yang dapat mengganggu aksesibilitas situs Anda dan memengaruhi SEO. Jika Anda menggunakan [ESLint](/docs/app/building-your-application/configuring/eslint#eslint-plugin), ada aturan bawaan `next/link-passhref` untuk memastikan penggunaan yang benar dari `passHref`.
+
+```jsx
+import Link from 'next/link';
+import styled from 'styled-components';
+
+// Ini membuat komponen kustom yang membungkus elemen <a>
+const RedLink = styled.a`
+  color: red;
+`;
+
+function NavLink({ href, name }) {
+  return (
+    <Link href={href} passHref legacyBehavior>
+      <RedLink>{name}</RedLink>
+    </Link>
+  );
+}
+
+export default NavLink;
+```
+
+- Jika Anda menggunakan fitur JSX pragma [emotion](https://emotion.sh/) (`@jsx jsx`), Anda harus menggunakan `passHref` bahkan jika Anda menggunakan elemen `<a>` secara langsung.
+- Komponen harus mendukung properti `onClick` untuk memicu navigasi dengan benar.
+
+### Jika anaknya adalah komponen fungsional
+
+Jika anak dari `Link` adalah komponen fungsional, selain menggunakan `passHref` dan `legacyBehavior`, Anda harus membungkus komponen dalam [`React.forwardRef`](https://react.dev/reference/react/forwardRef):
+
+```jsx
+import Link from 'next/link';
+
+// `onClick`, `href`, dan `ref` harus disampaikan ke elemen DOM
+// untuk penanganan yang benar
+const MyButton = React.forwardRef(({ onClick, href }, ref) => {
+  return (
+    <a href={href} onClick={onClick} ref={ref}>
+      Klik Saya
+    </a>
+  );
+});
+
+function Home() {
+  return (
+    <Link href="/about" passHref legacyBehavior>
+      <MyButton />
+    </Link>
+  );
+}
+
+export default Home;
+```
+
+### Dengan Objek URL
+
+`Link` juga dapat menerima objek URL dan akan secara otomatis memformatnya untuk membuat string URL. Berikut cara melakukannya:
+
+```jsx
+import Link from 'next/link';
+
+function Home() {
+  return (
+    <ul>
+      <li>
+        <Link
+          href={{
+            pathname: '/about',
+            query: { name: 'test' },
+          }}
+        >
+          Tentang kami
+        </Link>
+      </li>
+      <li>
+        <Link
+          href={{
+            pathname: '/blog/[slug]',
+            query: { slug: 'my-post' },
+          }}
+        >
+          Tulisan Blog
+        </Link>
+      </li>
+    </ul>
+  );
+}
+
+export default Home;
+```
+
+Contoh di atas memiliki tautan ke:
+
+- Rute yang telah ditentukan sebelumnya: `/about?name=test`
+- [Rute dinamis](/docs/app/building-your-application/routing/dynamic-routes): `/blog/my-post`
+
+Anda dapat menggunakan setiap properti seperti yang didefinisikan dalam [dokumentasi modul URL Node.js](https://nodejs.org/api/url.html#url_url_strings_and_url_objects).
+
+### Mengganti URL daripada mendorong
+
+Perilaku default dari komponen `Link` adalah `push` URL baru ke dalam tumpukan `history`. Anda dapat menggunakan properti `replace` untuk mencegah penambahan entri baru, seperti dalam contoh berikut:
+
+```jsx
+<Link href="/about" replace>
+  Tentang kami
+</Link>
+```
+
+### Middleware
+
+Biasanya, penggunaan [Middleware](/docs/app/building-your-application/routing/middleware) untuk autentikasi atau tujuan lain yang melibatkan pengalihan pengguna ke halaman yang berbeda. Agar komponen `<Link />` dapat melakukan prefetch tautan dengan pengalihan melalui Middleware, Anda perlu memberi tahu Next.js baik URL yang akan ditampilkan maupun URL yang akan di-prefetch. Hal ini diperlukan agar menghindari pengambilan yang tidak perlu ke middleware untuk mengetahui rute yang benar untuk di-prefetch.
+
+Sebagai contoh, jika Anda ingin melayani rute `/dashboard` yang memiliki tampilan yang terautentikasi dan pengunjung, Anda dapat menambahkan sesuatu yang serupa dengan berikut ini dalam Middleware Anda untuk mengarahkan pengguna ke halaman yang benar:
+
+```js filename="middleware.js"
+export function middleware(req) {
+  const nextUrl = req.nextUrl;
+  if (nextUrl.pathname === '/dashboard') {
+    if (req.cookies.authToken) {
+      return NextResponse.rewrite(new URL('/auth/dashboard', req.url));
+    } else {
+      return NextResponse.rewrite(new URL('/public/dashboard', req.url));
+    }
+  }
+}
+```
+
+Dalam hal ini, Anda ingin menggunakan kode berikut di komponen `<Link />` Anda:
+
+```js
+import Link from 'next/link';
+import useIsAuthed from './hooks/useIsAuthed';
+
+export default function Page() {
+  const isAuthed = useIsAuthed();
+  const path = isAuthed ? '/auth/dashboard' : '/dashboard';
+  return (
+    <Link as="/dashboard" href={path}>
+      Dasbor
+    </Link>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                                                                                                                                                             |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v13.0.0` | Tidak lagi memerlukan elemen `<a>` anak. [Codemod](/docs/app/building-your-application/upgrading/codemods#remove-a-tags-from-link-components) disediakan untuk secara otomatis memperbarui kode Anda. |
+| `v10.0.0` | Properti `href` yang menunjuk ke rute dinamis akan secara otomatis diresolusi dan tidak lagi memerlukan properti `as`.                                                                                |
+| `v8.0.0`  | Meningkatkan kinerja prefetching.                                                                                                                                                                     |
+| `v1.0.0`  | `next/link` diperkenalkan.                                                                                                                                                                            |

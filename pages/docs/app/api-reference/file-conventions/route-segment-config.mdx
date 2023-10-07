@@ -1,0 +1,233 @@
+---
+title: Konfigurasi Segment Rute
+description: Pelajari cara mengonfigurasi opsi untuk segmen rute Next.js.
+---
+
+# Konfigurasi Segment Rute
+
+Opsi Segment Rute memungkinkan Anda untuk mengonfigurasi perilaku [Halaman](/docs/app/building-your-application/routing/pages-and-layouts), [Layout](/docs/app/building-your-application/routing/pages-and-layouts), atau [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) dengan cara langsung mengekspor variabel-variabel berikut:
+
+| Opsi                                  | Tipe                                                                                                                      | Default                     |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| [`dynamic`](#dynamic)                 | `'auto' \| 'force-dynamic' \| 'error' \| 'force-static'`                                                                  | `'auto'`                    |
+| [`dynamicParams`](#dynamicparams)     | `boolean`                                                                                                                 | `true`                      |
+| [`revalidate`](#revalidate)           | `false \| 'force-cache' \| 0 \| number`                                                                                   | `false`                     |
+| [`fetchCache`](#fetchcache)           | `'auto' \| 'default-cache' \| 'only-cache' \| 'force-cache' \| 'force-no-store' \| 'default-no-store' \| 'only-no-store'` | `'auto'`                    |
+| [`runtime`](#runtime)                 | `'nodejs' \| 'edge'`                                                                                                      | `'nodejs'`                  |
+| [`preferredRegion`](#preferredregion) | `'auto' \| 'global' \| 'home' \| string \| string[]`                                                                      | `'auto'`                    |
+| [`maxDuration`](#maxduration)         | `number`                                                                                                                  | Diatur oleh platform deploy |
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const dynamic = 'auto';
+export const dynamicParams = true;
+export const revalidate = false;
+export const fetchCache = 'auto';
+export const runtime = 'nodejs';
+export const preferredRegion = 'auto';
+export const maxDuration = 5;
+
+export default function MyComponent() {}
+```
+
+```jsx filename="layout.js / page.js / route.js" switcher
+export const dynamic = 'auto';
+export const dynamicParams = true;
+export const revalidate = false;
+export const fetchCache = 'auto';
+export const runtime = 'nodejs';
+export const preferredRegion = 'auto';
+export const maxDuration = 5;
+
+export default function MyComponent() {}
+```
+
+> **Baik untuk diketahui**:
+>
+> - Nilai opsi konfigurasi saat ini harus dapat dianalisis secara statis. Misalnya, `revalidate = 600` adalah valid, tetapi `revalidate = 60 * 10` tidak valid.
+
+## Opsi
+
+### `dynamic`
+
+Mengubah perilaku dinamis dari suatu tata letak atau halaman menjadi sepenuhnya statis atau sepenuhnya dinamis.
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const dynamic = 'auto';
+// 'auto' | 'force-dynamic' | 'error' | 'force-static'
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const dynamic = 'auto';
+// 'auto' | 'force-dynamic' | 'error' | 'force-static'
+```
+
+> **Baik untuk diketahui**: Model baru dalam direktori `app` mendukung kontrol caching granular pada tingkat permintaan `fetch` di atas model biner all-or-nothing `getServerSideProps` dan `getStaticProps` pada tingkat halaman di direktori `pages`. Opsi `dynamic` adalah cara untuk kembali ke model sebelumnya sebagai kemudahan dan menyediakan jalur migrasi yang lebih sederhana.
+
+- **`'auto'`** (default): Pilihan default untuk meng-cache sebanyak mungkin tanpa mencegah komponen apa pun untuk memilih perilaku dinamis.
+- **`'force-dynamic'`**: Memaksa rendering dinamis dan pengambilan data tanpa cache dari tata letak atau halaman dengan menonaktifkan semua caching permintaan `fetch` dan selalu memvalidasi ulang. Opsi ini setara dengan:
+
+  - `getServerSideProps()` di direktori `pages`.
+  - Mengatur opsi setiap permintaan `fetch()` dalam tata letak atau halaman menjadi `{ cache: 'no-store', next: { revalidate: 0 } }`.
+  - Mengatur konfigurasi segmen menjadi `export const fetchCache = 'force-no-store'`
+
+- **`'error'`**: Memaksa rendering statis dan meng-cache data dari tata letak atau halaman dengan menyebabkan kesalahan jika ada komponen yang menggunakan [fungsi dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions) atau pengambilan data tanpa cache. Opsi ini setara dengan:
+
+  - `getStaticProps()` di direktori `pages`.
+  - Mengatur opsi setiap permintaan `fetch()` dalam tata letak atau halaman menjadi `{ cache: 'force-cache' }`.
+  - Mengatur konfigurasi segmen menjadi `fetchCache = 'only-cache', dynamicParams = false`.
+  - `dynamic = 'error'` mengubah nilai default `dynamicParams` dari `true` menjadi `false`. Anda dapat kembali memilih untuk secara dinamis merender halaman untuk parameter dinamis yang tidak dihasilkan oleh `generateStaticParams` dengan mengatur `dynamicParams = true`.
+
+- **`'force-static'`**: Memaksa rendering statis dan meng-cache data dari tata letak atau halaman dengan memaksa [`cookies()`](/docs/app/api-reference/functions/cookies), [`headers()`](/docs/app/api-reference/functions/headers), dan [`useSearchParams()`](/docs/app/api-reference/functions/use-search-params) mengembalikan nilai kosong.
+
+> **Baik untuk diketahui**:
+>
+> - Instruksi tentang [cara migrasi](/docs/app/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods) dari `getServerSideProps` dan `getStaticProps` ke `dynamic: 'force-dynamic'` dan `dynamic: 'error'` dapat ditemukan di [panduan upgrade](/docs/app/building-your-application/upgrading/app-router-migration#step-6-migrating-data-fetching-methods).
+
+### `dynamicParams`
+
+Kendalikan apa yang terjadi ketika segmen dinamis dikunjungi yang tidak dihasilkan dengan [generateStaticParams](/docs/app/api-reference/functions/generate-static-params).
+
+```tsx filename="layout.tsx / page.tsx" switcher
+export const dynamicParams = true; // true | false,
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const dynamicParams = true //
+
+ true | false,
+```
+
+- **`true`** (default): Segmen dinamis yang tidak termasuk dalam `generateStaticParams` dihasilkan saat diminta.
+- **`false`**: Segmen dinamis yang tidak termasuk dalam `generateStaticParams` akan mengembalikan 404.
+
+> **Baik untuk diketahui**:
+>
+> - Opsi ini menggantikan opsi `fallback: true | false | blocking` dari `getStaticPaths` di direktori `pages`.
+> - Ketika `dynamicParams = true`, segmen menggunakan [Streaming Server Rendering](/docs/app/building-your-application/routing/loading-ui-and-streaming#streaming-with-suspense).
+> - Jika `dynamic = 'error'` dan `dynamic = 'force-static'` digunakan, itu akan mengubah nilai default `dynamicParams` menjadi `false`.
+
+### `revalidate`
+
+Atur waktu validasi ulang default untuk tata letak atau halaman. Opsi ini tidak menggantikan nilai `revalidate` yang diatur oleh permintaan `fetch` individu.
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const revalidate = false;
+// false | 'force-cache' | 0 | number
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const revalidate = false;
+// false | 'force-cache' | 0 | number
+```
+
+- **`false`**: (default) Heuristik default untuk meng-cache semua permintaan `fetch` yang mengatur opsi `cache` mereka menjadi `'force-cache'` atau ditemukan sebelum [fungsi dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions) digunakan. Secara semantik setara dengan `revalidate: Infinity` yang efektif berarti sumber daya tersebut harus di-cache tanpa batas waktu. Masih memungkinkan bagi permintaan `fetch` individu untuk menggunakan `cache: 'no-store'` atau `revalidate: 0` untuk menghindari peng-cachingan dan membuat rute di-render secara dinamis. Atau atur `revalidate` ke angka positif lebih rendah dari default rute untuk meningkatkan frekuensi validasi ulang suatu rute.
+- **`0`**: Pastikan tata letak atau halaman selalu [di-render secara dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering) bahkan jika tidak ada fungsi dinamis atau pengambilan data tanpa cache yang ditemukan. Opsi ini mengubah default permintaan `fetch` yang tidak mengatur opsi `cache` menjadi `'no-store'`, tetapi tetap membiarkan permintaan `fetch` yang memilih `'force-cache'` atau menggunakan revalidate positif tetap seperti adanya.
+- **`number`**: (dalam detik) Atur frekuensi validasi ulang default tata letak atau halaman menjadi `n` detik.
+
+> **Baik untuk diketahui**: Opsi `revalidate` hanya tersedia saat menggunakan [Node.js Runtime](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes). Ini berarti menggunakan opsi `revalidate` dengan `runtime = 'edge'` tidak akan berfungsi.
+
+#### Frekuensi Validasi Ulang
+
+- Nilai `revalidate` terendah di antara setiap tata letak dan halaman dari satu rute akan menentukan frekuensi validasi ulang _seluruh_ rute. Ini memastikan bahwa halaman anak divalidasi ulang dengan sefrekuensi tata letak induk mereka.
+- Permintaan `fetch` individu dapat mengatur `revalidate` yang lebih rendah daripada `revalidate` default rute untuk meningkatkan frekuensi validasi ulang seluruh rute. Ini memungkinkan Anda untuk secara dinamis memilih untuk validasi ulang lebih sering untuk beberapa rute berdasarkan beberapa kriteria.
+
+### `fetchCache`
+
+<details>
+  <summary>Ini adalah opsi lanjutan yang harus digunakan hanya jika Anda secara khusus perlu mengganti perilaku default.</summary>
+
+Secara default, Next.js **akan meng-cache** semua permintaan `fetch()` yang dapat dijangkau **sebelum** fungsi dinamis apa pun digunakan dan **tidak akan meng-cache** permintaan `fetch` yang ditemukan **setelah** fungsi dinamis digunakan.
+
+`fetchCache` memungkinkan Anda untuk mengganti opsi `cache` default semua permintaan `fetch` dalam tata letak atau halaman.
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const fetchCache = 'auto';
+// 'auto' | 'default-cache' | 'only-cache'
+// 'force-cache' | 'force-no-store' | 'default-no-store' | 'only-no-store'
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const fetchCache = 'auto';
+// 'auto' | 'default-cache' | 'only-cache'
+// 'force-cache' | 'force-no-store' | 'default-no-store' | 'only-no-store'
+```
+
+- **`'auto'`** (default): Opsi default untuk meng-cache permintaan `fetch` sebelum fungsi dinamis dengan opsi `cache` yang mereka berikan dan tidak meng-cache permintaan `fetch` yang ditemukan setelah fungsi dinamis.
+- **`'default-cache'`**: Memungkinkan opsi `cache` apa pun yang akan dilewatkan ke `fetch`, tetapi jika tidak ada opsi yang disediakan, maka opsi `cache` diatur menjadi `'force-cache'`. Ini berarti bahkan permintaan `fetch` yang ditemukan setelah fungsi dinamis dianggap statis.
+- **`'only-cache'`**: Memastikan semua permintaan `fetch` memilih caching dengan mengubah default menjadi `cache: 'force-cache'` jika tidak ada opsi yang diberikan, dan menyebabkan kesalahan jika ada permintaan `fetch` yang menggunakan `cache: 'no-store'`.
+- **`'force-cache'`**: Memastikan semua permintaan `fetch` memilih caching dengan mengatur opsi `cache` dari semua permintaan `fetch` menjadi `'force-cache'`.
+- **`'default-no-store'`**: Memungkinkan opsi `cache` apa pun yang akan dilewatkan ke `fetch`, tetapi jika tidak ada opsi yang disediakan, maka opsi `cache` diatur menjadi `'no-store'`. Ini berarti bahkan permintaan `fetch` yang ditemukan sebelum fungsi dinamis dianggap dinamis.
+- **`'only-no-store'`**: Memastikan semua perm
+
+intaan `fetch` memilih untuk tidak meng-cache dengan mengubah default menjadi `cache: 'no-store'` jika tidak ada opsi yang diberikan, dan menyebabkan kesalahan jika ada permintaan `fetch` yang menggunakan `cache: 'force-cache'`.
+
+- **`'force-no-store'`**: Memastikan semua permintaan `fetch` memilih untuk tidak meng-cache dengan mengatur opsi `cache` dari semua permintaan `fetch` menjadi `'no-store'`. Ini memaksa semua permintaan `fetch` untuk diambil kembali setiap permintaan, bahkan jika mereka memberikan opsi `'force-cache'`.
+
+#### Perilaku Segmen Antar-rute
+
+- Semua opsi yang diatur di semua tata letak dan halaman dari satu rute perlu kompatibel satu sama lain.
+  - Jika baik `'only-cache'` dan `'force-cache'` diberikan, maka `'force-cache'` yang menang. Jika baik `'only-no-store'` dan `'force-no-store'` diberikan, maka `'force-no-store'` yang menang. Opsi yang memaksa mengubah perilaku di seluruh rute, sehingga satu segmen dengan `'force-*'` akan mencegah kesalahan yang disebabkan oleh `'only-*'`.
+  - Tujuan dari opsi `'only-*'` dan `force-*'` adalah untuk menjamin seluruh rute menjadi sepenuhnya statis atau sepenuhnya dinamis. Ini berarti:
+    - Kombinasi dari `'only-cache'` dan `'only-no-store'` dalam satu rute tidak diizinkan.
+    - Kombinasi dari `'force-cache'` dan `'force-no-store'` dalam satu rute tidak diizinkan.
+  - Sebagai rekomendasi umum, biarkan tata letak induk bersama sebagai `'auto'` dan sesuaikan opsi di mana segmen anak-anaknya berbeda.
+
+</details>
+
+### `runtime`
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const runtime = 'nodejs';
+// 'edge' | 'nodejs'
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const runtime = 'nodejs';
+// 'edge' | 'nodejs'
+```
+
+- **`nodejs`** (default)
+- **`edge`**
+
+Pelajari lebih lanjut tentang [Runtimes Edge dan Node.js](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+
+### `preferredRegion`
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const preferredRegion = 'auto';
+// 'auto' | 'global' | 'home' | ['iad1', 'sfo1']
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const preferredRegion = 'auto';
+// 'auto' | 'global' | 'home' | ['iad1', 'sfo1']
+```
+
+Dukungan untuk `preferredRegion`, dan wilayah yang didukung, bergantung pada platform deploy Anda.
+
+> **Baik untuk diketahui**:
+>
+> - Jika tidak ada `preferredRegion` yang ditentukan, akan mewarisi opsi dari tata letak induk terdekat.
+> - Tata letak root defaultnya adalah `semua` wilayah.
+
+### `maxDuration`
+
+Berdasarkan platform deploy Anda, Anda mungkin dapat menggunakan waktu eksekusi default yang lebih tinggi untuk fungsi Anda. Pengaturan ini memungkinkan Anda untuk memilih waktu eksekusi yang lebih tinggi dalam batas rencana Anda. **Catatan**: Pengaturan ini memerlukan Next.js `13.4.10` atau yang lebih tinggi.
+
+```tsx filename="layout.tsx / page.tsx / route.ts" switcher
+export const maxDuration = 5;
+```
+
+```js filename="layout.js / page.js / route.js" switcher
+export const maxDuration = 5;
+```
+
+> **Baik untuk diketahui**:
+>
+> - Jika tidak ada `maxDuration` yang ditentukan, nilai default tergantung pada platform deploy Anda dan rencana Anda.
+
+### `generateStaticParams`
+
+Fungsi `generateStaticParams` dapat digunakan bersamaan dengan [segmen rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) untuk mendefinisikan daftar parameter segmen rute yang akan dihasilkan secara statis pada saat pembuatan bukan saat permintaan.
+
+Lihat [referensi API](/docs/app/api-reference/functions/generate-static-params) untuk informasi lebih lanjut.

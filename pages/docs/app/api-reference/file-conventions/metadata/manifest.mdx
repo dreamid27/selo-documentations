@@ -1,0 +1,72 @@
+---
+title: manifest.json
+description: Referensi API untuk berkas manifest.json.
+---
+
+# manifest.json
+
+Tambahkan atau hasilkan berkas `manifest.(json|webmanifest)` yang sesuai dengan [Spesifikasi Manifest Web](https://developer.mozilla.org/docs/Web/Manifest) di **root** direktori `app` untuk memberikan informasi tentang aplikasi web Anda kepada browser.
+
+## Berkas Manifest Statis
+
+```json filename="app/manifest.json | app/manifest.webmanifest"
+{
+  "name": "Aplikasi Next.js Saya",
+  "short_name": "Aplikasi Next.js",
+  "description": "Aplikasi yang dibangun dengan Next.js",
+  "start_url": "/"
+  // ...
+}
+```
+
+## Hasilkan Berkas Manifest
+
+Tambahkan berkas `manifest.js` atau `manifest.ts` yang mengembalikan objek [`Manifest`](#manifest-object).
+
+```ts filename="app/manifest.ts" switcher
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Aplikasi Next.js',
+    short_name: 'Aplikasi Next.js',
+    description: 'Aplikasi Next.js',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#fff',
+    theme_color: '#fff',
+    icons: [
+      {
+        src: '/favicon.ico',
+        sizes: 'any',
+        type: 'image/x-icon',
+      },
+    ],
+  };
+}
+```
+
+```js filename="app/manifest.js" switcher
+export default function manifest() {
+  return {
+    name: 'Aplikasi Next.js',
+    short_name: 'Aplikasi Next.js',
+    description: 'Aplikasi Next.js',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#fff',
+    theme_color: '#fff',
+    icons: [
+      {
+        src: '/favicon.ico',
+        sizes: 'any',
+        type: 'image/x-icon',
+      },
+    ],
+  };
+}
+```
+
+### Objek Manifest
+
+Objek manifest mengandung daftar opsi yang luas yang mungkin diperbarui karena standar web yang baru. Untuk informasi tentang semua opsi saat ini, lihat tipe `MetadataRoute.Manifest` di editor kode Anda jika menggunakan [TypeScript](https://nextjs.org/docs/app/building-your-application/configuring/typescript#typescript-plugin) atau lihat [dokumentasi MDN](https://developer.mozilla.org/docs/Web/Manifest).

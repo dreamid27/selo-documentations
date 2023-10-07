@@ -1,0 +1,91 @@
+---
+title: not-found.js
+description: Referensi API untuk file not-found.js.
+---
+
+File **not-found** digunakan untuk merender antarmuka pengguna saat fungsi [`notFound`](/docs/app/api-reference/functions/not-found) dilemparkan dalam segmen rute. Selain melayani antarmuka pengguna kustom, Next.js akan mengembalikan kode status HTTP `200` untuk respons yang disiarkan, dan `404` untuk respons yang tidak disiarkan.
+
+```tsx filename="app/blog/not-found.tsx" switcher
+import Link from 'next/link';
+
+export default function NotFound() {
+  return (
+    <div>
+      <h2>Tidak Ditemukan</h2>
+      <p>Tidak dapat menemukan sumber daya yang diminta</p>
+      <Link href="/">Kembali ke Beranda</Link>
+    </div>
+  );
+}
+```
+
+```jsx filename="app/blog/not-found.js" switcher
+import Link from 'next/link';
+
+export default function NotFound() {
+  return (
+    <div>
+      <h2>Tidak Ditemukan</h2>
+      <p>Tidak dapat menemukan sumber daya yang diminta</p>
+      <Link href="/">Kembali ke Beranda</Link>
+    </div>
+  );
+}
+```
+
+> **Baik untuk diketahui**: Selain menangkap kesalahan `notFound()`, file root `app/not-found.js` juga menangani URL yang tidak cocok untuk seluruh aplikasi Anda. Ini berarti pengguna yang mengunjungi URL yang tidak ditangani oleh aplikasi Anda akan melihat antarmuka pengguna yang diekspor oleh file `app/not-found.js`.
+
+## Props
+
+Komponen `not-found.js` tidak menerima props apa pun.
+
+## Pengambilan Data
+
+Secara default, `not-found` adalah Komponen Server. Anda dapat menandainya sebagai `async` untuk mengambil dan menampilkan data:
+
+```tsx filename="app/blog/not-found.tsx" switcher
+import Link from 'next/link';
+import { headers } from 'next/headers';
+
+export default async function NotFound() {
+  const headersList = headers();
+  const domain = headersList.get('host');
+  const data = await getSiteData(domain);
+  return (
+    <div>
+      <h2>Tidak Ditemukan: {data.name}</h2>
+      <p>Tidak dapat menemukan sumber daya yang diminta</p>
+      <p>
+        Lihat <Link href="/blog">semua posting</Link>
+      </p>
+    </div>
+  );
+}
+```
+
+```jsx filename="app/blog/not-found.jsx" switcher
+import Link from 'next/link';
+import { headers } from 'next/headers';
+
+export default async function NotFound() {
+  const headersList = headers();
+  const domain = headersList.get('host');
+  const data = await getSiteData(domain);
+  return (
+    <div>
+      <h2>Tidak Ditemukan: {data.name}</h2>
+      <p>Tidak dapat menemukan sumber daya yang diminta</p>
+      <p>
+        Lihat <Link href="/blog">semua posting</Link>
+      </p>
+    </div>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                   |
+| --------- | ----------------------------------------------------------- |
+| `v13.3.0` | Root `app/not-found` menangani URL global yang tidak cocok. |
+| `v13.0.0` | `not-found` diperkenalkan.                                  |

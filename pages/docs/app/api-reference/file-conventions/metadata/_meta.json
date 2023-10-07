@@ -1,0 +1,7 @@
+{
+  "app-icons": "favicon, icon, dan apple icon",
+  "manifest": "manifest.js",
+  "opengraph-image": "opengraph-image and twitter-image",
+  "robots": "robots.txt",
+  "sitemap": "sitemap.xml"
+}

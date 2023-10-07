@@ -1,0 +1,36 @@
+---
+title: loading.js
+description: Referensi API untuk berkas loading.js.
+---
+
+# loading.js
+
+Berkas **loading** dapat membuat status loading instan yang dibangun di atas [Suspense](/docs/app/building-your-application/routing/loading-ui-and-streaming).
+
+Secara default, berkas ini adalah [Server Component](/docs/app/building-your-application/rendering/server-components) - tetapi juga dapat digunakan sebagai Komponen Klien melalui direktif `"gunakan klien"`.
+
+```tsx filename="app/feed/loading.tsx" switcher
+export default function Loading() {
+  // Atau komponen kerangka loading kustom
+  return <p>'Sedang Memuat...'</p>;
+}
+```
+
+```jsx filename="app/feed/loading.js" switcher
+export default function Loading() {
+  // Atau komponen kerangka loading kustom
+  return <p>'Sedang Memuat...'</p>;
+}
+```
+
+Komponen UI Loading tidak menerima parameter apa pun.
+
+> **Bagus untuk diketahui**
+>
+> - Saat merancang UI loading, Anda mungkin menemukan berguna untuk menggunakan [React Developer Tools](https://react.dev/learn/react-developer-tools) untuk secara manual mengaktifkan batasan Suspense.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                |
+| --------- | ------------------------ |
+| `v13.0.0` | `loading` diperkenalkan. |

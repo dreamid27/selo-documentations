@@ -1,0 +1,80 @@
+---
+title: route.js
+description: Referensi API untuk berkas istimewa route.js.
+---
+
+# route.js
+
+Pengendali Rute memungkinkan Anda untuk membuat penanganan permintaan kustom untuk suatu rute tertentu menggunakan API [Request](https://developer.mozilla.org/docs/Web/API/Request) dan [Response](https://developer.mozilla.org/docs/Web/API/Response) Web.
+
+## Metode HTTP
+
+Sebuah berkas **rute** memungkinkan Anda untuk membuat penanganan permintaan kustom untuk suatu rute tertentu. Berikut adalah [metode HTTP](https://developer.mozilla.org/docs/Web/HTTP/Methods) yang didukung: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, dan `OPTIONS`.
+
+```ts filename="route.ts" switcher
+export async function GET(request: Request) {}
+
+export async function HEAD(request: Request) {}
+
+export async function POST(request: Request) {}
+
+export async function PUT(request: Request) {}
+
+export async function DELETE(request: Request) {}
+
+export async function PATCH(request: Request) {}
+
+// Jika `OPTIONS` tidak didefinisikan, Next.js akan otomatis mengimplementasikan `OPTIONS` dan mengatur header Response yang sesuai dengan `Allow` tergantung pada metode lain yang didefinisikan dalam pengendali rute.
+export async function OPTIONS(request: Request) {}
+```
+
+```js filename="route.js" switcher
+export async function GET(request) {}
+
+export async function HEAD(request) {}
+
+export async function POST(request) {}
+
+export async function PUT(request) {}
+
+export async function DELETE(request) {}
+
+export async function PATCH(request) {}
+
+// Jika `OPTIONS` tidak didefinisikan, Next.js akan otomatis mengimplementasikan `OPTIONS` dan mengatur header Response yang sesuai dengan `Allow` tergantung pada metode lain yang didefinisikan dalam pengendali rute.
+export async function OPTIONS(request) {}
+```
+
+> **Penting untuk diketahui**: Pengendali Rute hanya tersedia di dalam direktori `app`. Anda **tidak perlu** menggunakan Rute API (`pages`) dan Pengendali Rute (`app`) bersama-sama, karena Pengendali Rute seharusnya dapat menangani semua kasus penggunaan.
+
+## Parameter
+
+### `request` (opsional)
+
+Objek `request` adalah objek [NextRequest](/docs/app/api-reference/functions/next-request), yang merupakan perluasan dari API [Request](https://developer.mozilla.org/docs/Web/API/Request) Web. `NextRequest` memberi Anda kendali lebih lanjut atas permintaan yang masuk, termasuk akses mudah ke `cookies` dan objek URL yang diperpanjang dan diparsing `nextUrl`.
+
+### `context` (opsional)
+
+```ts filename="app/dashboard/[team]/route.js"
+export async function GET(request, context: { params }) {
+  const team = params.team; // '1'
+}
+```
+
+Saat ini, satu-satunya nilai dari `context` adalah `params`, yang merupakan objek yang berisi [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) untuk rute saat ini.
+
+| Contoh                           | URL            | `params`                  |
+| -------------------------------- | -------------- | ------------------------- |
+| `app/dashboard/[team]/route.js`  | `/dashboard/1` | `{ team: '1' }`           |
+| `app/shop/[tag]/[item]/route.js` | `/shop/1/2`    | `{ tag: '1', item: '2' }` |
+| `app/blog/[...slug]/route.js`    | `/blog/1/2`    | `{ slug: ['1', '2'] }`    |
+
+## NextResponse
+
+Pengendali Rute dapat memperluas API Respons Web dengan mengembalikan objek `NextResponse`. Ini memungkinkan Anda dengan mudah mengatur cookies, header, pengalihan, dan perubahan ulang. [Lihat referensi API](/docs/app/api-reference/functions/next-response).
+
+## Riwayat Versi
+
+| Versi     | Perubahan                      |
+| --------- | ------------------------------ |
+| `v13.2.0` | Pengendali rute diperkenalkan. |

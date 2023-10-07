@@ -1,0 +1,59 @@
+---
+title: page.js
+description: Referensi API untuk berkas page.js.
+---
+
+# page.js
+
+Sebuah **halaman** adalah antarmuka pengguna yang unik untuk suatu rute.
+
+```tsx filename="app/blog/[slug]/page.tsx" switcher
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  return <h1>Halaman Saya</h1>;
+}
+```
+
+```jsx filename="app/blog/[slug]/page.js" switcher
+export default function Page({ params, searchParams }) {
+  return <h1>Halaman Saya</h1>;
+}
+```
+
+## Properti
+
+### `params` (opsional)
+
+Sebuah objek yang berisi [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) dari segmen root hingga halaman tersebut. Contohnya:
+
+| Contoh                               | URL         | `params`                       |
+| ------------------------------------ | ----------- | ------------------------------ |
+| `app/shop/[slug]/page.js`            | `/shop/1`   | `{ slug: '1' }`                |
+| `app/shop/[category]/[item]/page.js` | `/shop/1/2` | `{ category: '1', item: '2' }` |
+| `app/shop/[...slug]/page.js`         | `/shop/1/2` | `{ slug: ['1', '2'] }`         |
+
+### `searchParams` (opsional)
+
+Sebuah objek yang berisi [parameter pencarian](https://developer.mozilla.org/docs/Learn/Common_questions/What_is_a_URL#parameters) dari URL saat ini. Contohnya:
+
+| URL             | `searchParams`       |
+| --------------- | -------------------- |
+| `/shop?a=1`     | `{ a: '1' }`         |
+| `/shop?a=1&b=2` | `{ a: '1', b: '2' }` |
+| `/shop?a=1&a=2` | `{ a: ['1', '2'] }`  |
+
+> **Baik untuk diketahui**:
+>
+> - `searchParams` adalah **[API Dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)** yang nilainya tidak dapat diketahui sebelumnya. Menggunakannya akan mengaktifkan halaman ke dalam **[rendering dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)** pada saat permintaan.
+> - `searchParams` mengembalikan objek JavaScript biasa dan bukan instance `URLSearchParams`.
+
+## Riwayat Versi
+
+| Versi     | Perubahan             |
+| --------- | --------------------- |
+| `v13.0.0` | `page` diperkenalkan. |

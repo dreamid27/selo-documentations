@@ -1,0 +1,12 @@
+{
+  "default": "default.js",
+  "error": "error.js",
+  "layout": "layout.js",
+  "loading": "loading.js",
+  "not-found": "not-found.js",
+  "page": "page.js",
+  "route": "route.js",
+  "route-segment-config": "Konfigurasi Segment Rute",
+  "metadata": "Metadata Files",
+  "template": "tempate.js"
+}

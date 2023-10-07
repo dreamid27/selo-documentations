@@ -1,0 +1,176 @@
+---
+Judul: Perintah Next.js CLI
+Deskripsi: Next.js CLI memungkinkan Anda untuk memulai, membangun, dan mengekspor aplikasi Anda. Pelajari lebih lanjut di sini.
+---
+
+# Perintah Next.js CLI
+
+{/* Konten dokumen ini digunakan di antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Content</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak harus dibungkus dalam komponen. */}
+
+Next.js CLI memungkinkan Anda untuk memulai, membangun, dan mengekspor aplikasi Anda.
+
+Untuk mendapatkan daftar perintah CLI yang tersedia, jalankan perintah berikut di dalam direktori proyek Anda:
+
+```bash filename="Terminal"
+npx next -h
+```
+
+_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) disertai dengan npm 5.2+ dan versi yang lebih tinggi)_
+
+Keluaran harus terlihat seperti ini:
+
+```bash filename="Terminal"
+Penggunaan
+  $ next <perintah>
+
+Perintah yang Tersedia
+  build, start, export, dev, lint, telemetry, info
+
+Opsi
+  --versi, -v   Nomor versi
+  --bantuan, -h  Menampilkan pesan ini
+
+Untuk informasi lebih lanjut jalankan perintah dengan flag --help
+  $ next build --help
+```
+
+Anda dapat meneruskan [argumen node](https://nodejs.org/api/cli.html#cli_node_options_options) apa pun ke perintah `next`:
+
+```bash filename="Terminal"
+NODE_OPTIONS='--throw-deprecation' next
+NODE_OPTIONS='-r esm' next
+NODE_OPTIONS='--inspect' next
+```
+
+> **Tahu baik**: Menjalankan `next` tanpa perintah sama dengan menjalankan `next dev`
+
+## Membangun
+
+`next build` membuat build produksi yang dioptimalkan untuk aplikasi Anda. Output menampilkan informasi tentang setiap rute.
+
+- **Ukuran** – Jumlah aset yang diunduh saat navigasi ke halaman dari sisi klien. Ukuran untuk setiap rute hanya mencakup dependensinya.
+- **JS Pemuatan Pertama** – Jumlah aset yang diunduh saat mengunjungi halaman dari server. Jumlah JS yang dibagikan oleh semua ditampilkan sebagai metrik terpisah.
+
+Kedua nilai ini **dikompresi dengan gzip**. Pemuatan pertama ditunjukkan dengan warna hijau, kuning, atau merah. Tujuannya adalah hijau untuk aplikasi yang berkinerja tinggi.
+
+Anda dapat mengaktifkan profil produksi untuk React dengan flag `--profile` di `next build`. Ini memerlukan [Next.js 9.5](https://nextjs.org/blog/next-9-5):
+
+```bash filename="Terminal"
+next build --profile
+```
+
+Setelah itu, Anda dapat menggunakan profil tersebut dengan cara yang sama seperti yang Anda lakukan dalam pengembangan.
+
+Anda dapat mengaktifkan output build yang lebih terperinci dengan flag `--debug` di `next build`. Ini memerlukan Next.js 9.5.3:
+
+```bash filename="Terminal"
+next build --debug
+```
+
+Dengan flag ini diaktifkan, output build tambahan seperti rewrite, redirect, dan header akan ditampilkan.
+
+## Pengembangan
+
+`next dev` memulai aplikasi dalam mode pengembangan dengan hot-code reloading, pelaporan kesalahan, dan lainnya:
+
+Aplikasi akan dimulai di `http://localhost:3000` secara default. Port default dapat diubah dengan `-p`, seperti ini:
+
+```bash filename="Terminal"
+npx next dev -p 4000
+```
+
+Atau menggunakan variabel lingkungan `PORT`:
+
+```bash filename="Terminal"
+PORT=4000 npx next dev
+```
+
+> **Tahu baik**: `PORT` tidak dapat diatur di `.env` karena server HTTP diaktifkan sebelum kode lain diinisialisasi.
+
+Anda juga dapat mengatur nama host agar berbeda dari default `0.0.0.0`, ini bisa berguna untuk membuat aplikasi tersedia untuk perangkat lain di jaringan. Nama host default dapat diubah dengan `-H`, seperti ini:
+
+```bash filename="Terminal"
+npx next dev -H 192.168.1.2
+```
+
+## Produksi
+
+`next start` memulai aplikasi dalam mode produksi. Aplikasi harus dikompilasi dengan [`next build`](#build) terlebih dahulu.
+
+Aplikasi akan dimulai di `http://localhost:3000` secara default. Port default dapat diubah dengan `-p`, seperti ini:
+
+```bash filename="Terminal"
+npx next start -p 4000
+```
+
+Atau menggunakan variabel lingkungan `PORT`:
+
+```bash filename="Terminal"
+PORT=4000 npx next start
+```
+
+> **Tahu baik**:
+>
+> - `PORT` tidak dapat diatur di `.env` karena server HTTP diaktifkan sebelum kode lain diinisialisasi.
+>
+> - `next start` tidak dapat digunakan dengan `output: 'standalone'` atau `output: 'export'`.
+
+### Waktu Tunggu Keep Alive
+
+Saat mendeploy Next.js di belakang proxy downstream (misalnya, load balancer seperti AWS ELB/ALB), penting untuk mengonfigurasi server HTTP bawah Next dengan [waktu tunggu keep-alive](https://nodejs.org/api/http.html#http_server_keepalivetimeout) yang _lebih besar_ dari waktu tunggu proxy downstream. Jika tidak, setelah waktu tunggu keep-alive mencapai koneksi TCP tertentu, Node.js akan segera mengakhiri koneksi tersebut tanpa memberi tahu proxy downstream. Hal ini mengakibatkan kesalahan proxy setiap kali mencoba menggunakan koneksi yang sudah Node.js akhiri.
+
+Untuk mengonfigurasi nilai waktu tunggu untuk server Next.js produksi, berikan `--keepAliveTimeout` (dalam milidetik) ke `next start`, seperti ini:
+
+```bash filename="Terminal"
+npx next start --keepAliveTimeout 70000
+```
+
+## Lint
+
+`next lint` menjalankan ESLint untuk semua file di direktori `pages/`, `app/`, `components/`, `lib/`, dan `src/`. Ini juga
+menyediakan panduan instalasi untuk menginstal dependensi yang diperlukan jika ESLint belum dikonfigurasi di
+aplikasi Anda.
+
+Jika Anda memiliki direktori lain yang ingin Anda lint, Anda dapat menentukannya dengan flag `--dir`:
+
+```bash filename="Terminal"
+next lint --dir utils
+```
+
+## Telemetri
+
+Next.js mengumpulkan data telemetri **sepenuhnya anonim** tentang penggunaan umum.
+Partisipasi dalam program anonim ini adalah opsional, dan Anda dapat memilih keluar jika Anda tidak ingin berbagi informasi apa pun.
+
+Untuk mempelajari lebih lanjut tentang Telemetri, [silakan baca dokumen ini](https://nextjs.org/telemetry/).
+
+## Info Next
+
+`next info` mencetak detail relevan tentang sistem saat ini yang dapat digunakan untuk melaporkan bug Next.js.
+Informasi ini mencakup platform/sistem operasi/arsitektur/versi, Binari (Node.js, npm, Yarn, pnpm), dan versi paket npm (`next`, `react`, `react-dom`).
+
+Menjalankan perintah berikut di direktori root proyek Anda:
+
+```bash filename="Terminal"
+next info
+```
+
+akan memberi Anda informasi seperti contoh ini:
+
+```bash filename="Terminal"
+
+Sistem Operasi:
+  Platform: linux
+  Arsitektur: x64
+  Versi: #22-Ubuntu SMP Fri Nov 5 13:21:36 UTC 2021
+Binari:
+  Node: 16.13.0
+  npm: 8.1.0
+  Yarn: 1.22.17
+  pnpm: 6.24.2
+Paket yang relevan:
+  next: 12.0.8
+  react: 17.0.2
+  react-dom: 17.0.2
+
+```

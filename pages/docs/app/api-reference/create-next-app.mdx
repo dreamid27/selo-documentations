@@ -1,0 +1,133 @@
+---
+title: Membuat Aplikasi Next.js
+description: Membuat aplikasi Next.js dengan satu perintah menggunakan create-next-app.
+---
+
+# Membuat Aplikasi Next.js
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Cara tercepat untuk memulai dengan Next.js adalah dengan menggunakan `create-next-app`. Alat CLI ini memungkinkan Anda untuk dengan cepat memulai membangun aplikasi Next.js baru, dengan semua pengaturan yang sudah disiapkan untuk Anda.
+
+Anda dapat membuat aplikasi baru menggunakan template Next.js default, atau dengan menggunakan salah satu [contoh Next.js resmi](https://github.com/vercel/next.js/tree/canary/examples).
+
+### Interaktif
+
+Anda dapat membuat proyek baru secara interaktif dengan menjalankan:
+
+```bash filename="Terminal"
+npx create-next-app@latest
+```
+
+```bash filename="Terminal"
+yarn create next-app
+```
+
+```bash filename="Terminal"
+pnpm create next-app
+```
+
+```bash filename="Terminal"
+bunx create-next-app
+```
+
+Selanjutnya, Anda akan ditanyai pertanyaan-pertanyaan berikut:
+
+```txt filename="Terminal"
+Apa nama proyek Anda?  my-app
+Apakah Anda ingin menggunakan TypeScript?  Tidak / Ya
+Apakah Anda ingin menggunakan ESLint?  Tidak / Ya
+Apakah Anda ingin menggunakan Tailwind CSS?  Tidak / Ya
+Apakah Anda ingin menggunakan direktori `src/`?  Tidak / Ya
+Apakah Anda ingin menggunakan App Router? (disarankan)  Tidak / Ya
+Apakah Anda ingin menyesuaikan alias impor default (@/*)?  Tidak / Ya
+```
+
+Setelah Anda menjawab pertanyaan-pertanyaan tersebut, proyek baru akan dibuat dengan konfigurasi yang benar berdasarkan jawaban Anda.
+
+### Non-Interaktif
+
+Anda juga dapat menggunakan argumen baris perintah untuk mengatur proyek baru secara non-interaktif.
+
+Selain itu, Anda dapat membatalkan opsi default dengan menambahkan awalan `--no-` (misalnya `--no-eslint`).
+
+Lihat `create-next-app --help`:
+
+```bash filename="Terminal"
+Penggunaan: create-next-app <direktori-proyek> [opsi]
+
+Opsi:
+  -V, --version                        tampilkan nomor versi
+  --ts, --typescript
+
+    Inisialisasi sebagai proyek TypeScript. (default)
+
+  --js, --javascript
+
+    Inisialisasi sebagai proyek JavaScript.
+
+  --tailwind
+
+    Inisialisasi dengan konfigurasi Tailwind CSS. (default)
+
+  --eslint
+
+    Inisialisasi dengan konfigurasi ESLint.
+
+  --app
+
+    Inisialisasi sebagai proyek App Router.
+
+  --src-dir
+
+    Inisialisasi di dalam direktori `src/`.
+
+  --import-alias <alias-untuk-konfigurasi>
+
+    Tentukan alias impor yang akan digunakan (default "@/*").
+
+  --use-npm
+
+    Katakan secara eksplisit kepada CLI untuk memulai aplikasi dengan npm
+
+  --use-pnpm
+
+    Katakan secara eksplisit kepada CLI untuk memulai aplikasi dengan pnpm
+
+  --use-yarn
+
+    Katakan secara eksplisit kepada CLI untuk memulai aplikasi dengan Yarn
+
+  --use-bun
+
+    Katakan secara eksplisit kepada CLI untuk memulai aplikasi dengan Bun
+
+  -e, --example [nama]|[url-github]
+
+    Contoh untuk memulai aplikasi dengan. Anda dapat menggunakan nama contoh
+    dari repo Next.js resmi atau URL GitHub publik. URL tersebut dapat menggunakan
+    cabang dan/atau subdirektori apa saja
+
+  --example-path <path-ke-contoh>
+
+    Dalam kasus langka, URL GitHub Anda mungkin mengandung nama cabang dengan
+    garis miring (misalnya bug/fix-1) dan path ke contoh (misalnya foo/bar).
+    Dalam kasus ini, Anda harus menentukan path ke contoh secara terpisah:
+    --example-path foo/bar
+
+  --reset-preferences
+
+    Katakan secara eksplisit kepada CLI untuk mengatur ulang preferensi yang tersimpan
+
+  -h, --help                           tampilkan informasi penggunaan
+```
+
+### Mengapa Menggunakan Create Next App?
+
+`create-next-app` memungkinkan Anda untuk membuat aplikasi Next.js baru dalam hitungan detik. Ini secara resmi dikelola oleh para pencipta Next.js, dan memiliki sejumlah keuntungan:
+
+- **Pengalaman Interaktif**: Menjalankan `npx create-next-app@latest` (tanpa argumen) memulai pengalaman interaktif yang akan memandu Anda dalam mengatur proyek.
+- **Tanpa Ketergantungan**: Inisialisasi proyek hanya dalam hitungan satu detik. Create Next App tidak memiliki ketergantungan.
+- **Dukungan Offline**: Create Next App secara otomatis mendeteksi jika Anda sedang offline dan memulai proyek Anda dengan menggunakan cache paket lokal Anda.
+- **Dukungan untuk Contoh**: Create Next App dapat memulai aplikasi Anda dengan menggunakan contoh dari koleksi contoh Next.js (misalnya `npx create-next-app --example api-routes`) atau dari repositori GitHub publik mana pun.
+- **Diujikan**: Paket ini merupakan bagian dari monorepo Next.js dan diuji menggunakan rangkaian tes integrasi yang sama dengan Next.js itu sendiri, memastikan bahwa paket ini berfungsi seperti yang diharapkan dengan setiap rilis.

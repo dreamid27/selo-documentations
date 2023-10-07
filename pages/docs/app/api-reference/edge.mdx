@@ -1,0 +1,179 @@
+---
+title: Edge Runtime
+description: Referensi API untuk Edge Runtime.
+---
+
+# Edge Runtime
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Edge Runtime Next.js didasarkan pada API Web standar, dan mendukung API berikut:
+
+## API Jaringan
+
+| API                                                                             | Deskripsi                        |
+| ------------------------------------------------------------------------------- | -------------------------------- |
+| [`Blob`](https://developer.mozilla.org/docs/Web/API/Blob)                       | Mewakili blob                    |
+| [`fetch`](https://developer.mozilla.org/docs/Web/API/Fetch_API)                 | Mengambil sumber daya            |
+| [`FetchEvent`](https://developer.mozilla.org/docs/Web/API/FetchEvent)           | Mewakili peristiwa fetch         |
+| [`File`](https://developer.mozilla.org/docs/Web/API/File)                       | Mewakili berkas                  |
+| [`FormData`](https://developer.mozilla.org/docs/Web/API/FormData)               | Mewakili data formulir           |
+| [`Headers`](https://developer.mozilla.org/docs/Web/API/Headers)                 | Mewakili header HTTP             |
+| [`Request`](https://developer.mozilla.org/docs/Web/API/Request)                 | Mewakili permintaan HTTP         |
+| [`Response`](https://developer.mozilla.org/docs/Web/API/Response)               | Mewakili tanggapan HTTP          |
+| [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) | Mewakili parameter pencarian URL |
+| [`WebSocket`](https://developer.mozilla.org/docs/Web/API/WebSocket)             | Mewakili koneksi websocket       |
+
+## API Encoding
+
+| API                                                                                 | Deskripsi                              |
+| ----------------------------------------------------------------------------------- | -------------------------------------- |
+| [`atob`](https://developer.mozilla.org/docs/Web/API/WindowOrWorkerGlobalScope/atob) | Mendekodekan string berbasis 64        |
+| [`btoa`](https://developer.mozilla.org/docs/Web/API/WindowOrWorkerGlobalScope/btoa) | Mengkodekan string menjadi berbasis 64 |
+| [`TextDecoder`](https://developer.mozilla.org/docs/Web/API/TextDecoder)             | Mendekodekan Uint8Array menjadi string |
+| [`TextDecoderStream`](https://developer.mozilla.org/docs/Web/API/TextDecoderStream) | Dekoder berantai untuk aliran          |
+| [`TextEncoder`](https://developer.mozilla.org/docs/Web/API/TextEncoder)             | Mengkodekan string menjadi Uint8Array  |
+| [`TextEncoderStream`](https://developer.mozilla.org/docs/Web/API/TextEncoderStream) | Pengkode berantai untuk aliran         |
+
+## API Aliran
+
+| API                                                                                                     | Deskripsi                          |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream)                           | Mewakili aliran yang dapat dibaca  |
+| [`ReadableStreamBYOBReader`](https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader)       | Mewakili pembaca ReadableStream    |
+| [`ReadableStreamDefaultReader`](https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader) | Mewakili pembaca ReadableStream    |
+| [`TransformStream`](https://developer.mozilla.org/docs/Web/API/TransformStream)                         | Mewakili aliran transformasi       |
+| [`WritableStream`](https://developer.mozilla.org/docs/Web/API/WritableStream)                           | Mewakili aliran yang dapat ditulis |
+| [`WritableStreamDefaultWriter`](https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter) | Mewakili penulis WritableStream    |
+
+## API Kripto
+
+| API                                                                       | Deskripsi                                                                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [`crypto`](https://developer.mozilla.org/docs/Web/API/Window/crypto)      | Memberikan akses ke fungsionalitas kriptografi platform                                          |
+| [`CryptoKey`](https://developer.mozilla.org/docs/Web/API/CryptoKey)       | Mewakili kunci kriptografi                                                                       |
+| [`SubtleCrypto`](https://developer.mozilla.org/docs/Web/API/SubtleCrypto) | Memberikan akses ke primitif kriptografi umum, seperti hashing, signing, enkripsi, atau dekripsi |
+
+## API Standar Web
+
+| API                                                                                                           | Deskripsi                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController)                               | Memungkinkan Anda membatalkan satu atau lebih permintaan DOM sesuai keinginan                               |
+| [`Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)                   | Mewakili kumpulan nilai                                                                                     |
+| [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)       | Mewakili buffer data biner mentah dengan panjang tetap                                                      |
+| [`Atomics`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Atomics)               | Memberikan operasi atomik sebagai metode statis                                                             |
+| [`BigInt`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/BigInt)                 | Mewakili bilangan bulat dengan presisi sembarang                                                            |
+| [`BigInt64Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/BigInt64Array)   | Mewakili kumpulan bilangan bulat berukuran 64-bit                                                           |
+| [`BigUint64Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/BigUint64Array) | Mewakili kumpulan bilangan bulat berukuran 64-bit tanpa tanda                                               |
+| [`Boolean`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)               | Mewakili entitas logis dan dapat memiliki dua nilai: `true` dan `false`                                     |
+| [`clearInterval`](https://developer.mozilla.org/docs/Web/API/WindowOrWorkerGlobalScope/clearInterval)         | Membatalkan tindakan berulang berdasarkan waktu yang sebelumnya ditetapkan dengan panggilan `setInterval()` |
+| [`clearTimeout`](https://developer.mozilla.org/docs/Web/API/WindowOrWorkerGlobalScope/clearTimeout)           | Membatalkan tindakan berulang berdasarkan waktu yang sebelumnya ditetapkan dengan panggilan `setTimeout()`  |
+| [`console`](https://developer.mozilla.org/docs/Web/API/Console)                                               | Memberikan akses ke konsol debug browser                                                                    |
+| [`DataView`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/DataView)             | Mewakili tampilan umum dari `ArrayBuffer`                                                                   |
+| [`Date`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date)                     | Mewakili saat tunggal dalam                                                                                 |
+
+format yang tidak bergantung pada platform |
+| [`decodeURI`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/decodeURI) | Mendekodekan Uniform Resource Identifier (URI) yang sebelumnya dibuat dengan `encodeURI` atau rutin serupa |
+| [`decodeURIComponent`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent) | Mendekodekan komponen Uniform Resource Identifier (URI) yang sebelumnya dibuat dengan `encodeURIComponent` atau rutin serupa |
+| [`DOMException`](https://developer.mozilla.org/docs/Web/API/DOMException) | Mewakili kesalahan yang terjadi dalam DOM |
+| [`encodeURI`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/encodeURI) | Mengkodekan Uniform Resource Identifier (URI) dengan menggantikan setiap instansi karakter tertentu dengan satu, dua, tiga, atau empat urutan pelarian yang mewakili pengkodean UTF-8 karakter |
+| [`encodeURIComponent`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent) | Mengkodekan komponen Uniform Resource Identifier (URI) dengan menggantikan setiap instansi karakter tertentu dengan satu, dua, tiga, atau empat urutan pelarian yang mewakili pengkodean UTF-8 karakter |
+| [`Error`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Error) | Mewakili kesalahan saat mencoba menjalankan pernyataan atau mengakses properti |
+| [`EvalError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/EvalError) | Mewakili kesalahan yang terjadi dalam fungsi global `eval()` |
+| [`Float32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Float32Array) | Mewakili kumpulan bilangan pecahan 32-bit |
+| [`Float64Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Float64Array) | Mewakili kumpulan bilangan pecahan 64-bit |
+| [`Function`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Function) | Mewakili fungsi |
+| [`Infinity`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Infinity) | Mewakili nilai Infinity matematika |
+| [`Int8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int8Array) | Mewakili kumpulan bilangan bulat 8-bit yang telah diisi tanda |
+| [`Int16Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int16Array) | Mewakili kumpulan bilangan bulat 16-bit yang telah diisi tanda |
+| [`Int32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Int32Array) | Mewakili kumpulan bilangan bulat 32-bit yang telah diisi tanda |
+| [`Intl`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl) | Memberikan akses ke fungsi internasionalisasi dan lokalitas |
+| [`isFinite`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/isFinite) | Menentukan apakah sebuah nilai adalah angka terbatas |
+| [`isNaN`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/isNaN) | Menentukan apakah sebuah nilai adalah `NaN` atau bukan |
+| [`JSON`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON) | Memberikan fungsionalitas untuk mengonversi nilai JavaScript ke dan dari format JSON |
+| [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) | Mewakili koleksi nilai, di mana setiap nilai mungkin hanya terjadi sekali |
+| [`Math`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Math) | Memberikan akses ke fungsi matematika dan konstanta |
+| [`Number`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number) | Mewakili nilai numerik |
+| [`Object`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object) | Mewakili objek yang merupakan dasar dari semua objek JavaScript |
+| [`parseFloat`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/parseFloat) | Menganalisis argumen string dan mengembalikan bilangan pecahan |
+| [`parseInt`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/parseInt) | Menganalisis argumen string dan mengembalikan bilangan bulat dari radix yang ditentukan |
+| [`Promise`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise) | Mewakili penyelesaian (atau kegagalan) yang akan datang dari operasi asinkron, dan nilainya yang dihasilkan |
+| [`Proxy`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Proxy) | Mewakili objek yang digunakan untuk mendefinisikan perilaku kustom untuk operasi dasar (misalnya, pencarian properti, penugasan, enumerasi, pemanggilan fungsi, dll) |
+| [`queueMicrotask`](https://developer.mozilla.org/docs/Web/API/queueMicrotask) | Mengantrikan mikrotugas untuk dieksekusi |
+| [`RangeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RangeError) | Mewakili kesalahan saat nilai tidak ada dalam kumpulan atau rentang nilai yang diizinkan |
+| [`ReferenceError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ReferenceError) | Mewakili kesalahan saat variabel yang tidak ada direferensikan |
+| [`Reflect`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Reflect) | Memberikan metode untuk operasi JavaScript yang dapat diintersep |
+| [`RegExp`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/RegExp) | Mewakili ekspresi reguler, memungkinkan Anda mencocokkan kombinasi karakter |
+| [`Set`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set) | Mewakili koleksi nilai, di mana setiap
+
+nilai mungkin hanya terjadi sekali |
+| [`setInterval`](https://developer.mozilla.org/docs/Web/API/setInterval) | Mengulangi panggilan fungsi, dengan jeda waktu tetap antara setiap panggilan |
+| [`setTimeout`](https://developer.mozilla.org/docs/Web/API/setTimeout) | Memanggil fungsi atau mengevaluasi ekspresi setelah jumlah milidetik yang ditentukan |
+| [`SharedArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer) | Mewakili buffer data biner mentah dengan panjang tetap yang dapat dibagikan |
+| [`String`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) | Mewakili urutan karakter |
+| [`structuredClone`](https://developer.mozilla.org/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) | Membuat salinan mendalam dari nilai |
+| [`Symbol`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Symbol) | Mewakili jenis data unik dan tidak dapat diubah yang digunakan sebagai kunci dari properti objek |
+| [`SyntaxError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/SyntaxError) | Mewakili kesalahan saat mencoba menginterpretasikan kode yang tidak valid secara sintaksis |
+| [`TypeError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypeError) | Mewakili kesalahan saat nilai tidak sesuai dengan tipe yang diharapkan |
+| [`Uint8Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) | Mewakili kumpulan bilangan bulat 8-bit yang tidak memiliki tanda |
+| [`Uint8ClampedArray`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray) | Mewakili kumpulan bilangan bulat 8-bit yang tidak memiliki tanda yang terbatas pada 0-255 |
+| [`Uint32Array`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array) | Mewakili kumpulan bilangan bulat 32-bit yang tidak memiliki tanda |
+| [`URIError`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/URIError) | Mewakili kesalahan saat fungsi penanganan URI global digunakan dengan cara yang salah |
+| [`URL`](https://developer.mozilla.org/docs/Web/API/URL) | Mewakili objek yang menyediakan metode statis yang digunakan untuk membuat URL objek |
+| [`URLPattern`](https://developer.mozilla.org/docs/Web/API/URLPattern) | Mewakili pola URL |
+| [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams) | Mewakili koleksi pasangan kunci/nilai |
+| [`WeakMap`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WeakMap) | Mewakili koleksi pasangan kunci/nilai di mana kunci lemah direferensikan |
+| [`WeakSet`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WeakSet) | Mewakili koleksi objek di mana setiap objek mungkin hanya terjadi sekali |
+| [`WebAssembly`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly) | Memberikan akses ke WebAssembly |
+
+## Polyfill Khusus Next.js
+
+- [`AsyncLocalStorage`](https://nodejs.org/api/async_context.html#class-asynclocalstorage)
+
+## Variabel Lingkungan
+
+Anda dapat menggunakan `process.env` untuk mengakses [Variabel Lingkungan](/docs/app/building-your-application/configuring/environment-variables) baik untuk `next dev` maupun `next build`.
+
+## API yang Tidak Didukung
+
+Edge Runtime memiliki beberapa pembatasan termasuk:
+
+- API Native Node.js **tidak didukung**. Misalnya, Anda tidak dapat membaca atau menulis ke sistem berkas.
+- `node_modules` _dapat_ digunakan, asalkan mereka mengimplementasikan Modul ES dan tidak menggunakan API Native Node.js.
+- Memanggil `require` langsung **tidak diperbolehkan**. Gunakan Modul ES sebagai gantinya.
+
+Fitur bahasa JavaScript berikut ini dinonaktifkan, dan **tidak akan berfungsi:**
+
+| API                                                                                                                     | Deskripsi                                                          |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`eval`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/eval)                               | Mengevaluasi kode JavaScript yang direpresentasikan sebagai string |
+| [`new Function(evalString)`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Function)       | Membuat fungsi baru dengan kode yang diberikan sebagai argumen     |
+| [`WebAssembly.compile`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/compile) | Mengompilasi modul WebAssembly dari sumber buffer                  |
+
+| [`WebAssembly.instantiate`](https://developer.mozilla.org/docs/Web
+
+/JavaScript/Reference/Global_Objects/WebAssembly/instantiate) | Membangun instance modul WebAssembly |
+| [`WebAssembly.instantiateStreaming`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/instantiateStreaming) | Membangun instance modul WebAssembly dari streaming byte |
+
+API di atas **tidak tersedia** karena mereka memungkinkan eksekusi kode JavaScript tambahan yang tidak bisa diverifikasi atau terbatas keamanannya.
+
+## Import Dinamis
+
+Anda **dapat** menggunakan `import()` dengan modul ES dalam file JavaScript Anda untuk melakukan impor dinamis. Gunakan `await import()` atau `.then()` untuk mengakses modul yang diimpor.
+
+```javascript
+// Misalnya, impor dinamis di Next.js
+const dynamicImport = await import("./dynamic-module.js");
+```
+
+## API Kustom
+
+Anda dapat mengimplementasikan API kustom Anda sendiri dengan menggantungkan `fetch` dari modul global seperti `window`. Jika Anda ingin menggunakannya di luar Edge Runtime, pastikan untuk mengujinya terlebih dahulu dengan menambahkan kondisi pengecekan global untuk `window` atau `self`. Sebagai contoh:
+
+```javascript
+if (typeof window !== "undefined") {
+  // Lakukan sesuatu dengan window.fetch di sini
+}
+```
+
+Anda dapat merujuk pada API API di atas untuk dokumentasi lebih lanjut tentang cara menggunakannya. Semoga berhasil dengan pengembangan Next.js Anda!

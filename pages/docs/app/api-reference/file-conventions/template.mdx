@@ -1,0 +1,61 @@
+import Image from '@/components/image';
+
+---
+
+title: template.js
+description: Referensi API untuk berkas template.js.
+
+---
+
+# template.js
+
+Sebuah berkas **template** mirip dengan sebuah [layout](/docs/app/building-your-application/routing/pages-and-layouts#layouts) karena ia mengelilingi setiap tata letak anak atau halaman. Berbeda dengan layout yang bertahan di seluruh rute dan mempertahankan status, template menciptakan instance baru untuk setiap anaknya saat navigasi.
+
+```tsx filename="app/template.tsx" switcher
+export default function Template({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>;
+}
+```
+
+```jsx filename="app/template.jsx" switcher
+export default function Template({ children }) {
+  return <div>{children}</div>;
+}
+```
+
+<Image
+  alt="Berkas khusus template.js"
+  srcLight="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftemplate-special-file.png&w=1920&q=75&dpl=dpl_971SnCgVVrpdwvj6Autgp3KX6hSy"
+  srcDark="https://nextjs.org/_next/image?url=%2Fdocs%2Fdark%2Ftemplate-special-file.png&w=1920&q=75&dpl=dpl_971SnCgVVrpdwvj6Autgp3KX6hSy"
+  width="1600"
+  height="444"
+/>
+
+Meskipun kurang umum, Anda mungkin memilih template daripada layout jika Anda ingin:
+
+- Fitur-fitur yang bergantung pada `useEffect` (misalnya, pencatatan tampilan halaman) dan `useState` (misalnya, formulir umpan balik per halaman).
+- Mengubah perilaku kerangka kerja default. Misalnya, Batasan Suspense dalam layout hanya menampilkan fallback saat Layout pertama kali dimuat dan tidak saat beralih halaman. Untuk template, fallback ditampilkan setiap kali navigasi.
+
+## Properti
+
+### `children` (wajib)
+
+Komponen template harus menerima dan menggunakan properti `children`. `template` dirender di antara [layout](/docs/app/api-reference/file-conventions/layout) dan anak-anaknya. Misalnya:
+
+```jsx filename="Output"
+<Layout>
+  {/* Perhatikan bahwa template diberikan kunci unik. */}
+  <Template key={routeParam}>{children}</Template>
+</Layout>
+```
+
+> **Baik untuk diketahui**:
+>
+> - Secara default, `template` adalah [Komponen Server](/docs/app/building-your-application/rendering/server-components), tetapi juga dapat digunakan sebagai [Komponen Klien](/docs/app/building-your-application/rendering/client-components) melalui direktif `"use client"`.
+> - Ketika pengguna menavigasi antara rute yang menggunakan `template` yang sama, instance baru dari komponen dipasang, elemen DOM dibuat ulang, status **tidak** dipertahankan, dan efek disinkronkan ulang.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                 |
+| --------- | ------------------------- |
+| `v13.0.0` | `template` diperkenalkan. |

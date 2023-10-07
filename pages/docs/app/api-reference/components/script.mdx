@@ -1,0 +1,375 @@
+---
+title: <Script>
+description: Optimize script pihak ketiga dalam aplikasi Next.js Anda dengan menggunakan Komponen `next/script` bawaan.
+---
+
+{/* Konten dokumen ini digunakan di antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Referensi API ini akan membantu Anda memahami cara menggunakan [props](#props) yang tersedia untuk Komponen Script. Untuk fitur dan penggunaan, silakan lihat halaman [Mengoptimalkan Skrip](/docs/app/building-your-application/optimizing/scripts).
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import Script from 'next/script';
+
+export default function Dashboard() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+```jsx filename="app/dashboard/page.js" switcher
+import Script from 'next/script';
+
+export default function Dashboard() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" />
+    </>
+  );
+}
+```
+
+## Props
+
+Berikut adalah ringkasan props yang tersedia untuk Komponen Script:
+
+| Prop                    | Contoh                            | Tipe     | Wajib                                                  |
+| ----------------------- | --------------------------------- | -------- | ------------------------------------------------------ |
+| [`src`](#src)           | `src="http://example.com/script"` | String   | Dibutuhkan kecuali skrip dalam bentuk inline digunakan |
+| [`strategy`](#strategy) | `strategy="lazyOnload"`           | String   | -                                                      |
+| [`onLoad`](#onload)     | `onLoad={onLoadFunc}`             | Function | -                                                      |
+| [`onReady`](#onready)   | `onReady={onReadyFunc}`           | Function | -                                                      |
+| [`onError`](#onerror)   | `onError={onErrorFunc}`           | Function | -                                                      |
+
+## Props yang Wajib
+
+Komponen `<Script />` memerlukan properti berikut.
+
+### `src`
+
+Sebuah string path yang menentukan URL dari skrip eksternal. Ini bisa berupa URL eksternal mutlak atau path internal. Properti `src` diperlukan kecuali skrip dalam bentuk inline digunakan.
+
+## Props yang Opsional
+
+Komponen `<Script />` menerima sejumlah properti tambahan selain yang wajib.
+
+### `strategy`
+
+Strategi pemuatan skrip. Terdapat empat strategi yang dapat digunakan:
+
+- `beforeInteractive`: Dimuat sebelum kode Next.js apa pun dan sebelum terjadi hydrasi halaman apa pun.
+- `afterInteractive`: (**default**) Dimuat lebih awal tetapi setelah beberapa hydrasi halaman terjadi.
+- `lazyOnload`: Dimuat selama waktu idle browser.
+- `worker`: (eksperimental) Dimuat dalam web worker.
+
+### `beforeInteractive`
+
+Skrip yang dimuat dengan strategi `beforeInteractive` disuntikkan ke dalam HTML awal dari server, diunduh sebelum modul Next.js apa pun, dan dieksekusi sesuai urutan penempatannya sebelum terjadi hydrasi apa pun pada halaman.
+
+Skrip yang ditandai dengan strategi ini telah dipreloaded dan diambil sebelum kode first-party apa pun, tetapi eksekusinya tidak menghentikan hydrasi halaman dari terjadi.
+
+Skrip `beforeInteractive` harus ditempatkan di dalam tata letak root (`app/layout.tsx`) dan dirancang untuk memuat skrip yang dibutuhkan oleh seluruh situs (yaitu, skrip akan dimuat saat halaman apa pun dalam aplikasi telah dimuat dari sisi server).
+
+**Strategi ini sebaiknya hanya digunakan untuk skrip penting yang perlu diambil sebelum bagian apa pun dari halaman menjadi interaktif.**
+
+```tsx filename="app/layout.tsx" switcher
+import Script from 'next/script';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script
+        src="https://example.com/script.js"
+        strategy="beforeInteractive"
+      />
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+import Script from 'next/script';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+      <Script
+        src="https://example.com/script.js"
+        strategy="beforeInteractive"
+      />
+    </html>
+  );
+}
+```
+
+> **Perlu diketahui**: Skrip dengan `beforeInteractive` akan selalu disuntikkan ke dalam `head` dokumen HTML, tidak peduli di mana ia ditempatkan dalam komponen.
+
+Beberapa contoh skrip yang sebaiknya dimuat secepat mungkin dengan `beforeInteractive` meliputi:
+
+- Pendeteksi bot
+- Pengelola persetujuan cookie
+
+### `afterInteractive`
+
+Skrip yang menggunakan strategi `afterInteractive` disuntikkan ke dalam HTML di sisi klien dan akan dimuat setelah sebagian (atau seluruh) hydrasi terjadi pada halaman. **Ini adalah strategi default** dari komponen Script dan sebaiknya digunakan untuk skrip apa pun yang perlu dimuat secepat mungkin tetapi tidak sebelum kode first-party Next.js apa pun.
+
+Skrip `afterInteractive` dapat ditempatkan di dalam halaman atau tata letak apa pun dan hanya akan dimuat dan dieksekusi ketika halaman (atau grup halaman) tersebut dibuka di browser.
+
+```jsx filename="app/page.js"
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="afterInteractive" />
+    </>
+  );
+}
+```
+
+Beberapa contoh skrip yang cocok untuk `afterInteractive` meliputi:
+
+- Manajer tag
+- Analitika
+
+### `lazyOnload`
+
+Skrip yang menggunakan strategi `lazyOnload` disuntikkan ke dalam HTML di sisi klien selama waktu idle browser dan akan dimuat setelah semua sumber daya di halaman telah diambil. Strategi ini sebaiknya digunakan untuk skrip latar belakang atau skrip prioritas rendah yang tidak perlu dimuat dengan cepat.
+
+Skrip `lazyOnload` dapat ditempatkan di dalam halaman atau tata letak apa pun dan hanya akan dimuat dan dieksekusi ketika halaman (atau grup halaman) tersebut dibuka di browser.
+
+```jsx filename="app/page.js"
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="
+
+https://example.com/script.js"
+        strategy="lazyOnload"
+      />
+    </>
+  );
+}
+```
+
+Contoh skrip yang tidak perlu dimuat segera dan dapat diambil dengan `lazyOnload` meliputi:
+
+- Plugin dukungan obrolan
+- Widget media sosial
+
+### `worker`
+
+> **Peringatan:** Strategi `worker` belum stabil dan belum bekerja dengan direktori [`app`](/docs/app/building-your-application/routing/defining-routes). Gunakan dengan hati-hati.
+
+Skrip yang menggunakan strategi `worker` diambil ke dalam web worker untuk membebaskan utas utama dan memastikan bahwa hanya sumber daya first-party kritis yang diproses di dalamnya. Meskipun strategi ini dapat digunakan untuk skrip apa pun, ini adalah kasus penggunaan lanjutan yang tidak menjamin mendukung semua skrip pihak ketiga.
+
+Untuk menggunakan `worker` sebagai strategi, flag `nextScriptWorkers` harus diaktifkan dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    nextScriptWorkers: true,
+  },
+};
+```
+
+Skrip `worker` **hanya dapat digunakan dalam direktori `pages/`** saat ini:
+
+```tsx filename="pages/home.tsx" switcher
+import Script from 'next/script';
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  );
+}
+```
+
+```jsx filename="pages/home.js" switcher
+import Script from 'next/script';
+
+export default function Home() {
+  return (
+    <>
+      <Script src="https://example.com/script.js" strategy="worker" />
+    </>
+  );
+}
+```
+
+### `onLoad`
+
+> **Peringatan:** `onLoad` belum berfungsi dengan Komponen Server dan hanya dapat digunakan dalam Komponen Klien. Selain itu, `onLoad` tidak dapat digunakan dengan strategi pemuatan `beforeInteractive` – pertimbangkan untuk menggunakan `onReady` sebagai gantinya.
+
+Beberapa skrip pihak ketiga memerlukan pengguna untuk menjalankan kode JavaScript setelah skrip telah selesai dimuat untuk menginisialisasi konten atau memanggil fungsi. Jika Anda memuat skrip dengan strategi pemuatan `afterInteractive` atau `lazyOnload`, Anda dapat menjalankan kode setelah skrip dimuat menggunakan properti `onLoad`.
+
+Berikut adalah contoh menjalankan metode lodash hanya setelah pustaka tersebut telah dimuat.
+
+```tsx filename="app/page.tsx" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"
+        onLoad={() => {
+          console.log(_.sample([1, 2, 3, 4]));
+        }}
+      />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"
+        onLoad={() => {
+          console.log(_.sample([1, 2, 3, 4]));
+        }}
+      />
+    </>
+  );
+}
+```
+
+### `onReady`
+
+> **Peringatan:** `onReady` belum berfungsi dengan Komponen Server dan hanya dapat digunakan dalam Komponen Klien.
+
+Beberapa skrip pihak ketiga memerlukan pengguna untuk menjalankan kode JavaScript setelah skrip telah selesai dimuat dan setiap kali komponen dimuat (setelah navigasi rute, misalnya). Anda dapat menjalankan kode setelah acara pemuatan skrip saat pertama kali dimuat dan kemudian setelah setiap komponen kembali dimuat menggunakan properti `onReady`.
+
+Berikut adalah contoh cara menginisialisasi kembali sematkan Google Maps JS setiap kali komponen dimuat:
+
+```tsx filename="app/page.tsx" switcher
+'use client';
+
+import { useRef } from 'react';
+import Script from 'next/script';
+
+export default function Page() {
+  const mapRef = useRef();
+
+  return (
+    <>
+      <div ref={mapRef}></div>
+      <Script
+        id="google-maps"
+        src="https://maps.googleapis.com/maps/api/js"
+        onReady={() => {
+          new google.maps.Map(mapRef.current, {
+            center: { lat: -34.397, lng: 150.644 },
+            zoom: 8,
+          });
+        }}
+      />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+'use client';
+
+import { useRef } from 'react';
+import Script from 'next/script';
+
+export default function Page() {
+  const mapRef = useRef();
+
+  return (
+    <>
+      <div ref={mapRef}></div>
+      <Script
+        id="google-maps"
+        src="https://maps.googleapis.com/maps/api/js"
+        onReady={() => {
+          new google.maps.Map(mapRef.current, {
+            center: { lat: -34.397, lng: 150.644 },
+            zoom: 8,
+          });
+        }}
+      />
+    </>
+  );
+}
+```
+
+### `onError`
+
+> **Peringatan:** `onError` belum berfungsi dengan Komponen Server dan hanya dapat digunakan dalam Komponen Klien. `onError` tidak dapat digunakan dengan strategi pemuatan `beforeInteractive`.
+
+Terkadang berguna untuk menangkap ketika suatu skrip gagal dimuat. Kesalahan-kesalahan ini dapat diatasi dengan properti `onError`:
+
+```tsx filename="app/page.tsx" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onError={(e: Error) => {
+          console.error('Skrip gagal dimuat', e);
+        }}
+      />
+    </>
+  );
+}
+```
+
+```jsx filename="app/page.js" switcher
+'use client';
+
+import Script from 'next/script';
+
+export default function Page() {
+  return (
+    <>
+      <Script
+        src="https://example.com/script.js"
+        onError={(e: Error) => {
+          console.error('Skrip gagal dimuat', e);
+        }}
+      />
+    </>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                                         |
+| --------- | --------------------------------------------------------------------------------- |
+| `v13.0.0` | `beforeInteractive` dan `afterInteractive` dimodifikasi untuk mendukung `app`.    |
+| `v12.2.4` | Ditambahkan prop `onReady`.                                                       |
+| `v12.2.2` | Memungkinkan `next/script` dengan `beforeInteractive` ditempatkan di `_document`. |
+
+|
+
+`v11.0.0` | Diperkenalkan `next/script`. |

@@ -1,0 +1,288 @@
+---
+title: Favicon, Ikon, dan Ikon Apple
+description: Referensi API untuk konvensi berkas Favicon, Ikon, dan Ikon Apple.
+---
+
+# Favicon, Ikon, dan Ikon Apple
+
+Konvensi berkas `favicon`, `ikon`, atau `ikon apple` memungkinkan Anda untuk mengatur ikon-ikon untuk aplikasi Anda.
+
+Mereka berguna untuk menambahkan ikon aplikasi yang muncul di tempat-tempat seperti tab browser web, layar beranda ponsel, dan hasil mesin pencari.
+
+Ada dua cara untuk mengatur ikon aplikasi:
+
+- [Menggunakan berkas gambar (.ico, .jpg, .png)](#berkas-gambar-ico-jpg-png)
+- [Menggunakan kode untuk menghasilkan ikon (.js, .ts, .tsx)](#menghasilkan-ikon-menggunakan-kode-js-ts-tsx)
+
+## Berkas Gambar (.ico, .jpg, .png)
+
+Gunakan berkas gambar untuk mengatur ikon aplikasi dengan menempatkan berkas gambar `favicon`, `ikon`, atau `ikon apple` dalam direktori `/app` Anda. Berkas gambar `favicon` hanya dapat ditempatkan pada tingkat teratas `app/`.
+
+Next.js akan mengevaluasi berkas tersebut dan secara otomatis menambahkan tag-tag yang sesuai ke elemen `<head>` aplikasi Anda.
+
+| Konvensi Berkas             | Jenis Berkas yang Didukung              | Lokasi yang Valid |
+| --------------------------- | --------------------------------------- | ----------------- |
+| [`favicon`](#favicon)       | `.ico`                                  | `app/`            |
+| [`ikon`](#ikon)             | `.ico`, `.jpg`, `.jpeg`, `.png`, `.svg` | `app/**/*`        |
+| [`ikon apple`](#ikon-apple) | `.jpg`, `.jpeg`, `.png`                 | `app/**/*`        |
+
+### `favicon`
+
+Tambahkan berkas gambar `favicon.ico` ke rute root `/app`.
+
+```html filename="<head> output"
+<link rel="icon" href="/favicon.ico" sizes="any" />
+```
+
+### `ikon`
+
+Tambahkan berkas gambar `ikon.(ico|jpg|jpeg|png|svg)`.
+
+```html filename="<head> output"
+<link
+  rel="icon"
+  href="/ikon?<generated>"
+  type="image/<generated>"
+  sizes="<generated>"
+/>
+```
+
+### `ikon apple`
+
+Tambahkan berkas gambar `ikon-apple.(jpg|jpeg|png)`.
+
+```html filename="<head> output"
+<link
+  rel="apple-touch-icon"
+  href="/ikon-apple?<generated>"
+  type="image/<generated>"
+  sizes="<generated>"
+/>
+```
+
+> **Tahu yang Baik**
+>
+> - Anda dapat mengatur beberapa ikon dengan menambahkan akhiran nomor pada nama berkas. Misalnya, `ikon1.png`, `ikon2.png`, dll. Berkas-berekas bernomor akan diurutkan secara leksikal.
+> - Favicon hanya dapat diatur pada segmen root `/app`. Jika Anda memerlukan lebih banyak granularitas, Anda dapat menggunakan [`ikon`](#ikon).
+> - Tag-tag `<link>` yang sesuai dan atribut seperti `rel`, `href`, `type`, dan `sizes` ditentukan oleh jenis ikon dan metadata dari berkas yang dievaluasi.
+>   - Sebagai contoh, berkas `.png` berukuran 32x32 piksel akan memiliki atribut `type="image/png"` dan `sizes="32x32"`.
+> - `sizes="any"` ditambahkan ke output `favicon.ico` untuk [menghindari bug browser](https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs) di mana ikon `.ico` lebih disukai daripada `.svg`.
+
+## Menghasilkan Ikon dengan Kode (.js, .ts, .tsx)
+
+Selain menggunakan [berkas gambar literal](#berkas-gambar-ico-jpg-png), Anda dapat secara programatik **menghasilkan** ikon dengan kode.
+
+Hasilkan ikon aplikasi dengan membuat rute `ikon` atau `ikon apple` yang mengekspor secara default sebuah fungsi.
+
+| Konvensi Berkas | Jenis Berkas yang Didukung |
+| --------------- | -------------------------- |
+| `ikon`          | `.js`, `.ts`, `.tsx`       |
+| `ikon apple`    | `.js`, `.ts`, `.tsx`       |
+
+Cara paling mudah untuk menghasilkan ikon adalah dengan menggunakan API [`ImageResponse`](/docs/app/api-reference/functions/image-response) dari `next/server`.
+
+```tsx filename="app/ikon.tsx" switcher
+import { ImageResponse } from 'next/server';
+
+// Konfigurasi segmen rute
+export const runtime = 'edge';
+
+// Metadata gambar
+export const size = {
+  width: 32,
+  height: 32,
+};
+export const contentType = 'image/png';
+
+// Generasi gambar
+export default function Icon() {
+  return new ImageResponse(
+    (
+      // Elemen JSX ImageResponse
+      <div
+        style={{
+          fontSize: 24,
+          background: 'black',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+        }}
+      >
+        A
+      </div>
+    ),
+    // Opsi ImageResponse
+    {
+      // Untuk kenyamanan, kita dapat menggunakan metadata ukuran ikon yang diekspor
+      // untuk juga mengatur lebar dan tinggi ImageResponse.
+      ...size,
+    }
+  );
+}
+```
+
+```jsx filename="app/ikon.js" switcher
+import { ImageResponse } from 'next/server';
+
+// Konfigurasi segmen rute
+export const runtime = 'edge';
+
+// Metadata gambar
+export const size = {
+  width: 32,
+  height: 32,
+};
+export const contentType = 'image/png';
+
+// Generasi gambar
+export default function Icon() {
+  return new ImageResponse(
+    (
+      // Elemen JSX ImageResponse
+      <div
+        style={{
+          fontSize: 24,
+          background: 'black',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+        }}
+      >
+        A
+      </div>
+    ),
+    // Opsi ImageResponse
+    {
+      // Untuk kenyamanan, kita dapat menggunakan metadata ukuran ikon yang diekspor
+      // untuk juga mengatur lebar dan tinggi ImageResponse.
+      ...size,
+    }
+  );
+}
+```
+
+```html filename="<head> output"
+<link rel="icon" href="/ikon?<generated>" type="image/png" sizes="32x32" />
+```
+
+> **Tahu yang Baik**
+>
+> - Secara default, ikon yang dihasilkan [\*\*dioptimalk
+
+an secara statis\*\*](/docs/app/building-your-application/rendering/server-components#static-rendering-default) (dihasilkan saat waktu build dan di-cache) kecuali jika menggunakan [fungsi dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions) atau data yang tidak di-cache.
+
+> - Anda dapat menghasilkan beberapa ikon dalam berkas yang sama menggunakan [`generateImageMetadata`](/docs/app/api-reference/functions/generate-image-metadata).
+> - Anda tidak dapat menghasilkan ikon `favicon`. Gunakan [`ikon`](#ikon) atau berkas [favicon.ico](#favicon) sebagai alternatif.
+
+### Properti
+
+Fungsi ekspor default menerima properti berikut:
+
+#### `params` (opsional)
+
+Sebuah objek yang berisi objek [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) dari segmen root hingga segmen `ikon` atau `ikon apple` berada.
+
+```tsx filename="app/toko/[slug]/ikon.tsx" switcher
+export default function Icon({ params }: { params: { slug: string } }) {
+  // ...
+}
+```
+
+```jsx filename="app/toko/[slug]/ikon.js" switcher
+export default function Icon({ params }) {
+  // ...
+}
+```
+
+| Rute                            | URL         | `params`                  |
+| ------------------------------- | ----------- | ------------------------- |
+| `app/toko/ikon.js`              | `/toko`     | `undefined`               |
+| `app/toko/[slug]/ikon.js`       | `/toko/1`   | `{ slug: '1' }`           |
+| `app/toko/[tag]/[item]/ikon.js` | `/toko/1/2` | `{ tag: '1', item: '2' }` |
+| `app/toko/[...slug]/ikon.js`    | `/toko/1/2` | `{ slug: ['1', '2'] }`    |
+
+### Hasil
+
+Fungsi ekspor default seharusnya mengembalikan `Blob` | `ArrayBuffer` | `TypedArray` | `DataView` | `ReadableStream` | `Response`.
+
+> **Tahu yang Baik**: `ImageResponse` memenuhi jenis pengembalian ini.
+
+### Ekspor Konfigurasi
+
+Anda dapat mengkonfigurasi metadata ikon dengan mengeskpor variabel `size` dan `contentType` dari rute `ikon` atau `ikon apple`.
+
+| Opsi                          | Tipe                                                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`size`](#size)               | `{ width: number; height: number }`                                                                               |
+| [`contentType`](#contenttype) | `string` - [jenis MIME gambar](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/MIME_types#image_types) |
+
+#### `size`
+
+```tsx filename="ikon.tsx / ikon-apple.tsx" switcher
+export const size = { width: 32, height: 32 };
+
+export default function Icon() {}
+```
+
+```jsx filename="ikon.js / ikon-apple.js" switcher
+export const size = { width: 32, height: 32 };
+
+export default function Icon() {}
+```
+
+```html filename="<head> output"
+<link rel="icon" sizes="32x32" />
+```
+
+#### `contentType`
+
+```tsx filename="ikon.tsx / ikon-apple.tsx" switcher
+export const contentType = 'image/png';
+
+export default function Icon() {}
+```
+
+```jsx filename="ikon.js / ikon-apple.js" switcher
+export const contentType = 'image/png';
+
+export default function Icon() {}
+```
+
+```html filename="<head> output"
+<link rel="icon" type="image/png" />
+```
+
+#### Konfigurasi Segmen Rute
+
+`ikon` dan `ikon apple` adalah [Pengendali Rute](/docs/app/building-your-application/routing/route-handlers) yang khusus dan dapat menggunakan opsi [konfigurasi segmen rute](/docs/app/api-reference/file-conventions/route-segment-config) yang sama dengan Halaman dan Tata Letak.
+
+| Opsi                                                                                               | Tipe                                                             | Default      |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------ |
+| [`dinamis`](/docs/app/api-reference/file-conventions/route-segment-config#dinamis)                 | `'otomatis' \| 'paksa-dinamis' \| 'kesalahan' \| 'paksa-statis'` | `'otomatis'` |
+| [`revalidasi`](/docs/app/api-reference/file-conventions/route-segment-config#revalidasi)           | `false \| 'paksa-cache' \| 0 \| number`                          | `false`      |
+| [`runtime`](/docs/app/api-reference/file-conventions/route-segment-config#runtime)                 | `'nodejs' \| 'edge'`                                             | `'nodejs'`   |
+| [`preferredRegion`](/docs/app/api-reference/file-conventions/route-segment-config#preferredregion) | `'otomatis' \| 'global' \| 'home' \| string \| string[]`         | `'otomatis'` |
+
+```tsx filename="app/ikon.tsx" switcher
+export const runtime = 'edge';
+
+export default function Icon() {}
+```
+
+```jsx filename="app/ikon.js" switcher
+export const runtime = 'edge';
+
+export default function Icon() {}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                         |
+| --------- | ------------------------------------------------- |
+| `v13.3.0` | `favicon`, `ikon`, dan `ikon apple` diperkenalkan |

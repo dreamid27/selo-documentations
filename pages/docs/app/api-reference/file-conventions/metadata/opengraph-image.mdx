@@ -1,0 +1,435 @@
+---
+title: Konvensi Berkas opengraph-image dan twitter-image
+description: Referensi API untuk konvensi berkas Open Graph Image dan Twitter Image.
+---
+
+# Konvensi Berkas opengraph-image dan twitter-image
+
+Konvensi berkas `opengraph-image` dan `twitter-image` memungkinkan Anda untuk mengatur gambar Open Graph dan Twitter untuk segmen rute.
+
+Mereka berguna untuk mengatur gambar yang muncul di jejaring sosial dan aplikasi pesan ketika pengguna membagikan tautan ke situs Anda.
+
+Ada dua cara untuk mengatur gambar Open Graph dan Twitter:
+
+- [Menggunakan berkas gambar (.jpg, .png, .gif)](#berkas-gambar-jpg-png-gif)
+- [Menggunakan kode untuk menghasilkan gambar (.js, .ts, .tsx)](#menghasilkan-gambar-dengan-kode-js-ts-tsx)
+
+## Berkas gambar (.jpg, .png, .gif)
+
+Gunakan berkas gambar untuk mengatur gambar bersama segmen rute dengan menempatkan berkas gambar `opengraph-image` atau `twitter-image` di dalam segmen tersebut.
+
+Next.js akan mengevaluasi berkas tersebut dan secara otomatis menambahkan tag yang sesuai ke elemen `<head>` aplikasi Anda.
+
+| Konvensi Berkas                                 | Jenis Berkas yang Didukung      |
+| ----------------------------------------------- | ------------------------------- |
+| [`opengraph-image`](#opengraph-image)           | `.jpg`, `.jpeg`, `.png`, `.gif` |
+| [`twitter-image`](#twitter-image)               | `.jpg`, `.jpeg`, `.png`, `.gif` |
+| [`opengraph-image.alt`](#opengraph-imagealttxt) | `.txt`                          |
+| [`twitter-image.alt`](#twitter-imagealttxt)     | `.txt`                          |
+
+### `opengraph-image`
+
+Tambahkan berkas gambar `opengraph-image.(jpg|jpeg|png|gif)` ke segmen rute apa pun.
+
+```html filename="<head> output"
+<meta property="og:image" content="<generated>" />
+<meta property="og:image:type" content="<generated>" />
+<meta property="og:image:width" content="<generated>" />
+<meta property="og:image:height" content="<generated>" />
+```
+
+### `twitter-image`
+
+Tambahkan berkas gambar `twitter-image.(jpg|jpeg|png|gif)` ke segmen rute apa pun.
+
+```html filename="<head> output"
+<meta name="twitter:image" content="<generated>" />
+<meta name="twitter:image:type" content="<generated>" />
+<meta name="twitter:image:width" content="<generated>" />
+<meta name="twitter:image:height" content="<generated>" />
+```
+
+### `opengraph-image.alt.txt`
+
+Tambahkan berkas `opengraph-image.alt.txt` yang sesuai di segmen rute yang sama dengan berkas gambar `opengraph-image.(jpg|jpeg|png|gif)` untuk teks alternatifnya.
+
+```txt filename="opengraph-image.alt.txt"
+Tentang Acme
+```
+
+```html filename="<head> output"
+<meta property="og:image:alt" content="Tentang Acme" />
+```
+
+### `twitter-image.alt.txt`
+
+Tambahkan berkas `twitter-image.alt.txt` yang sesuai di segmen rute yang sama dengan berkas gambar `twitter-image.(jpg|jpeg|png|gif)` untuk teks alternatifnya.
+
+```txt filename="twitter-image.alt.txt"
+Tentang Acme
+```
+
+```html filename="<head> output"
+<meta property="twitter:image:alt" content="Tentang Acme" />
+```
+
+## Menghasilkan gambar menggunakan kode (.js, .ts, .tsx)
+
+Selain menggunakan [berkas gambar literal](#berkas-gambar-jpg-png-gif), Anda dapat secara programatik **menghasilkan** gambar menggunakan kode.
+
+Hasilkan gambar bersama segmen rute dengan membuat rute `opengraph-image` atau `twitter-image` yang mengeksporkan fungsi secara default.
+
+| Konvensi Berkas   | Jenis Berkas yang Didukung |
+| ----------------- | -------------------------- |
+| `opengraph-image` | `.js`, `.ts`, `.tsx`       |
+| `twitter-image`   | `.js`, `.ts`, `.tsx`       |
+
+> **Baik untuk diketahui**
+>
+> - Secara default, gambar yang dihasilkan [**dioptimalkan secara statis**](/docs/app/building-your-application/rendering/server-components#static-rendering-default) (dihasilkan saat waktu kompilasi dan dicache) kecuali jika mereka menggunakan [fungsi dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions) atau data yang tidak dicache.
+> - Anda dapat menghasilkan beberapa Gambar dalam satu berkas menggunakan [`generateImageMetadata`](/docs/app/api-reference/functions/generate-image-metadata).
+
+Cara paling mudah untuk menghasilkan gambar adalah dengan menggunakan API [ImageResponse](/docs/app/api-reference/functions/image-response) dari `next/server`.
+
+```tsx filename="app/about/opengraph-image.tsx" switcher
+import { ImageResponse } from 'next/server';
+
+// Konfigurasi segmen rute
+export const runtime = 'edge';
+
+// Metadata gambar
+export const alt = 'Tentang Acme';
+export const size = {
+  width: 1200,
+  height: 630,
+};
+
+export const contentType = 'image/png';
+
+// Generasi gambar
+export default async function Image() {
+  // Font
+  const interSemiBold = fetch(
+    new URL('./Inter-SemiBold.ttf', import.meta.url)
+  ).then((res) => res.arrayBuffer());
+
+  return new ImageResponse(
+    (
+      // Elemen JSX ImageResponse
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Tentang Acme
+      </div>
+    ),
+    // Opsi ImageResponse
+    {
+      // Untuk kenyamanan, kita dapat menggunakan konfigurasi ukuran opengraph-image yang diekspor
+      // untuk juga mengatur lebar dan tinggi ImageResponse.
+      ...size,
+      fonts: [
+        {
+          name: 'Inter',
+          data: await interSemiBold,
+          style: 'normal',
+          weight: 400,
+        },
+      ],
+    }
+  );
+}
+```
+
+```jsx filename="app/about/opengraph-image.js" switcher
+import { ImageResponse } from 'next/server'
+
+// Konfigurasi segmen rute
+export const runtime = 'edge'
+
+// Metadata gambar
+export const alt = 'Tentang Acme'
+export const size = {
+  width: 1200,
+  height: 630,
+}
+
+export const contentType = 'image/png'
+
+// Generasi gambar
+export default async function Image() {
+  // Font
+  const inter
+
+SemiBold = fetch(
+    new URL('./Inter-SemiBold.ttf', import.meta.url)
+  ).then((res) => res.arrayBuffer())
+
+  return new ImageResponse(
+    (
+      // Elemen JSX ImageResponse
+      <div
+        style={{
+          fontSize: 128,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Tentang Acme
+      </div>
+    ),
+    // Opsi ImageResponse
+    {
+      // Untuk kenyamanan, kita dapat menggunakan konfigurasi ukuran opengraph-image yang diekspor
+      // untuk juga mengatur lebar dan tinggi ImageResponse.
+      ...size,
+      fonts: [
+        {
+          name: 'Inter',
+          data: await interSemiBold,
+          style: 'normal',
+          weight: 400,
+        },
+      ],
+    }
+  )
+}
+```
+
+```html filename="<head> output"
+<meta property="og:image" content="<generated>" />
+<meta property="og:image:alt" content="Tentang Acme" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+```
+
+### Properti
+
+Fungsi ekspor default menerima properti berikut:
+
+#### `params` (opsional)
+
+Objek yang berisi objek [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) dari segmen akar hingga segmen `opengraph-image` atau `twitter-image` di mana ia terletak berdampingan.
+
+```tsx filename="app/shop/[slug]/opengraph-image.tsx" switcher
+export default function Image({ params }: { params: { slug: string } }) {
+  // ...
+}
+```
+
+```jsx filename="app/shop/[slug]/opengraph-image.js" switcher
+export default function Image({ params }) {
+  // ...
+}
+```
+
+| Rute                                       | URL         | `params`                  |
+| ------------------------------------------ | ----------- | ------------------------- |
+| `app/shop/opengraph-image.js`              | `/shop`     | `undefined`               |
+| `app/shop/[slug]/opengraph-image.js`       | `/shop/1`   | `{ slug: '1' }`           |
+| `app/shop/[tag]/[item]/opengraph-image.js` | `/shop/1/2` | `{ tag: '1', item: '2' }` |
+| `app/shop/[...slug]/opengraph-image.js`    | `/shop/1/2` | `{ slug: ['1', '2'] }`    |
+
+### Hasil
+
+Fungsi ekspor default seharusnya mengembalikan `Blob` | `ArrayBuffer` | `TypedArray` | `DataView` | `ReadableStream` | `Response`.
+
+> **Baik untuk diketahui**: `ImageResponse` memenuhi tipe pengembalian ini.
+
+### Ekspor Konfigurasi
+
+Anda dapat mengonfigurasi metadata gambar secara opsional dengan mengekspor variabel `alt`, `size`, dan `contentType` dari rute `opengraph-image` atau `twitter-image`.
+
+| Opsi                          | Tipe                                                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`alt`](#alt)                 | `string`                                                                                                          |
+| [`size`](#size)               | `{ width: number; height: number }`                                                                               |
+| [`contentType`](#contenttype) | `string` - [jenis MIME gambar](https://developer.mozilla.org/docs/Web/HTTP/Basics_of_HTTP/MIME_types#image_types) |
+
+#### `alt`
+
+```tsx filename="opengraph-image.tsx / twitter-image.tsx" switcher
+export const alt = 'Teks alternatif gambar saya';
+
+export default function Image() {}
+```
+
+```jsx filename="opengraph-image.js / twitter-image.js" switcher
+export const alt = 'Teks alternatif gambar saya';
+
+export default function Image() {}
+```
+
+```html filename="<head> output"
+<meta property="og:image:alt" content="Teks alternatif gambar saya" />
+```
+
+#### `size`
+
+```tsx filename="opengraph-image.tsx / twitter-image.tsx" switcher
+export const size = { width: 1200, height: 630 };
+
+export default function Image() {}
+```
+
+```jsx filename="opengraph-image.js / twitter-image.js" switcher
+export const size = { width: 1200, height: 630 };
+
+export default function Image() {}
+```
+
+```html filename="<head> output"
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+```
+
+#### `contentType`
+
+```tsx filename="opengraph-image.tsx / twitter-image.tsx" switcher
+export const contentType = 'image/png';
+
+export default function Image() {}
+```
+
+```jsx filename="opengraph-image.js / twitter-image.js" switcher
+export const contentType = 'image/png';
+
+export default function Image() {}
+```
+
+```html filename="<head> output"
+<meta property="og:image:type" content="image/png" />
+```
+
+#### Konfigurasi Segmen Rute
+
+`opengraph-image` dan `twitter-image` adalah [Penangan Rute](/docs/app/building-your-application/routing/route-handlers) yang berspesialisasi yang dapat menggunakan opsi [konfigurasi segmen rute yang sama](/docs/app/api-reference/file-conventions/route-segment-config) seperti Halaman dan Tata Letak.
+
+| Opsi                                                                                               | Tipe                                                     | Default    |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------- |
+| [`dynamic`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic)                 | `'auto' \| 'force-dynamic' \| 'error' \| 'force-static'` | `'auto'`   |
+| [`revalidate`](/docs/app/api-reference/file-conventions/route-segment-config#revalidate)           | `false \| 'force-cache' \| 0 \| number`                  | `false`    |
+| [`runtime`](/docs/app/api-reference/file-conventions/route-segment-config#runtime)                 | `'nodejs' \| 'edge'`                                     | `'nodejs'` |
+| [`preferredRegion`](/docs/app/api-reference/file-conventions/route-segment-config#preferredregion) | `'auto' \| 'global' \| 'home' \| string \| string[]`     | `'auto'`   |
+
+```tsx filename="app/opengraph-image.tsx" switcher
+export const runtime = 'edge';
+
+export default function Image() {}
+```
+
+```jsx filename="app/opengraph-image.js" switcher
+export const runtime = 'edge';
+
+export default function Image() {}
+```
+
+### Contoh
+
+#### Menggunakan data eksternal
+
+Contoh ini menggunakan objek `params` dan data eksternal untuk menghasilkan gambar.
+
+> \*\*Baik untuk
+
+diketahui\*\*:
+
+> Secara default, gambar yang dihasilkan ini akan [dioptimalkan secara statis](/docs/app/building-your-application/rendering/server-components#static-rendering-default). Anda dapat mengonfigurasi opsi `fetch` individu [`options`](/docs/app/api-reference/functions/fetch) atau [opsi segmen rute](/docs/app/api-reference/file-conventions/route-segment-config#revalidate) untuk mengubah perilaku ini.
+
+```tsx filename="app/posts/[slug]/opengraph-image.tsx" switcher
+import { ImageResponse } from 'next/server';
+
+export const runtime = 'edge';
+
+export const alt = 'Tentang Acme';
+export const size = {
+  width: 1200,
+  height: 630,
+};
+export const contentType = 'image/png';
+
+export default async function Image({ params }: { params: { slug: string } }) {
+  const post = await fetch(`https://.../posts/${params.slug}`).then((res) =>
+    res.json()
+  );
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          fontSize: 48,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {post.title}
+      </div>
+    ),
+    {
+      ...size,
+    }
+  );
+}
+```
+
+```jsx filename="app/posts/[slug]/opengraph-image.js" switcher
+import { ImageResponse } from 'next/server';
+
+export const runtime = 'edge';
+
+export const alt = 'Tentang Acme';
+export const size = {
+  width: 1200,
+  height: 630,
+};
+export const contentType = 'image/png';
+
+export default async function Image({ params }) {
+  const post = await fetch(`https://.../posts/${params.slug}`).then((res) =>
+    res.json()
+  );
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          fontSize: 48,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {post.title}
+      </div>
+    ),
+    {
+      ...size,
+    }
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                            |
+| --------- | ---------------------------------------------------- |
+| `v13.3.0` | `opengraph-image` dan `twitter-image` diperkenalkan. |

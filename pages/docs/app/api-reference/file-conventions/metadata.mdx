@@ -1,0 +1,13 @@
+---
+title: Referensi API Berkas Metadata
+nav_title: Berkas Metadata
+description: Dokumentasi API untuk konvensi berkas metadata.
+---
+
+# Metadata Files
+
+Bagian ini dari dokumen mencakup **Konvensi berkas metadata**. Metadata berbasis berkas dapat didefinisikan dengan menambahkan berkas metadata khusus ke segmen rute.
+
+Setiap konvensi berkas dapat didefinisikan menggunakan berkas statis (misalnya, `opengraph-image.jpg`), atau varian dinamis yang menggunakan kode untuk menghasilkan berkas (misalnya, `opengraph-image.js`).
+
+Setelah sebuah berkas didefinisikan, Next.js secara otomatis akan melayani berkas tersebut (dengan hash di produksi untuk caching) dan memperbarui elemen-elemen kepala yang relevan dengan metadata yang benar, seperti URL aset, jenis berkas, dan ukuran gambar.

@@ -1,0 +1,135 @@
+---
+title: layout.js
+description: Referensi API untuk berkas layout.js.
+---
+
+# layout.js
+
+Sebuah **layout** adalah antarmuka pengguna yang digunakan bersama antar rute.
+
+```tsx filename="app/dashboard/layout.tsx" switcher
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <section>{children}</section>;
+}
+```
+
+```jsx filename="app/dashboard/layout.js" switcher
+export default function DashboardLayout({ children }) {
+  return <section>{children}</section>;
+}
+```
+
+Sebuah **layout root** adalah layout paling atas dalam direktori root `app`. Ini digunakan untuk mendefinisikan tag `<html>` dan `<body>` serta antarmuka pengguna bersama lainnya.
+
+```tsx filename="app/layout.tsx" switcher
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/layout.js" switcher
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+## Props
+
+### `children` (wajib)
+
+Komponen layout harus menerima dan menggunakan prop `children`. Selama proses rendering, `children` akan diisi dengan segmen rute yang dilapisi oleh layout ini. Ini akan menjadi komponen anak [Layout](/docs/app/building-your-application/routing/pages-and-layouts#pages) (jika ada) atau [Page](/docs/app/building-your-application/routing/pages-and-layouts#pages), tetapi juga bisa menjadi berkas khusus lain seperti [Loading](/docs/app/building-your-application/routing/loading-ui-and-streaming) atau [Error](/docs/app/building-your-application/routing/error-handling) jika sesuai.
+
+### `params` (opsional)
+
+Objek [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) dari segmen root hingga layout tersebut.
+
+| Contoh                            | URL            | `params`                  |
+| --------------------------------- | -------------- | ------------------------- |
+| `app/dashboard/[team]/layout.js`  | `/dashboard/1` | `{ team: '1' }`           |
+| `app/shop/[tag]/[item]/layout.js` | `/shop/1/2`    | `{ tag: '1', item: '2' }` |
+| `app/blog/[...slug]/layout.js`    | `/blog/1/2`    | `{ slug: ['1', '2'] }`    |
+
+Sebagai contoh:
+
+```tsx filename="app/shop/[tag]/[item]/layout.tsx" switcher
+export default function ShopLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: {
+    tag: string;
+    item: string;
+  };
+}) {
+  // URL -> /shop/shoes/nike-air-max-97
+  // `params` -> { tag: 'shoes', item: 'nike-air-max-97' }
+  return <section>{children}</section>;
+}
+```
+
+```jsx filename="app/shop/[tag]/[item]/layout.js" switcher
+export default function ShopLayout({ children, params }) {
+  // URL -> /shop/shoes/nike-air-max-97
+  // `params` -> { tag: 'shoes', item: 'nike-air-max-97' }
+  return <section>{children}</section>;
+}
+```
+
+## Penting untuk diketahui
+
+### Layouts tidak menerima `searchParams`
+
+Berbeda dengan [Pages](/docs/app/api-reference/file-conventions/page), komponen Layout **tidak** menerima prop `searchParams`. Hal ini dikarenakan layout bersama tidak di-render ulang selama navigasi yang bisa menyebabkan `searchParams` menjadi kadaluwarsa antar navigasi.
+
+Ketika menggunakan navigasi sisi klien, Next.js secara otomatis hanya merender bagian halaman di bawah layout bersama antara dua rute.
+
+Sebagai contoh, dalam struktur direktori berikut, `dashboard/layout.tsx` adalah layout bersama untuk `/dashboard/settings` dan `/dashboard/analytics`:
+
+```txt highight={3} hideLineNumbers
+app
+└── dashboard
+    ├── layout.tsx
+    ├── settings
+    │   └── page.tsx
+    └── analytics
+        └── page.js
+```
+
+Saat melakukan navigasi dari `/dashboard/settings` ke `/dashboard/analytics`, `page.tsx` di `/dashboard/analytics` akan di-render di server karena itu adalah UI yang berubah, sementara `dashboard/layout.tsx` **tidak** akan di-render ulang karena itu adalah UI bersama antara dua rute.
+
+Optimasi kinerja ini memungkinkan navigasi antara halaman yang menggunakan layout bersama menjadi lebih cepat karena hanya menjalankan pengambilan data dan rendering untuk halaman, daripada seluruh rute yang bisa mencakup layout bersama yang mengambil data mereka sendiri.
+
+Karena `dashboard/layout.tsx` tidak di-render ulang, prop `searchParams` di dalam Komponen Server layout dapat menjadi **kadaluwarsa** setelah navigasi.
+
+- Sebaliknya, gunakan prop [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional) Page atau hook [`useSearchParams`](/docs/app/api-reference/functions/use-search-params) dalam Komponen Klien, yang di-render ulang di sisi klien dengan `searchParams` terbaru.
+
+### Layout-root
+
+- Direktori `app` **harus** mencakup root `app/layout.js`.
+- Layout root **harus** mendefinisikan tag `<html>` dan `<body>`.
+  - Anda **tidak boleh** secara manual menambahkan tag `<head>` seperti `<title>` dan `<meta>` ke layout root. Sebaliknya, Anda harus menggunakan [Metadata API](/docs/app/api-reference/functions/generate-metadata) yang secara otomatis menangani kebutuhan lanjutan seperti streaming dan penghapusan elemen-elemen `<head>` yang berlebihan.
+- Anda dapat menggunakan [grup rute](/docs/app/building-your-application/routing/route-groups) untuk membuat beberapa layout root.
+  - Navigasi **di antara beberapa layout root** akan menyebabkan **pemuatan halaman penuh** (berbeda dengan navigasi sisi klien). Sebagai contoh, navigasi dari `/cart` yang menggunakan `app/(shop)/layout.js` ke `/blog` yang menggunakan `app/(marketing)/layout.js` akan menyebabkan pemuatan halaman penuh. Ini hanya berlaku untuk beberapa layout root.
+
+## Riwayat Versi
+
+| Versi     | Perubahan               |
+| --------- | ----------------------- |
+| `v13.0.0` | `layout` diperkenalkan. |

@@ -1,0 +1,150 @@
+---
+title: error.js
+description: Referensi API untuk berkas istimewa error.js.
+related:
+  title: Pelajari lebih lanjut tentang penanganan kesalahan
+  links:
+    - app/building-your-application/routing/error-handling
+---
+
+# error.js
+
+Berkas **error** mendefinisikan batas antarmuka kesalahan untuk segmen rute.
+
+Berkas ini berguna untuk menangkap kesalahan **tak terduga** yang terjadi pada Komponen Server dan Komponen Klien dan menampilkan antarmuka cadangan.
+
+```tsx filename="app/dashboard/error.tsx" switcher
+'use client'; // Komponen Kesalahan harus Komponen Klien
+
+import { useEffect } from 'react';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    // Catat kesalahan ke layanan pelaporan kesalahan
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div>
+      <h2>Terjadi kesalahan!</h2>
+      <button
+        onClick={
+          // Coba pulihkan dengan mencoba merender ulang segmen
+          () => reset()
+        }
+      >
+        Coba lagi
+      </button>
+    </div>
+  );
+}
+```
+
+```tsx filename="app/dashboard/error.js" switcher
+'use client'; // Komponen Kesalahan harus Komponen Klien
+
+import { useEffect } from 'react';
+
+export default function Error({ error, reset }) {
+  useEffect(() => {
+    // Catat kesalahan ke layanan pelaporan kesalahan
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div>
+      <h2>Terjadi kesalahan!</h2>
+      <button
+        onClick={
+          // Coba pulihkan dengan mencoba merender ulang segmen
+          () => reset()
+        }
+      >
+        Coba lagi
+      </button>
+    </div>
+  );
+}
+```
+
+## Properti
+
+### `error`
+
+Sebuah contoh dari objek [`Error`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Error) yang diteruskan ke Komponen Klien `error.js`.
+
+#### `error.message`
+
+Pesan kesalahan.
+
+- Untuk kesalahan yang diteruskan dari Komponen Klien, ini akan menjadi pesan Kesalahan asli.
+- Untuk kesalahan yang diteruskan dari Komponen Server, ini akan menjadi pesan kesalahan generik untuk menghindari kebocoran detail sensitif. `errors.digest` dapat digunakan untuk mencocokkan kesalahan yang sesuai dalam log sisi server.
+
+#### `error.digest`
+
+Sebuah hash yang secara otomatis dihasilkan dari kesalahan yang dilemparkan dalam Komponen Server. Ini dapat digunakan untuk mencocokkan kesalahan yang sesuai dalam log sisi server.
+
+### `reset`
+
+Sebuah fungsi untuk mereset batas kesalahan. Ketika dieksekusi, fungsi akan mencoba merender kembali konten batas Kesalahan. Jika berhasil, komponen kesalahan cadangan digantikan dengan hasil dari pengembalian.
+
+Dapat digunakan untuk mendorong pengguna untuk mencoba memulihkan dari kesalahan.
+
+> **Baik untuk diketahui**:
+>
+> - Batas `error.js` harus Komponen Klien **[Komponen Klien](/docs/app/building-your-application/rendering/client-components)**.
+> - Dalam build Produksi, kesalahan yang diteruskan dari Komponen Server akan dipotong dari detail kesalahan khusus untuk menghindari kebocoran informasi sensitif.
+> - Batas `error.js` **tidak** akan menangani kesalahan yang dilemparkan dalam komponen `layout.js` di segmen yang **sama** karena batas kesalahan bersarang **di dalam** komponen layout tersebut.
+>   - Untuk menangani kesalahan untuk layout tertentu, letakkan berkas `error.js` dalam segmen induk layout.
+>   - Untuk menangani kesalahan dalam layout atau template utama, gunakan variasi `error.js` yang disebut `app/global-error.js`.
+
+## `global-error.js`
+
+Untuk menangani kesalahan secara khusus dalam `layout.js` root, gunakan variasi `error.js` yang disebut `app/global-error.js` yang terletak dalam direktori `app` root.
+
+```tsx filename="app/global-error.tsx" switcher
+'use client';
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html>
+      <body>
+        <h2>Terjadi kesalahan!</h2>
+        <button onClick={() => reset()}>Coba lagi</button>
+      </body>
+    </html>
+  );
+}
+```
+
+```jsx filename="app/global-error.js" switcher
+'use client';
+
+export default function GlobalError({ error, reset }) {
+  return (
+    <html>
+      <body>
+        <h2>Terjadi kesalahan!</h2>
+        <button onClick={() => reset()}>Coba lagi</button>
+      </body>
+    </html>
+  );
+}
+```
+
+> **Baik untuk diketahui**:
+>
+> - `global-error.js` menggantikan `layout.js` root ketika aktif dan sehingga **harus** mendefinisikan tag `<html>` dan `<body>`nya sendiri.
+> - Saat merancang antarmuka kesalahan, Anda mungkin akan menemukan berguna untuk menggunakan [React Developer Tools](https://react.dev/learn/react-developer-tools) untuk secara manual mengaktifkan atau menonaktifkan batas Kesalahan.

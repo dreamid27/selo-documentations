@@ -1,0 +1,161 @@
+---
+title: useRouter
+description: Referensi API untuk hook useRouter.
+---
+
+Hook `useRouter` memungkinkan Anda untuk mengubah rute secara programatis dalam [Komponen Klien](/docs/app/building-your-application/rendering/client-components).
+
+> **Rekomendasi:** Gunakan komponen [`<Link>`](/docs/app/building-your-application/routing/linking-and-navigating#link-component) untuk navigasi kecuali jika Anda memiliki kebutuhan khusus untuk menggunakan `useRouter`.
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function Halaman() {
+  const router = useRouter();
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dasbor
+    </button>
+  );
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.js" switcher
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function Halaman() {
+  const router = useRouter();
+
+  return (
+    <button type="button" onClick={() => router.push('/dashboard')}>
+      Dasbor
+    </button>
+  );
+}
+```
+
+## `useRouter()`
+
+- `router.push(href: string, { scroll: boolean })`: Melakukan navigasi sisi klien ke rute yang diberikan. Menambahkan entri baru ke dalam [tumpukan sejarah peramban](https://developer.mozilla.org/docs/Web/API/History_API).
+- `router.replace(href: string, { scroll: boolean })`: Melakukan navigasi sisi klien ke rute yang diberikan tanpa menambahkan entri baru ke dalam [tumpukan sejarah peramban](https://developer.mozilla.org/docs/Web/API/History_API).
+- `router.refresh()`: Menyegarkan rute saat ini. Membuat permintaan baru ke server, meminta ulang permintaan data, dan merender ulang Komponen Server. Klien akan menggabungkan muatan Komponen Server React yang diperbarui tanpa kehilangan React sisi klien yang tidak terpengaruh (misalnya, `useState`) atau status peramban (misalnya, posisi gulir).
+- `router.prefetch(href: string)`: [Prefetch](/docs/app/building-your-application/routing/linking-and-navigating#1-prefetching) rute yang diberikan untuk transisi sisi klien yang lebih cepat.
+- `router.back()`: Kembali ke rute sebelumnya dalam tumpukan sejarah peramban.
+- `router.forward()`: Navigasi maju ke halaman berikutnya dalam tumpukan sejarah peramban.
+
+> **Baik untuk diketahui**:
+>
+> - Komponen `<Link>` secara otomatis melakukan prefetch rute saat mereka menjadi terlihat dalam viewport.
+> - `refresh()` dapat menghasilkan hasil yang sama jika permintaan pengambilan cache. Fungsi dinamis lainnya seperti `cookies` dan `headers` juga dapat mengubah respons.
+
+### Migrasi dari `next/router`
+
+- Hook `useRouter` harus diimpor dari `next/navigation` dan bukan dari `next/router` saat menggunakan Router Aplikasi.
+- String `pathname` telah dihapus dan digantikan oleh [`usePathname()`](/docs/app/api-reference/functions/use-pathname)
+- Objek `query` telah dihapus dan digantikan oleh [`useSearchParams()`](/docs/app/api-reference/functions/use-search-params)
+- `router.events` telah digantikan. [Lihat di bawah.](#router-events)
+
+[Tampilkan panduan migrasi lengkap](/docs/app/building-your-application/upgrading/app-router-migration).
+
+## Contoh
+
+### Peristiwa Router
+
+Anda dapat mendengarkan perubahan halaman dengan menggabungkan hook Komponen Klien lain seperti `usePathname` dan `useSearchParams`.
+
+```jsx filename="app/komponen/peristiwa-navigasi.js"
+'use client';
+
+import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+
+export function PeristiwaNavigasi() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const url = `${pathname}?${searchParams}`;
+    console.log(url);
+    // Anda sekarang dapat menggunakan URL saat ini
+    // ...
+  }, [pathname, searchParams]);
+
+  return null;
+}
+```
+
+Ini dapat diimpor ke dalam layout.
+
+```jsx filename="app/layout.js" highlight={2,10-12}
+import { Suspense } from 'react';
+import { PeristiwaNavigasi } from './komponen/peristiwa-navigasi';
+
+export default function Layout({ children }) {
+  return (
+    <html lang="id">
+      <body>
+        {children}
+
+        <Suspense fallback={null}>
+          <PeristiwaNavigasi />
+        </Suspense>
+      </body>
+    </html>
+  );
+}
+```
+
+> **Baik untuk diketahui**: `<PeristiwaNavigasi>` dibungkus dalam batas [`Suspense`](/docs/app/building-your-application/routing/loading-ui-and-streaming#example) karena [`useSearchParams()`](/docs/app/api-reference/functions/use-search-params) menyebabkan rendering sisi klien hingga batas `Suspense` terdekat selama [rendering statis](/docs/app/building-your-application/rendering/server-components#static-rendering-default). [Pelajari lebih lanjut](/docs/app/api-reference/functions/use-search-params#behavior).
+
+### Menonaktifkan pemulihan gulir
+
+Secara default, Next.js akan menggulir ke atas halaman saat navigasi ke rute baru. Anda dapat menonaktifkan perilaku ini dengan melewati `scroll: false` ke `router.push()` atau `router.replace()`.
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function Halaman() {
+  const router = useRouter();
+
+  return (
+    <button
+      type="button"
+      onClick={() => router.push('/dashboard', { scroll: false })}
+    >
+      Dasbor
+    </button>
+  );
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.jsx" switcher
+'use client';
+
+import { useRouter } from 'next/navigation';
+
+export default function Halaman() {
+  const router = useRouter();
+
+  return (
+    <button
+      type="button"
+      onClick={() => router.push('/dashboard', { scroll: false })}
+    >
+      Dasbor
+    </button>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                         |
+| --------- | ------------------------------------------------- |
+| `v13.0.0` | `useRouter` dari `next/navigation` diperkenalkan. |

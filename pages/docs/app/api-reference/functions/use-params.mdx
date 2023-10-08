@@ -1,0 +1,73 @@
+---
+title: useParams
+description: Referensi API untuk hook useParams.
+---
+
+`useParams` adalah hook **Komponen Klien** yang memungkinkan Anda membaca [parameter dinamis](/docs/app/building-your-application/routing/dynamic-routes) rute yang diisi oleh URL saat ini.
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { useParams } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const params = useParams();
+
+  // Rute -> /toko/[tag]/[item]
+  // URL -> /toko/sepatu/nike-air-max-97
+  // `params` -> { tag: 'sepatu', item: 'nike-air-max-97' }
+  console.log(params);
+
+  return <></>;
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.js" switcher
+'use client';
+
+import { useParams } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const params = useParams();
+
+  // Rute -> /toko/[tag]/[item]
+  // URL -> /toko/sepatu/nike-air-max-97
+  // `params` -> { tag: 'sepatu', item: 'nike-air-max-97' }
+  console.log(params);
+
+  return <></>;
+}
+```
+
+## Parameter
+
+```tsx
+const params = useParams();
+```
+
+`useParams` tidak menerima parameter apapun.
+
+## Kembalian
+
+`useParams` mengembalikan sebuah objek yang berisi [parameter dinamis](/docs/app/building-your-application/routing/dynamic-routes) rute saat ini yang telah diisi.
+
+- Setiap properti dalam objek tersebut adalah segmen dinamis aktif.
+- Nama properti adalah nama segmen, dan nilai properti adalah apa yang diisi dalam segmen tersebut.
+- Nilai properti tersebut bisa berupa tipe `string` atau array dari tipe `string` tergantung pada [tipe segmen dinamis](/docs/app/building-your-application/routing/dynamic-routes).
+- Jika rute tidak mengandung parameter dinamis, `useParams` akan mengembalikan objek kosong.
+- Jika digunakan di `pages`, `useParams` akan mengembalikan `null`.
+
+Contoh:
+
+| Rute                               | URL         | `useParams()`             |
+| ---------------------------------- | ----------- | ------------------------- |
+| `app/toko/halaman.js`              | `/toko`     | `null`                    |
+| `app/toko/[slug]/halaman.js`       | `/toko/1`   | `{ slug: '1' }`           |
+| `app/toko/[tag]/[item]/halaman.js` | `/toko/1/2` | `{ tag: '1', item: '2' }` |
+| `app/toko/[...slug]/halaman.js`    | `/toko/1/2` | `{ slug: ['1', '2'] }`    |
+
+## Riwayat Versi
+
+| Versi     | Perubahan                   |
+| --------- | --------------------------- |
+| `v13.3.0` | Memperkenalkan `useParams`. |

@@ -1,0 +1,109 @@
+---
+title: fetch
+description: Referensi API untuk fungsi pengambilan yang diperluas.
+---
+
+# fetch
+
+Next.js memperluas [API `fetch()` Web](https://developer.mozilla.org/docs/Web/API/Fetch_API) asli untuk memungkinkan setiap permintaan pada server mengatur semantik penyimpanan cache yang persisten.
+
+Di browser, opsi `cache` menunjukkan bagaimana permintaan fetch akan berinteraksi dengan _cache_ HTTP browser. Dengan perluasan ini, `cache` menunjukkan bagaimana permintaan fetch _sisi server_ akan berinteraksi dengan cache HTTP persisten kerangka kerja.
+
+Anda dapat menggunakan `fetch` dengan `async` dan `await` langsung dalam Komponen Server.
+
+```tsx filename="app/page.tsx" switcher
+export default async function Page() {
+  // Permintaan ini harus di-cache sampai dibatalkan secara manual.
+  // Serupa dengan `getStaticProps`.
+  // `force-cache` adalah default dan dapat dihilangkan.
+  const staticData = await fetch(`https://...`, { cache: 'force-cache' });
+
+  // Permintaan ini harus diambil kembali pada setiap permintaan.
+  // Serupa dengan `getServerSideProps`.
+  const dynamicData = await fetch(`https://...`, { cache: 'no-store' });
+
+  // Permintaan ini harus di-cache dengan masa pakai 10 detik.
+  // Serupa dengan `getStaticProps` dengan opsi `revalidate`.
+  const revalidatedData = await fetch(`https://...`, {
+    next: { revalidate: 10 },
+  });
+
+  return <div>...</div>;
+}
+```
+
+```jsx filename="app/page.js" switcher
+export default async function Page() {
+  // Permintaan ini harus di-cache sampai dibatalkan secara manual.
+  // Serupa dengan `getStaticProps`.
+  // `force-cache` adalah default dan dapat dihilangkan.
+  const staticData = await fetch(`https://...`, { cache: 'force-cache' });
+
+  // Permintaan ini harus diambil kembali pada setiap permintaan.
+  // Serupa dengan `getServerSideProps`.
+  const dynamicData = await fetch(`https://...`, { cache: 'no-store' });
+
+  // Permintaan ini harus di-cache dengan masa pakai 10 detik.
+  // Serupa dengan `getStaticProps` dengan opsi `revalidate`.
+  const revalidatedData = await fetch(`https://...`, {
+    next: { revalidate: 10 },
+  });
+
+  return <div>...</div>;
+}
+```
+
+## `fetch(url, options)`
+
+Karena Next.js memperluas [API `fetch()` Web](https://developer.mozilla.org/docs/Web/API/Fetch_API), Anda dapat menggunakan salah satu dari [opsi asli yang tersedia](https://developer.mozilla.org/docs/Web/API/fetch#parameters).
+
+### `options.cache`
+
+Konfigurasikan bagaimana permintaan harus berinteraksi dengan [Cache Data Next.js](/docs/app/building-your-application/caching#data-cache).
+
+```ts
+fetch(`https://...`, { cache: 'force-cache' | 'no-store' });
+```
+
+- **`force-cache`** (default) - Next.js mencari permintaan yang cocok di Cache Data-nya.
+  - Jika ada yang cocok dan masih segar, akan dikembalikan dari cache.
+  - Jika tidak ada yang cocok atau yang cocok sudah kadaluarsa, Next.js akan mengambil sumber daya dari server remote dan memperbarui cache dengan sumber daya yang diunduh.
+- **`no-store`** - Next.js mengambil sumber daya dari server remote pada setiap permintaan tanpa melihat ke dalam cache, dan tidak akan memperbarui cache dengan sumber daya yang diunduh.
+
+> **Baik untuk diketahui**:
+>
+> - Jika Anda tidak memberikan opsi `cache`, Next.js akan menggunakan `force-cache` secara default, kecuali jika digunakan [fungsi dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions) seperti `cookies()`, dalam hal ini akan menggunakan `no-store`.
+> - Opsi `no-cache` berperilaku sama dengan `no-store` di Next.js.
+
+### `options.next.revalidate`
+
+```ts
+fetch(`https://...`, { next: { revalidate: false | 0 | number } });
+```
+
+Atur masa pakai cache suatu sumber daya (dalam detik).
+
+- **`false`** - Cache sumber daya tanpa batas waktu. Sama dengan `revalidate: Infinity`. Cache HTTP dapat mengeluarkan sumber daya yang lebih lama seiring waktu.
+- **`0`** - Cegah sumber daya dari di-cache.
+- **`number`** - (dalam detik) Tentukan sumber daya harus memiliki masa pakai cache paling banyak `n` detik.
+
+> **Baik untuk diketahui**:
+>
+> - Jika permintaan `fetch()` individu mengatur nilai `revalidate` lebih rendah dari [nilai `revalidate` default](/docs/app/api-reference/file-conventions/route-segment-config#revalidate) dari rute, interval revalidasi seluruh rute akan berkurang.
+> - Jika dua permintaan fetch dengan URL yang sama dalam rute yang sama memiliki nilai `revalidate` yang berbeda, nilai yang lebih rendah akan digunakan.
+> - Sebagai kemudahan, tidak perlu mengatur opsi `cache` jika `revalidate` diatur ke angka karena `0` mengimplikasikan `cache: 'no-store'` dan nilai positif mengimplikasikan `cache: 'force-cache'`.
+> - Opsi yang bertentangan seperti `{ revalidate: 0, cache: 'force-cache' }` atau `{ revalidate: 10, cache: 'no-store' }` akan menyebabkan kesalahan.
+
+### `options.next.tags`
+
+```ts
+fetch(`https://...`, { next: { tags: ['koleksi'] } });
+```
+
+Atur tag cache suatu sumber daya. Data kemudian dapat diperbarui sesuai permintaan menggunakan [`revalidateTag`](https://nextjs.org/docs/app/api-reference/functions/revalidateTag). Panjang maksimum untuk tag kustom adalah 256 karakter.
+
+## Riwayat Versi
+
+| Versi     | Perubahan              |
+| --------- | ---------------------- |
+| `v13.0.0` | `fetch` diperkenalkan. |

@@ -1,0 +1,28 @@
+---
+title: draftMode
+description: Referensi API untuk fungsi draftMode.
+---
+
+# draftMode
+
+Fungsi `draftMode` memungkinkan Anda untuk mendeteksi [Mode Draf](/docs/app/building-your-application/configuring/draft-mode) dalam [Komponen Server](/docs/app/building-your-application/rendering/server-components).
+
+```jsx filename="app/halaman.js"
+import { draftMode } from 'next/headers';
+
+export default function Halaman() {
+  const { isEnabled } = draftMode();
+  return (
+    <main>
+      <h1>Posting Blog Saya</h1>
+      <p>Mode Draf saat ini {isEnabled ? 'Aktif' : 'Nonaktif'}</p>
+    </main>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                  |
+| --------- | -------------------------- |
+| `v13.4.0` | `draftMode` diperkenalkan. |

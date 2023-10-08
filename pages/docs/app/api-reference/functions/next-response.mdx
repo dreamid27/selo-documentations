@@ -1,0 +1,144 @@
+---
+title: NextResponse
+description: Referensi API untuk NextResponse.
+---
+
+NextResponse memperluas [API Respons Web](https://developer.mozilla.org/docs/Web/API/Response) dengan metode-metode kenyamanan tambahan.
+
+## `cookies`
+
+Baca atau ubah header [`Set-Cookie`](https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie) dari respons.
+
+### `set(name, value)`
+
+Diberikan sebuah nama, tetapkan cookie dengan nilai yang diberikan pada respons.
+
+```ts
+// Diberikan permintaan masuk /home
+let response = NextResponse.next();
+// Tetapkan cookie untuk menyembunyikan banner
+response.cookies.set('show-banner', 'false');
+// Respons akan memiliki header `Set-Cookie:show-banner=false;path=/home`
+return response;
+```
+
+### `get(name)`
+
+Diberikan nama cookie, kembalikan nilai dari cookie tersebut. Jika cookie tidak ditemukan, `undefined` dikembalikan. Jika terdapat beberapa cookie, yang pertama akan dikembalikan.
+
+```ts
+// Diberikan permintaan masuk /home
+let response = NextResponse.next();
+// { name: 'show-banner', value: 'false', Path: '/home' }
+response.cookies.get('show-banner');
+```
+
+### `getAll()`
+
+Diberikan nama cookie, kembalikan nilai-nilai dari cookie tersebut. Jika tidak ada nama yang diberikan, kembalikan semua cookie pada respons.
+
+```ts
+// Diberikan permintaan masuk /home
+let response = NextResponse.next();
+// [
+//   { name: 'experiments', value: 'new-pricing-page', Path: '/home' },
+//   { name: 'experiments', value: 'winter-launch', Path: '/home' },
+// ]
+response.cookies.getAll('experiments');
+// Atau, dapatkan semua cookie untuk respons
+response.cookies.getAll();
+```
+
+### `delete(name)`
+
+Diberikan nama cookie, hapus cookie dari respons.
+
+```ts
+// Diberikan permintaan masuk /home
+let response = NextResponse.next();
+// Mengembalikan true jika terhapus, false jika tidak ada yang dihapus
+response.cookies.delete('experiments');
+```
+
+## `json()`
+
+Hasilkan respons dengan tubuh JSON yang diberikan.
+
+```ts filename="app/api/route.ts" switcher
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+}
+```
+
+```js filename="app/api/route.js" switcher
+import { NextResponse } from 'next/server';
+
+export async function GET(request) {
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+}
+```
+
+## `redirect()`
+
+Hasilkan respons yang mengalihkan ke [URL](https://developer.mozilla.org/docs/Web/API/URL) tertentu.
+
+```ts
+import { NextResponse } from 'next/server';
+
+return NextResponse.redirect(new URL('/new', request.url));
+```
+
+[URL](https://developer.mozilla.org/docs/Web/API/URL) dapat dibuat dan diubah sebelum digunakan dalam metode `NextResponse.redirect()`. Sebagai contoh, Anda dapat menggunakan properti `request.nextUrl` untuk mendapatkan URL saat ini, lalu memodifikasinya untuk mengalihkan ke URL yang berbeda.
+
+```ts
+import { NextResponse } from 'next/server';
+
+// Diberikan permintaan masuk...
+const loginUrl = new URL('/login', request.url);
+// Tambahkan ?from=/incoming-url ke URL /login
+loginUrl.searchParams.set('from', request.nextUrl.pathname);
+// Dan alihkan ke URL baru
+return NextResponse.redirect(loginUrl);
+```
+
+## `rewrite()`
+
+Hasilkan respons yang menulis ulang (memproksi) [URL](https://developer.mozilla.org/docs/Web/API/URL) yang diberikan sambil mempertahankan URL asli.
+
+```ts
+import { NextResponse } from 'next/server';
+
+// Permintaan masuk: /about, browser menunjukkan /about
+// Permintaan yang diubah: /proxy, browser menunjukkan /about
+return NextResponse.rewrite(new URL('/proxy', request.url));
+```
+
+## `next()`
+
+Metode `next()` berguna untuk Middleware, karena memungkinkan Anda untuk kembali dengan cepat dan melanjutkan penjurusan.
+
+```ts
+import { NextResponse } from 'next/server';
+
+return NextResponse.next();
+```
+
+Anda juga dapat meneruskan `headers` saat menghasilkan respons:
+
+```ts
+import { NextResponse } from 'next/server';
+
+// Diberikan permintaan masuk...
+const newHeaders = new Headers(request.headers);
+// Tambahkan header baru
+newHeaders.set('x-version', '123');
+// Dan hasilkan respons dengan header baru
+return NextResponse.next({
+  request: {
+    // Header permintaan baru
+    headers: newHeaders,
+  },
+});
+```

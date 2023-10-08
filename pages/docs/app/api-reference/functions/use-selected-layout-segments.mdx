@@ -1,0 +1,77 @@
+---
+title: useSelectedLayoutSegments
+description: Referensi API untuk hook useSelectedLayoutSegments.
+---
+
+`useSelectedLayoutSegments` adalah sebuah hook **Komponen Klien** yang memungkinkan Anda untuk membaca segmen rute aktif **di bawah** Layout tempatnya dipanggil.
+
+Ini berguna untuk membuat antarmuka pengguna (UI) dalam Layout induk yang membutuhkan pengetahuan tentang segmen anak aktif seperti breadcrumb.
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { useSelectedLayoutSegments } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const segmen = useSelectedLayoutSegments();
+
+  return (
+    <ul>
+      {segmen.map((segmen, indeks) => (
+        <li key={indeks}>{segmen}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.js" switcher
+'use client';
+
+import { useSelectedLayoutSegments } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const segmen = useSelectedLayoutSegments();
+
+  return (
+    <ul>
+      {segmen.map((segmen, indeks) => (
+        <li key={indeks}>{segmen}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+> **Baik untuk diketahui**:
+>
+> - Karena `useSelectedLayoutSegments` adalah sebuah hook [Komponen Klien](/docs/app/building-your-application/rendering/client-components), dan Layout secara default adalah [Komponen Server](/docs/app/building-your-application/rendering/server-components), `useSelectedLayoutSegments` biasanya dipanggil melalui Komponen Klien yang diimpor ke dalam sebuah Layout.
+> - Segmen yang dikembalikan mencakup [Grup Rute](/docs/app/building-your-application/routing/route-groups), yang mungkin tidak ingin Anda sertakan dalam UI Anda. Anda dapat menggunakan metode array `filter()` untuk menghapus item yang dimulai dengan tanda kurung.
+
+## Parameter
+
+```tsx
+const segmen = useSelectedLayoutSegments(parallelRoutesKey?: string)
+```
+
+`useSelectedLayoutSegments` _secara opsional_ menerima sebuah [`parallelRoutesKey`](/docs/app/building-your-application/routing/parallel-routes#useselectedlayoutsegments), yang memungkinkan Anda untuk membaca segmen rute aktif dalam slot tersebut.
+
+## Hasil
+
+`useSelectedLayoutSegments` mengembalikan sebuah array berisi string-string segmen aktif satu level di bawah layout tempat hook ini dipanggil. Atau sebuah array kosong jika tidak ada.
+
+Sebagai contoh, dengan Layout dan URL di bawah ini, segmen yang dikembalikan adalah:
+
+| Layout                    | URL Dikunjungi        | Segmen yang Dikembalikan    |
+| ------------------------- | --------------------- | --------------------------- |
+| `app/layout.js`           | `/`                   | `[]`                        |
+| `app/layout.js`           | `/dashboard`          | `['dashboard']`             |
+| `app/layout.js`           | `/dashboard/settings` | `['dashboard', 'settings']` |
+| `app/dashboard/layout.js` | `/dashboard`          | `[]`                        |
+| `app/dashboard/layout.js` | `/dashboard/settings` | `['settings']`              |
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                  |
+| --------- | ------------------------------------------ |
+| `v13.0.0` | `useSelectedLayoutSegments` diperkenalkan. |

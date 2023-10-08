@@ -1,0 +1,58 @@
+---
+title: permanentRedirect
+description: Dokumentasi API untuk fungsi permanentRedirect.
+---
+
+Fungsi `permanentRedirect` memungkinkan Anda untuk mengarahkan pengguna ke URL lain. `permanentRedirect` dapat digunakan dalam Komponen Server, Komponen Klien, [Penangan Rute](/docs/app/building-your-application/routing/route-handlers), dan [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+Ketika digunakan dalam konteks streaming, ini akan menyisipkan tag meta untuk mengeluarkan pengalihan di sisi klien. Jika tidak, itu akan memberikan respons pengalihan HTTP 308 (Permanent) kepada pemanggil.
+
+Jika sumber daya tidak ada, Anda dapat menggunakan fungsi [`notFound`](/docs/app/api-reference/functions/not-found) sebagai gantinya.
+
+> **Bermanfaat untuk diketahui**: Jika Anda lebih suka mengembalikan pengalihan HTTP 307 (Sementara) daripada 308 (Permanent), Anda dapat menggunakan fungsi [`redirect`](/docs/app/api-reference/functions/redirect) sebagai gantinya.
+
+## Parameter
+
+Fungsi `permanentRedirect` menerima dua argumen:
+
+```js
+permanentRedirect(path, type);
+```
+
+| Parameter | Tipe                                                         | Deskripsi                                                       |
+| --------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
+| `path`    | `string`                                                     | URL yang akan diarahkan. Bisa berupa path relatif atau absolut. |
+| `type`    | `'replace'` (default) atau `'push'` (default di Aksi Server) | Jenis pengalihan yang akan dilakukan.                           |
+
+Secara default, `permanentRedirect` akan menggunakan `push` (menambahkan entri baru ke stack riwayat browser) dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) dan `replace` (menggantikan URL saat ini dalam stack riwayat browser) di tempat lain. Anda dapat mengganti perilaku ini dengan menyebutkan parameter `type`.
+
+Parameter `type` tidak berpengaruh ketika digunakan dalam Komponen Server.
+
+## Mengembalikan
+
+`permanentRedirect` tidak mengembalikan nilai apa pun.
+
+## Contoh
+
+Memanggil fungsi `permanentRedirect()` akan menyebabkan error `NEXT_REDIRECT` dan mengakhiri proses rendering segmen rute di mana itu dilemparkan.
+
+```jsx filename="app/team/[id]/page.js"
+import { permanentRedirect } from 'next/navigation';
+
+async function fetchTeam(id) {
+  const res = await fetch('https://...');
+  if (!res.ok) return undefined;
+  return res.json();
+}
+
+export default async function Profile({ params }) {
+  const team = await fetchTeam(params.id);
+  if (!team) {
+    permanentRedirect('/login');
+  }
+
+  // ...
+}
+```
+
+> **Bermanfaat untuk diketahui**: `permanentRedirect` tidak memerlukan Anda untuk menggunakan `return permanentRedirect()` karena menggunakan tipe TypeScript [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never).

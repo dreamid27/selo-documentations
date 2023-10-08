@@ -1,0 +1,177 @@
+---
+title: Tindakan Server
+nav_title: Tindakan Server
+description: Referensi API untuk Tindakan Server Next.js.
+related:
+  title: Langkah Selanjutnya
+  description: Untuk informasi lebih lanjut tentang apa yang harus dilakukan selanjutnya, kami merekomendasikan bagian-bagian berikut
+  links:
+    - app/building-your-application/data-fetching/forms-and-mutations
+---
+
+{/* TODO: Halaman ini akan perlu menghubungkan kembali ke dokumen React yang disebutkan di bagian bawah */}
+
+Next.js berintegrasi dengan Tindakan React untuk menyediakan solusi bawaan untuk [mutasi server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+## Konvensi
+
+Anda dapat mengaktifkan Tindakan Server dalam proyek Next.js Anda dengan mengaktifkan flag **eksperimental** `serverActions`.
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    serverActions: true,
+  },
+};
+```
+
+Tindakan Server dapat didefinisikan di dua tempat:
+
+- Di dalam komponen yang menggunakannya (hanya Komponen Server).
+- Di dalam file terpisah (Komponen Klien dan Server), untuk kegunaan ulang. Anda dapat mendefinisikan beberapa Tindakan Server dalam satu file.
+
+### Dengan Komponen Server
+
+Buat Tindakan Server dengan mendefinisikan fungsi asinkron dengan direktif [`"use server"`](https://react.dev/reference/react/use-server) di bagian atas tubuh fungsi. `"use server"` memastikan bahwa fungsi ini hanya dieksekusi di server.
+
+Fungsi ini harus memiliki argumen [serializable](https://developer.mozilla.org/docs/Glossary/Serialization) dan nilai kembali yang [serializable](https://developer.mozilla.org/docs/Glossary/Serialization).
+
+```jsx filename="app/page.js" highlight={2}
+export default function ServerComponent() {
+  async function myAction() {
+    'use server';
+    // ...
+  }
+}
+```
+
+### Dengan Komponen Klien
+
+#### Impor
+
+Buat Tindakan Server Anda dalam file terpisah dengan direktif `"use server"` di bagian atas file. Kemudian, impor Tindakan Server ke Komponen Klien Anda:
+
+```js filename="app/actions.js" highlight={1}
+'use server';
+
+export async function myAction() {
+  // ...
+}
+```
+
+```jsx filename="app/client-component.jsx" highlight={1}
+'use client';
+
+import { myAction } from './actions';
+
+export default function ClientComponent() {
+  return (
+    <form action={myAction}>
+      <button type="submit">Tambahkan ke Keranjang</button>
+    </form>
+  );
+}
+```
+
+> **Bagus untuk diketahui**: Saat menggunakan direktif `"use server"` tingkat atas, semua ekspor di bawahnya akan dianggap Tindakan Server. Anda dapat memiliki beberapa Tindakan Server dalam satu file.
+
+#### Props
+
+Dalam beberapa kasus, Anda mungkin ingin meneruskan Tindakan Server ke Komponen Klien sebagai prop.
+
+```jsx
+<ClientComponent updateItem={updateItem} />
+```
+
+```jsx filename="app/client-component.jsx"
+'use client';
+
+export default function ClientComponent({ myAction }) {
+  return (
+    <form action={myAction}>
+      <input type="text" name="name" />
+      <button type="submit">Perbarui Item</button>
+    </form>
+  );
+}
+```
+
+### Mengikat Argumen
+
+Anda dapat mengikat argumen ke Tindakan Server menggunakan metode `bind`. Ini memungkinkan Anda membuat Tindakan Server baru dengan beberapa argumen yang sudah diikat. Ini bermanfaat ketika Anda ingin meneruskan argumen tambahan ke Tindakan Server.
+
+```jsx filename="app/client-component.jsx" highlight={6}
+'use client';
+
+import { updateUser } from './actions';
+
+export function UserProfile({ userId }) {
+  const updateUserWithId = updateUser.bind(null, userId);
+
+  return (
+    <form action={updateUserWithId}>
+      <input type="text" name="name" />
+      <button type="submit">Perbarui Nama Pengguna</button>
+    </form>
+  );
+}
+```
+
+Dan kemudian, Tindakan Server `updateUser` akan selalu menerima argumen `userId`, selain data formulir:
+
+```js filename="app/actions.js"
+'use server';
+
+export async function updateUser(userId, formData) {
+  // ...
+}
+```
+
+> **Bagus untuk diketahui**: `.bind` dari Tindakan Server berfungsi baik di Komponen Server maupun Klien. Ini juga mendukung [Peningkatan Progresif](#peningkatan-progresif).
+
+## Panggilan
+
+Anda dapat memanggil Tindakan Server menggunakan metode berikut:
+
+- Menggunakan `action`: Prop `action` React memungkinkan pemanggilan Tindakan Server pada elemen `<form>`.
+- Menggunakan `formAction`: Prop `formAction` React memungkinkan penanganan elemen `<button>`, `<input type="submit">`, dan `<input type="image">` dalam `<form>`.
+- Panggilan Kustom dengan `startTransition`: Memanggil Tindakan Server tanpa menggunakan `action` atau `formAction` dengan menggunakan `startTransition`. Metode ini **menonaktifkan [Peningkatan Progresif](#peningkatan-progresif)**.
+
+## Peningkatan Progresif
+
+Peningkatan progresif memungkinkan sebuah `<form>` berfungsi dengan baik tanpa JavaScript, atau dengan JavaScript dinonaktifkan. Ini memungkinkan pengguna berinteraksi dengan formulir dan mengirimkan data bahkan jika JavaScript untuk formulir belum dimuat atau gagal dimuat.
+
+Tindakan React (baik server maupun klien) mendukung peningkatan progresif, menggunakan salah satu dari dua strategi berikut:
+
+- Jika **Tindakan Server** langsung diberikan ke `<form>`, formulir itu interaktif **meskipun JavaScript dinonaktifkan**.
+- Jika **Tindakan Klien** diberikan ke `<form>`, formulir tetap interaktif, tetapi tindakan akan ditempatkan dalam antrian sampai formulir dihidrasi. React memprioritaskan tindakan ini, sehingga tetap terjadi dengan cepat.
+
+Dalam kedua kasus, formulir interaktif sebelum hidrasi terjadi. Meskipun Tindakan Server memiliki keuntungan tambahan tidak bergantung pada JavaScript klien, Anda masih dapat menggabungkan perilaku tambahan dengan Tindakan Klien jika diinginkan tanpa mengorbankan interaktivitas.
+
+## Batasan Ukuran
+
+Secara default, ukuran maksimum tubuh permintaan yang
+
+dikirim ke Tindakan Server adalah 1MB, untuk mencegah konsumsi sumber daya server yang berlebihan dalam memparsing jumlah data yang besar.
+
+Namun, Anda dapat mengkonfigurasi batasan ini menggunakan opsi `serverActionsBodySizeLimit`. Ini dapat mengambil jumlah byte atau format string yang didukung oleh byte, misalnya `1000`, `'500kb'`, atau `'3mb'`.
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    serverActions: true,
+    serverActionsBodySizeLimit: '2mb',
+  },
+};
+```
+
+## Sumber Daya Tambahan
+
+Halaman API React berikut sedang didokumentasikan:
+
+- [`"use server"`](https://react.dev/reference/react/use-server)
+- `action` (🚧)
+- `formAction` (🚧)
+- `useFormStatus` (🚧)
+- `useFormState` (🚧)
+- `useOptimistic` (🚧)

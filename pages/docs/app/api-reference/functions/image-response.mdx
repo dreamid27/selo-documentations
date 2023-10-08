@@ -1,0 +1,44 @@
+---
+title: ImageResponse
+description: Referensi API untuk konstruktor ImageResponse.
+---
+
+Konstruktor `ImageResponse` memungkinkan Anda untuk menghasilkan gambar-gambar dinamis menggunakan JSX dan CSS. Ini sangat berguna untuk menghasilkan gambar media sosial seperti gambar Open Graph, kartu Twitter, dan lainnya.
+
+Opsi berikut tersedia untuk `ImageResponse`:
+
+```jsx
+import { ImageResponse } from 'next/server'
+
+new ImageResponse(
+  element: ReactElement,
+  options: {
+    width?: number = 1200
+    height?: number = 630
+    emoji?: 'twemoji' | 'blobmoji' | 'noto' | 'openmoji' = 'twemoji',
+    fonts?: {
+      name: string,
+      data: ArrayBuffer,
+      weight: number,
+      style: 'normal' | 'italic'
+    }[]
+    debug?: boolean = false
+
+    // Opsi yang akan diteruskan ke respons HTTP
+    status?: number = 200
+    statusText?: string
+    headers?: Record<string, string>
+  },
+)
+```
+
+## Properti CSS yang Didukung
+
+Silakan lihat [dokumentasi Satori](https://github.com/vercel/satori#css) untuk daftar fitur HTML dan CSS yang didukung.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                                 |
+| --------- | --------------------------------------------------------- |
+| `v13.3.0` | `ImageResponse` dapat diimpor dari `next/server`.         |
+| `v13.0.0` | `ImageResponse` diperkenalkan melalui paket `@vercel/og`. |

@@ -1,0 +1,67 @@
+---
+title: revalidateTag
+description: Referensi API untuk fungsi revalidateTag.
+---
+
+`revalidateTag` memungkinkan Anda untuk membersihkan [data yang telah di-cache](/docs/app/building-your-application/caching) secara on-demand untuk tag cache tertentu.
+
+> **Bagus untuk diketahui**:
+>
+> - `revalidateTag` tersedia baik dalam [runtime Node.js maupun Edge](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+> - `revalidateTag` hanya menggugurkan cache saat path tersebut dikunjungi selanjutnya. Ini berarti memanggil `revalidateTag` dengan segmen rute dinamis tidak akan segera memicu banyak revalidasi sekaligus. Pengguguran hanya terjadi saat path tersebut dikunjungi selanjutnya.
+
+## Parameter
+
+```tsx
+revalidateTag(tag: string): void;
+```
+
+- `tag`: Sebuah string yang mewakili tag cache yang terkait dengan data yang ingin Anda revalidasi. Harus kurang dari atau sama dengan 256 karakter.
+
+Anda dapat menambahkan tag ke `fetch` seperti berikut:
+
+```tsx
+fetch(url, { next: { tags: [...] } });
+```
+
+## Hasil
+
+`revalidateTag` tidak mengembalikan nilai apa pun.
+
+## Contoh
+
+### Aksi Server
+
+```ts filename="app/actions.ts" switcher
+'use server'
+
+impor { revalidateTag } dari 'next/cache'
+
+export default async function submit() {
+  await addPost()
+  revalidateTag('posts')
+}
+```
+
+### Penangan Rute
+
+```ts filename="app/api/revalidate/route.ts" switcher
+impor { NextRequest } dari 'next/server'
+impor { revalidateTag } dari 'next/cache'
+
+export async function GET(request: NextRequest) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  revalidateTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+impor { revalidateTag } dari 'next/cache'
+
+export async function GET(request) {
+  const tag = request.nextUrl.searchParams.get('tag')
+  revalidateTag(tag)
+  return Response.json({ revalidated: true, now: Date.now() })
+}
+```

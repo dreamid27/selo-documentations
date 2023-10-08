@@ -1,0 +1,365 @@
+---
+title: useSearchParams
+description: API Referensi untuk hook useSearchParams.
+---
+
+`useSearchParams` adalah sebuah hook **Komponen Klien** yang memungkinkan Anda untuk membaca **query string** saat ini dari URL.
+
+`useSearchParams` mengembalikan versi **hanya-baca** dari antarmuka [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams).
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // URL -> `/dashboard?search=my-project`
+  // `search` -> 'my-project'
+  return <>Cari: {search}</>;
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // URL -> `/dashboard?search=my-project`
+  // `search` -> 'my-project'
+  return <>Cari: {search}</>;
+}
+```
+
+## Parameter
+
+```tsx
+const searchParams = useSearchParams();
+```
+
+`useSearchParams` tidak mengambil parameter apapun.
+
+## Hasil
+
+`useSearchParams` mengembalikan versi **hanya-baca** dari antarmuka [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams), yang mencakup metode utilitas untuk membaca query string URL:
+
+- [`URLSearchParams.get()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/get): Mengembalikan nilai pertama yang terkait dengan parameter pencarian. Misalnya:
+
+  | URL                  | `searchParams.get("a")`                                                                                                         |
+  | -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+  | `/dashboard?a=1`     | `'1'`                                                                                                                           |
+  | `/dashboard?a=`      | `''`                                                                                                                            |
+  | `/dashboard?b=3`     | `null`                                                                                                                          |
+  | `/dashboard?a=1&a=2` | `'1'` _- gunakan [`getAll()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll) untuk mendapatkan semua nilai_ |
+
+- [`URLSearchParams.has()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/has): Mengembalikan nilai boolean yang menunjukkan apakah parameter yang diberikan ada. Misalnya:
+
+  | URL              | `searchParams.has("a")` |
+  | ---------------- | ----------------------- |
+  | `/dashboard?a=1` | `true`                  |
+  | `/dashboard?b=3` | `false`                 |
+
+- Pelajari lebih lanjut tentang metode **hanya-baca** lain dari [`URLSearchParams`](https://developer.mozilla.org/docs/Web/API/URLSearchParams), termasuk [`getAll()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/getAll), [`keys()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/keys), [`values()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/values), [`entries()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/entries), [`forEach()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/forEach), dan [`toString()`](https://developer.mozilla.org/docs/Web/API/URLSearchParams/toString).
+
+> **Menarik untuk diketahui**:
+>
+> - `useSearchParams` adalah hook [Komponen Klien](/docs/app/building-your-application/rendering/client-components) dan **tidak didukung** di [Komponen Server](/docs/app/building-your-application/rendering/server-components) untuk mencegah nilai yang kadaluarsa selama [render parsial](/docs/app/building-your-application/routing/linking-and-navigating#3-partial-rendering).
+> - Jika sebuah aplikasi mencakup direktori `/pages`, `useSearchParams` akan mengembalikan `ReadonlyURLSearchParams | null`. Nilai `null` adalah untuk kompatibilitas selama migrasi karena parameter pencarian tidak dapat diketahui selama pra-rendering halaman yang tidak menggunakan `getServerSideProps`.
+
+## Perilaku
+
+### Render Statis
+
+Jika sebuah rute [dirender secara statis](/docs/app/building-your-application/rendering/server-components#static-rendering-default), memanggil `useSearchParams()` akan menyebabkan pohon hingga batas [`Suspense`](/docs/app/building-your-application/routing/loading-ui-and-streaming#example) terdekat di-render di sisi klien.
+
+Hal ini memungkinkan bagian dari halaman di-render secara statis sementara bagian dinamis yang menggunakan `searchParams` di-render di sisi klien.
+
+Anda dapat mengurangi bagian rute yang di-render di sisi klien dengan melampirkan komponen yang menggunakan `useSearchParams` dalam batas `Suspense`. Contohnya:
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // Ini tidak akan dicatat di server saat menggunakan render statis
+  console.log(search);
+
+  return <>Cari: {search}</>;
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // Ini tidak akan dicatat di server saat menggunakan render statis
+  console.log(search);
+
+  return <>Cari: {search}</>;
+}
+```
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import { Suspense } from 'react';
+import SearchBar from './search-bar';
+
+// Komponen ini yang digunakan sebagai fallback ke dalam batas Suspense
+// akan di-render di tempat bilamana search bar di-render pada HTML awal.
+// Saat nilai tersedia selama hydrasi React, fallback akan digantikan
+// dengan komponen `<SearchBar>`.
+function SearchBarFallback() {
+  return <>placeholder</>;
+}
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <Suspense fallback={<SearchBarFallback />}>
+          <SearchBar />
+        </Suspense>
+      </nav>
+      <h1>Dasbor</h1>
+    </>
+  );
+}
+```
+
+```jsx filename="app/dashboard/page.js" switcher
+import { Suspense } from 'react';
+import SearchBar from './search-bar';
+
+// Komponen ini yang digunakan sebagai fallback ke dalam batas Suspense
+// akan di-render di tempat bilamana search bar di-render pada HTML awal.
+// Saat nilai tersedia selama hydrasi React, fallback akan digantikan
+// dengan komponen `<SearchBar>`.
+function SearchBarFallback() {
+  return <>placeholder</>;
+}
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <Suspense fallback={<SearchBarFallback />}>
+          <SearchBar />
+        </Suspense>
+      </nav>
+      <h1>Dasbor</h1>
+    </>
+  );
+}
+```
+
+### Render Dinamis
+
+Jika sebuah rute [dirender secara dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering), `useSearchParams` akan tersedia di server selama render awal dari Komponen Klien.
+
+> **Menarik untuk diketahui**: Mengatur opsi konfigurasi segmen rute [`dynamic`](/docs/app/api-reference/file-conventions/route-segment-config#dynamic) menjadi `force-dynamic` dapat digunakan untuk memaksa render dinamis.
+
+Contohnya:
+
+```tsx filename="app/dashboard/search-bar.tsx" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // Ini akan dicatat di server selama render awal
+  // dan di sisi klien pada navigasi berikutnya.
+  console.log(search);
+
+  return <>Cari: {search}</>;
+}
+```
+
+```jsx filename="app/dashboard/search-bar.js" switcher
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+
+export default function SearchBar() {
+  const searchParams = useSearchParams();
+
+  const search = searchParams.get('search');
+
+  // Ini akan dicatat di server saat render awal
+  // dan di sisi klien pada navigasi berikutnya.
+  console.log(search);
+
+  return <>Cari: {search}</>;
+}
+```
+
+```tsx filename="app/dashboard/page.tsx" switcher
+import SearchBar from './search-bar';
+
+export const dynamic = 'force-dynamic';
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <SearchBar />
+      </nav>
+      <h1>Dasbor</h1>
+    </>
+  );
+}
+```
+
+```jsx filename="app/dashboard/page.js" switcher
+import SearchBar from './search-bar';
+
+export const dynamic = 'force-dynamic';
+
+export default function Page() {
+  return (
+    <>
+      <nav>
+        <SearchBar />
+      </nav>
+      <h1>Dasbor</h1>
+    </>
+  );
+}
+```
+
+### Komponen Server
+
+#### Halaman
+
+Untuk mengakses parameter pencarian dalam [Halaman](/docs/app/api-reference/file-conventions/page) (Komponen Server), gunakan prop [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional).
+
+#### Tata Letak
+
+Berbeda dengan Halaman, [Tata Letak](/docs/app/api-reference/file-conventions/layout) (Komponen Server) **tidak** menerima prop `searchParams`. Hal ini karena tata letak bersamaan [tidak di-render ulang saat navigasi](/docs/app/building-your-application/routing/linking-and-navigating#3-partial-rendering) yang dapat menyebabkan `searchParams` menjadi kadaluarsa antara navigasi. Lihat [penjelasan rinci](/docs/app/api-reference/file-conventions/layout#layouts-do-not-receive-searchparams).
+
+Sebaliknya, gunakan prop [`searchParams`](/docs/app/api-reference/file-conventions/page) Halaman atau hook [`useSearchParams`](/docs/app/api-reference/functions/use-search-params) dalam Komponen Klien, yang di-render ulang di sisi klien dengan `searchParams` terbaru.
+
+## Contoh
+
+### Memperbarui `searchParams`
+
+Anda dapat menggunakan [`useRouter`](/docs/app/api-reference/functions/use-router) atau [`Link`](/docs/app/api-reference/components/link) untuk mengatur `searchParams` baru. Setelah navigasi dilakukan, [`page.js`](/docs/app/api-reference/file-conventions/page) saat ini akan menerima prop [`searchParams`](/docs/app/api-reference/file-conventions/page#searchparams-optional) yang diperbarui.
+
+```tsx filename="app/example-client-component.tsx" switcher
+export default function ExampleClientComponent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams()!;
+
+  // Dapatkan string `searchParams` baru dengan menggabungkan
+  // `searchParams` saat ini dengan pasangan kunci/nilai yang diberikan
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams);
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  return (
+    <>
+      <p>Urutkan Berdasarkan</p>
+
+      {/* Menggunakan useRouter */}
+      <button
+        onClick={() => {
+          // <pathname>?sort=asc
+          router.push(pathname + '?' + createQueryString('sort', 'asc'));
+        }}
+      >
+        ASC
+      </button>
+
+      {/* Menggunakan <Link> */}
+      <Link
+        href={
+          // <pathname>?sort=desc
+          pathname + '?' + createQueryString('sort', 'desc')
+        }
+      >
+        DESC
+      </Link>
+    </>
+  );
+}
+```
+
+```jsx filename="app/example-client-component.js" switcher
+export default function ExampleClientComponent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Dapatkan string `searchParams` baru dengan menggabungkan
+  // `searchParams` saat ini dengan pasangan kunci/nilai yang diberikan
+  const createQueryString = useCallback(
+    (name, value) => {
+      const params = new URLSearchParams(searchParams);
+      params.set(name, value);
+
+      return params.toString();
+    },
+    [searchParams]
+  );
+
+  return (
+    <>
+      <p>Urutkan Berdasarkan</p>
+
+      {/* Menggunakan useRouter */}
+      <button
+        onClick={() => {
+          // <pathname>?sort=asc
+          router.push(pathname + '?' + createQueryString('sort', 'asc'));
+        }}
+      >
+        ASC
+      </button>
+
+      {/* Menggunakan <Link> */}
+      <Link
+        href={
+          // <pathname>?sort=desc
+          pathname + '?' + createQueryString('sort', 'desc')
+        }
+      >
+        DESC
+      </Link>
+    </>
+  );
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                        |
+| --------- | -------------------------------- |
+| `v13.0.0` | `useSearchParams` diperkenalkan. |

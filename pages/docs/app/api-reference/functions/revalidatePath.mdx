@@ -1,0 +1,111 @@
+---
+title: revalidatePath
+description: Referensi API untuk fungsi revalidatePath.
+---
+
+`revalidatePath` memungkinkan Anda untuk menghapus [data yang telah dicache](/docs/app/building-your-application/caching) secara on-demand untuk suatu path tertentu.
+
+> **Penting untuk diketahui**:
+>
+> - `revalidatePath` tersedia baik dalam [Node.js maupun runtime Edge](/docs/app/building-your-application/rendering/edge-and-nodejs-runtimes).
+> - `revalidatePath` hanya akan menginvalidasi cache ketika path yang dimasukkan dikunjungi selanjutnya. Artinya, memanggil `revalidatePath` dengan segmen rute dinamis tidak akan segera memicu banyak validasi sekaligus. Invalidasi hanya terjadi saat path tersebut dikunjungi selanjutnya.
+
+## Parameter
+
+```tsx
+revalidatePath(path: string, type?: 'page' | 'layout'): void;
+```
+
+- `path`: Entah string yang mewakili path sistem file yang terkait dengan data yang ingin Anda validasi ulang (misalnya, `/product/[slug]/page`), atau segmen rute literal (misalnya, `/product/123`). Harus kurang dari 1024 karakter.
+- `type`: (opsional) String `'page'` atau `'layout'` untuk mengubah jenis path yang akan divalidasi ulang.
+
+## Kembalian
+
+`revalidatePath` tidak mengembalikan nilai apapun.
+
+## Contoh
+
+### Validasi Ulang URL Tertentu
+
+```ts
+import { revalidatePath } from 'next/cache';
+revalidatePath('/blog/post-1');
+```
+
+Ini akan memvalidasi ulang satu URL tertentu saat kunjungan halaman berikutnya.
+
+### Validasi Ulang Path Halaman
+
+```ts
+import { revalidatePath } from 'next/cache';
+revalidatePath('/blog/[slug]', 'page');
+// atau dengan grup rute
+revalidatePath('/(main)/post/[slug]', 'page');
+```
+
+Ini akan memvalidasi ulang semua URL yang cocok dengan file `page` yang diberikan saat kunjungan halaman berikutnya. Ini _tidak_ akan menginvalidasi halaman-halaman di bawah halaman spesifik tersebut. Misalnya, `/blog/[slug]` tidak akan menginvalidasi `/blog/[slug]/[author]`.
+
+### Validasi Ulang Path Layout
+
+```ts
+import { revalidatePath } from 'next/cache';
+revalidatePath('/blog/[slug]', 'layout');
+// atau dengan grup rute
+revalidatePath('/(main)/post/[slug]', 'layout');
+```
+
+Ini akan memvalidasi ulang semua URL yang cocok dengan file `layout` yang diberikan saat kunjungan halaman berikutnya. Ini akan menyebabkan halaman-halaman dengan layout yang sama mengalami validasi ulang saat kunjungan berikutnya. Misalnya, dalam kasus di atas, `/blog/[slug]/[another]` juga akan divalidasi ulang saat kunjungan berikutnya.
+
+### Aksi Server
+
+```ts filename="app/actions.ts" switcher
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+export default async function submit() {
+  await submitForm();
+  revalidatePath('/');
+}
+```
+
+### Penanganan Rute
+
+```ts filename="app/api/revalidate/route.ts" switcher
+import { revalidatePath } from 'next/cache';
+import { NextRequest } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path');
+
+  if (path) {
+    revalidatePath(path);
+    return Response.json({ revalidated: true, now: Date.now() });
+  }
+
+  return Response.json({
+    revalidated: false,
+    now: Date.now(),
+    message: 'Path yang akan divalidasi ulang tidak ditemukan',
+  });
+}
+```
+
+```js filename="app/api/revalidate/route.js" switcher
+import { revalidatePath } from 'next/cache';
+
+export async function GET(request) {
+  const path = request.nextUrl.searchParams.get('path');
+
+  if (path) {
+    revalidatePath(path);
+    return Response.json({ revalidated: true, now: Date.now() });
+  }
+
+  return Response.json({
+    revalidated: false,
+    now: Date.now(),
+    message: 'Path yang akan divalidasi ulang tidak ditemukan',
+  });
+}
+```

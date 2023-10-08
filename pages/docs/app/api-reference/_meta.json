@@ -1,8 +1,8 @@
 {
-  "component": "Komponen",
+  "components": "Komponen",
   "file-conventions": "Konvensi File",
   "functions": "Fungsi",
-  "next-config-js": "next.config.js Options",
+  "next-config-js": "Opsi next.config.js",
   "create-next-app": "create-next-app",
   "edge": "Edge Runtime",
   "next-cli": "Next.js CLI"

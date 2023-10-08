@@ -1,0 +1,62 @@
+---
+title: redirect
+description: Referensi API untuk fungsi pengalihan.
+---
+
+Fungsi `redirect` memungkinkan Anda untuk mengarahkan pengguna ke URL lain. `redirect` dapat digunakan dalam Komponen Server, Komponen Klien, [Penangan Rute](/docs/app/building-your-application/routing/route-handlers), dan [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations).
+
+Ketika digunakan dalam [konteks streaming](/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming), ini akan memasukkan tag meta untuk mengirimkan pengalihan pada sisi klien. Selain itu, akan memberikan respons pengalihan HTTP 307 kepada pemanggil.
+
+Jika sumber daya tidak ada, Anda dapat menggunakan fungsi [`notFound`](/docs/app/api-reference/functions/not-found) sebagai gantinya.
+
+> **Bagus untuk diketahui**: Jika Anda lebih suka mengembalikan pengalihan HTTP 308 (Permanen) daripada 307 (Sementara), Anda dapat menggunakan fungsi [`permanentRedirect`](/docs/app/api-reference/functions/permanentRedirect) sebagai gantinya.
+
+## Parameter
+
+Fungsi `redirect` menerima dua argumen:
+
+```js
+redirect(path, type);
+```
+
+| Parameter | Tipe                                                            | Deskripsi                                                     |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
+| `path`    | `string`                                                        | URL untuk pengalihan. Dapat berupa path relatif atau absolut. |
+| `type`    | `'replace'` (default) atau `'push'` (default dalam Aksi Server) | Jenis pengalihan yang akan dilakukan.                         |
+
+Secara default, `redirect` akan menggunakan `push` (menambahkan entri baru ke stack riwayat browser) dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) dan `replace` (mengganti URL saat ini dalam stack riwayat browser) di tempat lain. Anda dapat mengganti perilaku ini dengan menyebutkan parameter `type`.
+
+Parameter `type` tidak memiliki efek ketika digunakan dalam Komponen Server.
+
+## Kembalian
+
+`redirect` tidak mengembalikan nilai apa pun.
+
+## Contoh
+
+Memanggil fungsi `redirect()` akan melemparkan kesalahan `NEXT_REDIRECT` dan menghentikan pengembangan segmen rute di mana kesalahan itu dilemparkan.
+
+```jsx filename="app/team/[id]/page.js"
+import { redirect } from 'next/navigation';
+
+async function fetchTeam(id) {
+  const res = await fetch('https://...');
+  if (!res.ok) return undefined;
+  return res.json();
+}
+
+export default async function Profile({ params }) {
+  const team = await fetchTeam(params.id);
+  if (!team) {
+    redirect('/login');
+  }
+
+  // ...
+}
+```
+
+> **Bagus untuk diketahui**: `redirect` tidak mengharuskan Anda menggunakan `return redirect()` karena itu menggunakan tipe TypeScript [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never).
+
+| Versi     | Perubahan                 |
+| --------- | ------------------------- |
+| `v13.0.0` | `redirect` diperkenalkan. |

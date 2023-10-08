@@ -1,0 +1,143 @@
+---
+title: useReportWebVitals
+description: Referensi API untuk fungsi useReportWebVitals.
+---
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan sebaiknya tidak dibungkus dalam komponen. */}
+
+Hook `useReportWebVitals` memungkinkan Anda untuk melaporkan [Core Web Vitals](https://web.dev/vitals/), dan dapat digunakan bersama dengan layanan analitik Anda.
+
+```jsx filename="app/_components/web-vitals.js"
+'use client';
+
+import { useReportWebVitals } from 'next/web-vitals';
+
+export function WebVitals() {
+  useReportWebVitals((metric) => {
+    console.log(metric);
+  });
+}
+```
+
+```jsx filename="app/layout.js"
+import { WebVitals } from './_components/web-vitals';
+
+export default function Layout({ children }) {
+  return (
+    <html>
+      <body>
+        <WebVitals />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+> Karena hook `useReportWebVitals` memerlukan direktif `"use client"`, pendekatan yang paling optimal adalah dengan membuat komponen terpisah yang diimpor oleh layout root. Hal ini membatasi batas klien eksklusif pada komponen `WebVitals`.
+
+## useReportWebVitals
+
+Objek `metric` yang dilewatkan sebagai argumen hook ini terdiri dari beberapa properti:
+
+- `id`: Identifikasi unik untuk metrik dalam konteks pemuatan halaman saat ini
+- `name`: Nama metrik kinerja. Nilai yang mungkin termasuk nama-nama metrik [Web Vitals](#web-vitals) (TTFB, FCP, LCP, FID, CLS) yang spesifik untuk aplikasi web.
+- `delta`: Perbedaan antara nilai saat ini dan nilai sebelumnya dari metrik. Nilai ini biasanya dalam milidetik dan menggambarkan perubahan dalam nilai metrik seiring waktu.
+- `entries`: Array [Entri Kinerja](https://developer.mozilla.org/docs/Web/API/PerformanceEntry) yang terkait dengan metrik. Entri-entri ini memberikan informasi rinci tentang peristiwa kinerja yang terkait dengan metrik tersebut.
+- `navigationType`: Menunjukkan [jenis navigasi](https://developer.mozilla.org/docs/Web/API/PerformanceNavigationTiming/type) yang memicu pengumpulan metrik. Nilai-nilai yang mungkin termasuk `"navigate"`, `"reload"`, `"back_forward"`, dan `"prerender"`.
+- `rating`: Penilaian kualitatif dari nilai metrik, memberikan penilaian kinerja. Nilai-nilai yang mungkin adalah `"baik"`, `"perlu-perbaikan"`, dan `"buruk"`. Penilaian biasanya ditentukan dengan membandingkan nilai metrik dengan ambang batas yang telah ditentukan yang menunjukkan kinerja yang dapat diterima atau suboptimal.
+- `value`: Nilai atau durasi aktual entri kinerja, biasanya dalam milidetik. Nilai ini memberikan pengukuran kuantitatif dari aspek kinerja yang dilacak oleh metrik tersebut. Sumber nilai tergantung pada metrik spesifik yang diukur dan dapat berasal dari berbagai [API Kinerja](https://developer.mozilla.org/docs/Web/API/Performance_API).
+
+## Web Vitals
+
+[Web Vitals](https://web.dev/vitals/) adalah serangkaian metrik yang berguna yang bertujuan untuk menangkap pengalaman pengguna dari sebuah halaman web. Berikut ini adalah semua Web Vitals yang termasuk:
+
+- [Waktu hingga Byte Pertama](https://developer.mozilla.org/docs/Glossary/Time_to_first_byte) (TTFB)
+- [Paint Konten Pertama](https://developer.mozilla.org/docs/Glossary/First_contentful_paint) (FCP)
+- [Paint Konten Terbesar](https://web.dev/lcp/) (LCP)
+- [Tunda Masukan Pertama](https://web.dev/fid/) (FID)
+- [Geser Tata Letak Kumulatif](https://web.dev/cls/) (CLS)
+- [Interaksi hingga Lukisan Berikutnya](https://web.dev/inp/) (INP)
+
+Anda dapat mengelola semua hasil metrik ini menggunakan properti `name`.
+
+```tsx filename="app/components/web-vitals.tsx" switcher
+'use client';
+
+import { useReportWebVitals } from 'next/web-vitals';
+
+export function WebVitals() {
+  useReportWebVitals((metric) => {
+    switch (metric.name) {
+      case 'FCP': {
+        // Mengelola hasil FCP
+      }
+      case 'LCP': {
+        // Mengelola hasil LCP
+      }
+      // ...
+    }
+  });
+}
+```
+
+```jsx filename="app/components/web-vitals.js" switcher
+'use client';
+
+import { useReportWebVitals } from 'next/web-vitals';
+
+export function WebVitals() {
+  useReportWebVitals((metric) => {
+    switch (metric.name) {
+      case 'FCP': {
+        // Mengelola hasil FCP
+      }
+      case 'LCP': {
+        // Mengelola hasil LCP
+      }
+      // ...
+    }
+  });
+}
+```
+
+## Penggunaan pada Vercel
+
+[Insight Kecepatan Vercel](https://vercel.com/docs/concepts/speed-insights) secara otomatis dikonfigurasi pada implementasi Vercel, dan tidak memerlukan penggunaan `useReportWebVitals`. Hook ini berguna dalam pengembangan lokal, atau jika Anda menggunakan layanan analitik yang berbeda.
+
+## Mengirim hasil ke sistem eksternal
+
+Anda dapat mengirim hasil ke endpoint apa pun untuk mengukur dan melacak
+kinerja pengguna nyata di situs Anda. Contohnya:
+
+```js
+useReportWebVitals((metric) => {
+  const body = JSON.stringify(metric);
+  const url = 'https://example.com/analytics';
+
+  // Gunakan `navigator.sendBeacon()` jika tersedia, jika tidak, gunakan `fetch()`.
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(url, body);
+  } else {
+    fetch(url, { body, method: 'POST', keepalive: true });
+  }
+});
+```
+
+> **Bagus untuk diketahui**: Jika Anda menggunakan [Google Analytics](https://analytics.google.com/analytics/web/), dengan menggunakan
+> nilai `id`, Anda dapat membuat distribusi metrik secara manual (untuk menghitung persentil,
+> dll.)
+
+> ```js
+> useReportWebVitals(metric => {
+>   // Gunakan `window.gtag` jika Anda menginisialisasi Google Analytics seperti contoh ini:
+>   // https://github.com/vercel/next.js/blob/canary/examples/with-google-analytics/pages/_app.js
+>   window.gtag('event', metric.name, {
+>     value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value), // nilai harus berupa bilangan bulat
+>     event_label: metric.id, // id unik untuk pemuatan halaman saat ini
+>     non_interaction: true, // menghindari mempengaruhi tingkat pentalan.
+>   });
+> }
+> ```
+>
+> Baca lebih lanjut tentang [mengirim hasil ke Google Analytics](https://github.com/GoogleChrome/web-vitals#send-the-results-to-google-analytics).

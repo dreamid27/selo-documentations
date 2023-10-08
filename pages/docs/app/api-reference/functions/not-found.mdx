@@ -1,0 +1,38 @@
+---
+title: notFound
+description: Dokumentasi API untuk fungsi `notFound`.
+---
+
+Fungsi `notFound` memungkinkan Anda untuk merender [`file tidak ditemukan`](/docs/app/api-reference/file-conventions/not-found) dalam segmen rute serta menyisipkan tag `<meta name="robots" content="noindex" />`.
+
+## `notFound()`
+
+Memanggil fungsi `notFound()` akan melemparkan error `NEXT_NOT_FOUND` dan menghentikan proses merender segmen rute di mana error tersebut dilemparkan. Menentukan [**file tidak ditemukan**](/docs/app/api-reference/file-conventions/not-found) memungkinkan Anda untuk dengan lembut menangani error tersebut dengan merender UI Tidak Ditemukan dalam segmen tersebut.
+
+```jsx filename="app/user/[id]/page.js"
+import { notFound } from 'next/navigation';
+
+async function fetchUser(id) {
+  const res = await fetch('https://...');
+  if (!res.ok) return undefined;
+  return res.json();
+}
+
+export default async function Profile({ params }) {
+  const user = await fetchUser(params.id);
+
+  if (!user) {
+    notFound();
+  }
+
+  // ...
+}
+```
+
+> **Penting untuk diketahui**: `notFound()` tidak memerlukan Anda untuk menggunakan `return notFound()` karena menggunakan tipe [`never`](https://www.typescriptlang.org/docs/handbook/2/functions.html#never) dalam TypeScript.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                 |
+| --------- | ------------------------- |
+| `v13.0.0` | `notFound` diperkenalkan. |

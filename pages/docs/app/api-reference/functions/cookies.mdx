@@ -1,0 +1,159 @@
+---
+title: Cookies
+description: Referensi API untuk fungsi cookies.
+related:
+  title: Langkah Selanjutnya
+  description: Untuk informasi lebih lanjut tentang langkah apa yang harus diambil selanjutnya, kami merekomendasikan bagian-bagian berikut
+  links:
+    - app/building-your-application/data-fetching/forms-and-mutations
+---
+
+# Cookies
+
+Fungsi `cookies` memungkinkan Anda untuk membaca cookie permintaan HTTP yang masuk dari [Komponen Server](/docs/app/building-your-application/rendering/server-components) atau menulis cookie permintaan keluar dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) atau [Penangan Rute](/docs/app/building-your-application/routing/route-handlers).
+
+> **Bagus untuk diketahui**: `cookies()` adalah **[Fungsi Dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)** yang nilai-nilainya tidak dapat diketahui sebelumnya. Menggunakannya dalam tata letak atau halaman akan mengaktifkan rute ke dalam **[pembuatan dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)** pada saat permintaan.
+
+## `cookies().get(name)`
+
+Metode yang mengambil nama cookie dan mengembalikan objek dengan nama dan nilai. Jika cookie dengan `name` tidak ditemukan, itu akan mengembalikan `undefined`. Jika ada beberapa cookie yang cocok, itu hanya akan mengembalikan yang pertama cocok.
+
+```jsx filename="app/page.js"
+import { cookies } from 'next/headers';
+
+export default function Page() {
+  const cookieStore = cookies();
+  const tema = cookieStore.get('tema');
+  return '...';
+}
+```
+
+## `cookies().getAll()`
+
+Metode yang mirip dengan `get`, tetapi mengembalikan daftar semua cookie dengan `name` yang cocok. Jika `name` tidak ditentukan, itu akan mengembalikan semua cookie yang tersedia.
+
+```jsx filename="app/page.js"
+import { cookies } from 'next/headers';
+
+export default function Page() {
+  const cookieStore = cookies();
+  return cookieStore.getAll().map((cookie) => (
+    <div key={cookie.name}>
+      <p>Nama: {cookie.name}</p>
+      <p>Nilai: {cookie.value}</p>
+    </div>
+  ));
+}
+```
+
+## `cookies().has(name)`
+
+Metode yang mengambil nama cookie dan mengembalikan `boolean` berdasarkan apakah cookie ada (`true`) atau tidak (`false`).
+
+```jsx filename="app/page.js"
+import { cookies } from 'next/headers';
+
+export default function Page() {
+  const cookiesList = cookies();
+  const punyaCookie = cookiesList.has('tema');
+  return '...';
+}
+```
+
+## `cookies().set(name, value, options)`
+
+Metode yang mengambil nama cookie, nilai, dan opsi, serta mengatur cookie permintaan keluar.
+
+> **Bagus untuk diketahui**: HTTP tidak memperbolehkan mengatur cookie setelah streaming dimulai, jadi Anda harus menggunakan `.set()` dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) atau [Penangan Rute](/docs/app/building-your-application/routing/route-handlers).
+
+```js filename="app/actions.js"
+'use server';
+
+import { cookies } from 'next/headers';
+
+async function create(data) {
+  cookies().set('nama', 'lee');
+  // atau
+  cookies().set('nama', 'lee', { secure: true });
+  // atau
+  cookies().set({
+    nama: 'nama',
+    nilai: 'lee',
+    httpOnly: true,
+    path: '/',
+  });
+}
+```
+
+## Menghapus cookie
+
+> **Bagus untuk diketahui**: Anda hanya dapat menghapus cookie dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) atau [Penangan Rute](/docs/app/building-your-application/routing/route-handlers).
+
+Ada beberapa pilihan untuk menghapus cookie:
+
+### `cookies().delete(name)`
+
+Anda dapat dengan tegas menghapus cookie dengan nama tertentu.
+
+```js filename="app/actions.js"
+'use server';
+
+import { cookies } from 'next/headers';
+
+async function create(data) {
+  cookies().delete('nama');
+}
+```
+
+### `cookies().set(name, '')`
+
+Sebagai alternatif, Anda dapat mengatur cookie baru dengan nama yang sama dan nilai kosong.
+
+```js filename="app/actions.js"
+'use server';
+
+import { cookies } from 'next/headers';
+
+async function create(data) {
+  cookies().set('nama', '');
+}
+```
+
+> **Bagus untuk diketahui**: `.set()` hanya tersedia dalam [Aksi Server](/docs/app/building-your-application/data-fetching/forms-and-mutations) atau [Penangan Rute](/docs/app/building-your-application/routing/route-handlers).
+
+### `cookies().set(name, value, { maxAge: 0 })`
+
+Mengatur `maxAge` ke 0 akan langsung kedaluwarsa cookie.
+
+```js filename="app/actions.js"
+'use server';
+
+import { cookies } from 'next/headers';
+
+async function create(data) {
+  cookies().set('nama', 'nilai', { maxAge: 0 });
+}
+```
+
+### `cookies().set(name, value, { expires: timestamp })`
+
+Mengatur `expires` ke nilai apa pun di masa lalu akan langsung kedaluwarsa cookie.
+
+```js filename="app/actions.js"
+'use server';
+
+import { cookies } from 'next/headers';
+
+async function create(data) {
+  const satuHari = 24 * 60 * 60 * 1000;
+  cookies().set('nama', 'nilai', { expires: Date.now() - satuHari });
+}
+```
+
+> **Bagus untuk diketahui**: Anda hanya dapat menghapus cookie yang milik domain yang sama dari mana `.set()` dipanggil. Selain itu, kode harus dieksekusi dalam protokol yang sama (HTTP atau HTTPS) seperti cookie yang ingin Anda hapus.
+
+## Riwayat Versi
+
+| Versi     | Perubahan                |
+| --------- | ------------------------ |
+| `v13.0.0` | `cookies` diperkenalkan. |

@@ -441,7 +441,7 @@ Di dalam `app`, Anda sebaiknya menggunakan tiga hook baru yang diimpor dari `nex
 - Hook baru ini hanya didukung di Komponen Klien. Mereka tidak dapat digunakan di Komponen Server.
 
 ```tsx filename="app/example-client-component.tsx" switcher
-'gunakan klien';
+'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
@@ -455,7 +455,7 @@ export default function ExampleClientComponent() {
 ```
 
 ```jsx filename="app/example-client-component.js" switcher
-'gunakan klien';
+'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 

@@ -1,0 +1,94 @@
+---
+title: usePathname
+description: Referensi API untuk hook usePathname.
+---
+
+`usePathname` adalah sebuah hook **Komponen Klien** yang memungkinkan Anda untuk membaca **pathname** URL saat ini.
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { usePathname } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const pathname = usePathname();
+  return <p>Pathname saat ini: {pathname}</p>;
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.js" switcher
+'use client';
+
+import { usePathname } from 'next/navigation';
+
+export default function ContohKomponenKlien() {
+  const pathname = usePathname();
+  return <p>Pathname saat ini: {pathname}</p>;
+}
+```
+
+`usePathname` sengaja mengharuskan penggunaan [Komponen Klien](/docs/app/building-your-application/rendering/client-components). Penting untuk dicatat bahwa Komponen Klien bukanlah suatu de-optimasi. Mereka merupakan bagian integral dari arsitektur [Komponen Server](/docs/app/building-your-application/rendering/server-components).
+
+Sebagai contoh, sebuah Komponen Klien dengan `usePathname` akan dirender menjadi HTML saat halaman awal dimuat. Ketika berpindah ke rute baru, komponen ini tidak perlu diambil kembali. Sebaliknya, komponen ini diunduh sekali (dalam bundel JavaScript klien), dan di-render kembali berdasarkan keadaan saat ini.
+
+> **Penting untuk diketahui**:
+>
+> - Membaca URL saat ini dari [Komponen Server](/docs/app/building-your-application/rendering/server-components) tidak didukung. Desain ini disengaja untuk mendukung kelestarian status layout saat navigasi halaman.
+> - Mode kompatibilitas:
+>   - `usePathname` dapat mengembalikan `null` saat rute [fallback](/docs/pages/api-reference/functions/get-static-paths#fallback-true) sedang dirender atau saat halaman direktori `pages` telah [dioptimasi secara otomatis secara statis](/docs/pages/building-your-application/rendering/automatic-static-optimization) oleh Next.js dan router belum siap.
+>   - Next.js akan secara otomatis memperbarui tipe Anda jika mendeteksi ada direktori `app` dan `pages` dalam proyek Anda.
+
+## Parameter
+
+```tsx
+const pathname = usePathname();
+```
+
+`usePathname` tidak menerima parameter apa pun.
+
+## Hasil
+
+`usePathname` mengembalikan sebuah string dari pathname URL saat ini. Contohnya:
+
+| URL                 | Nilai yang Dikembalikan |
+| ------------------- | ----------------------- |
+| `/`                 | `'/'`                   |
+| `/dashboard`        | `'/dashboard'`          |
+| `/dashboard?v=2`    | `'/dashboard'`          |
+| `/blog/hello-world` | `'/blog/hello-world'`   |
+
+## Contoh
+
+### Lakukan sesuatu sebagai respons terhadap perubahan rute
+
+```tsx filename="app/contoh-komponen-klien.tsx" switcher
+'use client';
+
+import { usePathname, useSearchParams } from 'next/navigation';
+
+function ContohKomponenKlien() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    // Lakukan sesuatu di sini...
+  }, [pathname, searchParams]);
+}
+```
+
+```jsx filename="app/contoh-komponen-klien.js" switcher
+'use client';
+
+import { usePathname, useSearchParams } from 'next/navigation';
+
+function ContohKomponenKlien() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    // Lakukan sesuatu di sini...
+  }, [pathname, searchParams]);
+}
+```
+
+| Versi     | Perubahan                    |
+| --------- | ---------------------------- |
+| `v13.0.0` | `usePathname` diperkenalkan. |

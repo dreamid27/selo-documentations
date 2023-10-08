@@ -1,0 +1,1172 @@
+---
+title: Objek Metadata dan Opsi generateMetadata
+nav_title: generateMetadata
+description: Pelajari cara menambahkan Metadata ke aplikasi Next.js Anda untuk meningkatkan optimasi mesin pencari (SEO) dan berbagi web.
+related:
+  title: Langkah Selanjutnya
+  description: Lihat semua opsi API Metadata.
+  links:
+    - app/api-reference/file-conventions/metadata
+    - app/building-your-application/optimizing/metadata
+---
+
+Halaman ini mencakup semua opsi **Metadata berbasis Konfigurasi** dengan `generateMetadata` dan objek metadata statis.
+
+```tsx filename="layout.tsx / page.tsx" switcher
+import { Metadata } from 'next';
+
+// baik Metadata statis
+export const metadata: Metadata = {
+  title: '...',
+};
+
+// atau Metadata dinamis
+export async function generateMetadata({ params }) {
+  return {
+    title: '...',
+  };
+}
+```
+
+```jsx filename="layout.js / page.js" switcher
+// baik Metadata statis
+export const metadata = {
+  title: '...',
+};
+
+// atau Metadata dinamis
+export async function generateMetadata({ params }) {
+  return {
+    title: '...',
+  };
+}
+```
+
+> **Baik untuk diketahui**:
+>
+> - Objek `metadata` dan ekspor fungsi `generateMetadata` hanya **didukung dalam Komponen Server**.
+> - Anda tidak dapat mengekspor baik objek `metadata` maupun fungsi `generateMetadata` dari segmen rute yang sama.
+
+## Objek `metadata`
+
+Untuk mendefinisikan metadata statis, ekspor objek [`Metadata`](#metadata-fields) dari file `layout.js` atau `page.js`.
+
+```tsx filename="layout.tsx / page.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '...',
+  description: '...',
+};
+
+export default function Page() {}
+```
+
+```jsx filename="layout.js / page.js" switcher
+export const metadata = {
+  title: '...',
+  description: '...',
+};
+
+export default function Page() {}
+```
+
+Lihat [Metadata Fields](#metadata-fields) untuk daftar lengkap opsi yang didukung.
+
+## Fungsi `generateMetadata`
+
+Metadata dinamis bergantung pada **informasi dinamis**, seperti parameter rute saat ini, data eksternal, atau `metadata` dalam segmen induk, dapat diatur dengan mengekspor fungsi `generateMetadata` yang mengembalikan objek [`Metadata`](#metadata-fields).
+
+```tsx filename="app/products/[id]/page.tsx" switcher
+import { Metadata, ResolvingMetadata } from 'next';
+
+type Props = {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  // membaca parameter rute
+  const id = params.id;
+
+  // mengambil data
+  const product = await fetch(`https://.../${id}`).then((res) => res.json());
+
+  // secara opsional mengakses dan memperpanjang (daripada menggantikan) metadata induk
+  const previousImages = (await parent).openGraph?.images || [];
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  };
+}
+
+export default function Page({ params, searchParams }: Props) {}
+```
+
+```jsx filename="app/products/[id]/page.js" switcher
+export async function generateMetadata({ params, searchParams }, parent) {
+  // membaca parameter rute
+  const id = params.id;
+
+  // mengambil data
+  const product = await fetch(`https://.../${id}`).then((res) => res.json());
+
+  // secara opsional mengakses dan memperpanjang (daripada menggantikan) metadata induk
+  const previousImages = (await parent).openGraph?.images || [];
+
+  return {
+    title: product.title,
+    openGraph: {
+      images: ['/some-specific-page-image.jpg', ...previousImages],
+    },
+  };
+}
+
+export default function Page({ params, searchParams }) {}
+```
+
+### Parameter
+
+Fungsi `generateMetadata` menerima parameter berikut:
+
+- `props` - Sebuah objek yang berisi parameter rute saat ini:
+
+  - `params` - Sebuah objek yang berisi [parameter rute dinamis](/docs/app/building-your-application/routing/dynamic-routes) dari segmen akar hingga segmen `generateMetadata` dipanggil dari. Contoh:
+
+    | Rute                            | URL         | `params`                  |
+    | ------------------------------- | ----------- | ------------------------- |
+    | `app/shop/[slug]/page.js`       | `/shop/1`   | `{ slug: '1' }`           |
+    | `app/shop/[tag]/[item]/page.js` | `/shop/1/2` | `{ tag: '1', item: '2' }` |
+    | `app/shop/[...slug]/page.js`    | `/shop/1/2` | `{ slug: ['1', '2'] }`    |
+
+  - `searchParams` - Sebuah objek yang berisi [parameter pencarian URL](https://developer.mozilla.org/docs/Learn/Common_questions/What_is_a_URL#parameters) saat ini. Contoh:
+
+    | URL             | `searchParams`       |
+    | --------------- | -------------------- |
+    | `/shop?a=1`     | `{ a: '1' }`         |
+    | `/shop?a=1&b=2` | `{ a: '1', b: '2' }` |
+    | `/shop?a=1&a=2` | `{ a: ['1', '2'] }`  |
+
+- `parent` - Sebuah janji metadata yang dipecahkan dari segmen rute induk.
+
+### Mengembalikan
+
+Fungsi `generateMetadata` seharusnya mengembalikan objek [`Metadata`](#metadata-fields) yang berisi satu atau lebih bidang metadata.
+
+> **Baik untuk diketahui**:
+>
+> - Jika metadata tidak bergantung pada informasi waktu jalankan, sebaiknya didefinisikan menggunakan [`metadata` objek statis](#objek-metadata).
+> - Permintaan `fetch` secara otomatis [dimemoisasi](/docs/app/building-your-application/caching#request-memoization) untuk data yang sama di seluruh `generateMetadata`, `generateStaticParams`, Layouts, Pages, dan Komponen Server. React [`cache` dapat digunakan](/docs/app/building-your-application/caching#request-memoization) jika `fetch` tidak tersedia.
+> - `searchParams` hanya tersedia di segmen `page.js`.
+> - Metode Next.js [`redirect()`](/docs/app/api-reference/functions/redirect) dan [`notFound()`](/
+
+docs/app/api-reference/functions/not-found) juga dapat digunakan dalam `generateMetadata`.
+
+## Bidang Metadata
+
+### `title`
+
+Atribut `title` digunakan untuk mengatur judul dokumen. Ini dapat didefinisikan sebagai [string](#string) sederhana atau [objek templat](#template-object) yang opsional.
+
+#### String
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  title: 'Next.js',
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<title>Next.js</title>
+```
+
+#### Objek templat
+
+```tsx filename="app/layout.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    template: '...',
+    default: '...',
+    absolute: '...',
+  },
+};
+```
+
+```jsx filename="app/layout.js" switcher
+export const metadata = {
+  title: {
+    default: '...',
+    template: '...',
+    absolute: '...',
+  },
+};
+```
+
+##### Default
+
+`title.default` dapat digunakan untuk memberikan **judul cadangan** ke segmen rute anak yang tidak mendefinisikan `title` mereka sendiri.
+
+```tsx filename="app/layout.tsx"
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'Acme',
+  },
+};
+```
+
+```tsx filename="app/about/page.tsx"
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {};
+
+// Output: <title>Acme</title>
+```
+
+##### Template
+
+`title.template` dapat digunakan untuk menambahkan awalan atau akhiran ke `title` yang didefinisikan di segmen rute **anak**.
+
+```tsx filename="app/layout.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Acme',
+    default: 'Acme', // diperlukan default saat membuat template
+  },
+};
+```
+
+```jsx filename="app/layout.js" switcher
+export const metadata = {
+  title: {
+    template: '%s | Acme',
+    default: 'Acme', // diperlukan default saat membuat template
+  },
+};
+```
+
+```tsx filename="app/about/page.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About',
+};
+
+// Output: <title>About | Acme</title>
+```
+
+```jsx filename="app/about/page.js" switcher
+export const metadata = {
+  title: 'About',
+};
+
+// Output: <title>About | Acme</title>
+```
+
+> **Baik untuk diketahui**:
+>
+> - `title.template` berlaku untuk segmen rute **anak** dan **bukan** segmen di mana itu didefinisikan. Ini berarti:
+>
+>   - `title.default` **diperlukan** saat Anda menambahkan `title.template`.
+>   - `title.template` yang didefinisikan di `layout.js` tidak akan berlaku untuk `title` yang didefinisikan di `page.js` dari segmen rute yang sama.
+>   - `title.template` yang didefinisikan di `page.js` tidak memiliki efek karena halaman selalu merupakan segmen terminasi (tidak memiliki segmen rute anak).
+>
+> - `title.template` tidak berpengaruh jika sebuah rute tidak mendefinisikan `title` atau `title.default`.
+
+##### Absolute
+
+`title.absolute` dapat digunakan untuk memberikan judul yang **mengabaikan** `title.template` yang ditetapkan di segmen induk.
+
+```tsx filename="app/layout.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Acme',
+  },
+};
+```
+
+```jsx filename="app/layout.js" switcher
+export const metadata = {
+  title: {
+    template: '%s | Acme',
+  },
+};
+```
+
+```tsx filename="app/about/page.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    absolute: 'About',
+  },
+};
+
+// Output: <title>About</title>
+```
+
+```jsx filename="app/about/page.js" switcher
+export const metadata = {
+  title: {
+    absolute: 'About',
+  },
+};
+
+// Output: <title>About</title>
+```
+
+> **Baik untuk diketahui**:
+>
+> - `layout.js`
+>
+>   - `title` (string) dan `title.default` menentukan judul default untuk segmen anak (yang tidak mendefinisikan `title` mereka sendiri). Ini akan melengkapi `title.template` dari segmen induk terdekat jika ada.
+>   - `title.absolute` menentukan judul default untuk segmen anak. Ini mengabaikan `title.template` dari segmen induk.
+>   - `title.template` menentukan template judul baru untuk segmen anak.
+>
+> - `page.js`
+>   - Jika sebuah halaman tidak mendefinisikan `title`nya sendiri, judul yang sudah dipecahkan terdekat dari segmen induk akan digunakan.
+>   - `title` (string) menentukan judul rute. Ini akan melengkapi `title.template` dari segmen induk terdekat jika ada.
+>   - `title.absolute` menentukan judul rute. Ini mengabaikan `title.template` dari segmen induk.
+>   - `title.template` tidak berpengaruh di `page.js` karena halaman selalu menjadi segmen terminasi dari suatu rute.
+
+### `description`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  description: 'Kerangka Kerja React untuk Web',
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<meta name="description" content="Kerangka Kerja React untuk Web" />
+```
+
+### Bidang Dasar
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  generator: 'Next.js',
+  applicationName: 'Next.js',
+  referrer: 'origin-when-cross-origin',
+  keywords: ['Next.js', 'React', 'JavaScript'],
+  authors: [{ name: 'Seb' }, { name: 'Josh', url: 'https://nextjs.org' }],
+  colorScheme: 'dark',
+  creator: 'Jiachi Liu',
+  publisher: 'Sebastian Markbåge',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<meta name="application-name" content="Next.js" />
+<meta name="author" content="Seb" />
+<link rel="author" href="https://nextjs.org" />
+<meta name="author" content="Josh" />
+<meta name="generator" content="Next.js" />
+<meta name="keywords" content="Next.js,React,JavaScript" />
+<meta name="referrer" content="origin-when-cross-origin" />
+<meta name="color-scheme" content="dark" />
+<meta name="creator" content="Jiachi Liu" />
+<meta name="publisher" content="Sebastian Markbåge" />
+<meta name="format-detection" content="telephone=no, address=no, email=no" />
+```
+
+### `metadataBase`
+
+`metadataBase` adalah opsi yang berguna untuk menetapkan awalan URL basis untuk bidang `metadata` yang memerlukan URL lengkap.
+
+- `metadataBase` memungkinkan bidang `metadata` berbasis URL yang didefinisikan dalam **segmen rute saat ini dan di bawahnya** untuk menggunakan **jalur relatif** daripada URL absolut yang diperlukan sebaliknya.
+- Jalur relatif bidang akan digabungkan dengan `metadataBase` untuk membentuk URL lengkap.
+- Jika tidak dikonfigurasi, `metadataBase` akan **otomatis diisi** dengan [nilai default](#nilai-default).
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  metadataBase: new URL('https://acme.com'),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en-US': '/en-US',
+      'de-DE': '/de-DE',
+    },
+  },
+  openGraph: {
+    images: '/og-image.png',
+  },
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="canonical" href="https://acme.com" />
+<link rel="alternate" hreflang="en-US" href="https://acme.com/en-US" />
+<link rel="alternate" hreflang="de-DE" href="https://acme.com/de-DE" />
+<meta property="og:image" content="https://acme.com/og-image.png" />
+```
+
+> **Baik untuk diketahui**:
+>
+> - `metadataBase` biasanya diatur di `app/layout.js` root untuk menerapkan bidang `metadata` berbasis URL di seluruh rute.
+> - Semua bidang `metadata` berbasis URL yang memerlukan URL absolut dapat dikonfigurasi dengan opsi `metadataBase`.
+> - `metadataBase` dapat berisi subdomain misalnya `https://app.acme.com` atau jalur basis misalnya `https://acme.com/start/from/here`
+> - Jika bidang `metadata` menyediakan URL absolut, `metadataBase` akan diabaikan.
+> - Menggunakan jalur relatif dalam bidang `metadata` berbasis URL tanpa mengkonfigurasi `metadataBase` akan menyebabkan kesalahan pembuatan. - Next.js akan menormalkan tanda garis miring ganda antara `metadataBase` (misalnya `https://acme.com/`) dan bidang relatif (misalnya `/path`) menjadi satu tanda garis miring tunggal (misalnya `https://acme.com/path`)
+
+#### Nilai Bawaan
+
+Jika tidak dikonfigurasi, `metadataBase` memiliki **nilai bawaan**
+
+- Ketika [`VERCEL_URL`](https://vercel.com/docs/concepts/projects/environment-variables/system-environment-variables#:~:text=.-,VERCEL_URL,-The%20domain%20name) terdeteksi: `https://${process.env.VERCEL_URL}` atau kembali ke `http://localhost:${process.env.PORT || 3000}` jika tidak ada.
+- Saat mengganti nilai bawaan, kami merekomendasikan penggunaan variabel lingkungan untuk menghitung URL. Ini memungkinkan konfigurasi URL untuk pengembangan lokal, staging, dan lingkungan produksi.
+
+#### Komposisi URL
+
+Komposisi URL lebih mengutamakan niat pengembang daripada semantik traversal direktori bawaan.
+
+- Tanda garis miring di antara bidang `metadataBase` dan `metadata` dinormalisasi.
+- Jika ada path "absolute" dalam bidang `metadata` (yang biasanya akan menggantikan seluruh path URL), itu akan dianggap sebagai path "relative" (dimulai dari akhir `metadataBase`).
+
+Sebagai contoh, dengan `metadataBase` berikut:
+
+```tsx filename="app/layout.tsx" switcher
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://acme.com'),
+};
+```
+
+```jsx filename="app/layout.js" switcher
+export const metadata = {
+  metadataBase: new URL('https://acme.com'),
+};
+```
+
+Semua bidang `metadata` yang mewarisi `metadataBase` di atas dan menetapkan nilai mereka sendiri akan dipecahkan sebagai berikut:
+
+| Bidang `metadata`                | URL yang Dihasilkan              |
+| -------------------------------- | -------------------------------- |
+| `/`                              | `https://acme.com`               |
+| `./`                             | `https://acme.com`               |
+| `payments`                       | `https://acme.com/payments`      |
+| `/payments`                      | `https://acme.com/payments`      |
+| `./payments`                     | `https://acme.com/payments`      |
+| `../payments`                    | `https://acme.com/payments`      |
+| `https://beta.acme.com/payments` | `https://beta.acme.com/payments` |
+
+### `openGraph`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  openGraph: {
+    title: 'Next.js',
+    description: 'Framework React untuk Web',
+    url: 'https://nextjs.org',
+    siteName: 'Next.js',
+    images: [
+      {
+        url: 'https://nextjs.org/og.png',
+        width: 800,
+        height: 600,
+      },
+      {
+        url: 'https://nextjs.org/og-alt.png',
+        width: 1800,
+        height: 1600,
+        alt: 'Alt kustom saya',
+      },
+    ],
+    locale: 'id_ID',
+    type: 'website',
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta property="og:title" content="Next.js" />
+<meta property="og:description" content="Framework React untuk Web" />
+<meta property="og:url" content="https://nextjs.org/" />
+<meta property="og:site_name" content="Next.js" />
+<meta property="og:locale" content="id_ID" />
+<meta property="og:image:url" content="https://nextjs.org/og.png" />
+<meta property="og:image:width" content="800" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image:url" content="https://nextjs.org/og-alt.png" />
+<meta property="og:image:width" content="1800" />
+<meta property="og:image:height" content="1600" />
+<meta property="og:image:alt" content="Alt kustom saya" />
+<meta property="og:type" content="website" />
+```
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  openGraph: {
+    title: 'Next.js',
+    description: 'Framework React untuk Web',
+    type: 'article',
+    publishedTime: '2023-01-01T00:00:00.000Z',
+    authors: ['Seb', 'Josh'],
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta property="og:title" content="Next.js" />
+<meta property="og:description" content="Framework React untuk Web" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-01-01T00:00:00.000Z" />
+<meta property="article:author" content="Seb" />
+<meta property="article:author" content="Josh" />
+```
+
+> **Baik untuk diketahui**:
+>
+> - Lebih nyaman menggunakan [API Metadata berbasis file](/docs/app/api-reference/file-conventions/metadata/opengraph-image#image-files-jpg-png-gif) untuk gambar Open Graph. Daripada harus menyinkronkan ekspor konfigurasi dengan file sebenarnya, API berbasis file akan secara otomatis menghasilkan metadata yang benar untuk Anda.
+
+### `robots`
+
+```tsx
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: true,
+    nocache: true,
+    googleBot: {
+      index: true,
+      follow: false,
+      noimageindex: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="robots" content="noindex, follow, nocache" />
+<meta
+  name="googlebot"
+  content="index, nofollow, noimageindex, max-video-preview:-1, max-image-preview:large, max-snippet:-1"
+/>
+```
+
+### `icons`
+
+> **Baik untuk diketahui**: Kami merekomendasikan menggunakan [API Metadata berbasis file](/docs/app/api-reference/file-conventions/metadata/app-icons#image-files-ico-jpg-png) untuk ikon jika memungkinkan. Daripada harus menyinkronkan ekspor konfigurasi dengan file sebenarnya, API berbasis file akan secara otomatis menghasilkan metadata yang benar untuk Anda.
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  icons: {
+    icon: '/ikon.png',
+    shortcut: '/ikon-pintasan.png',
+    apple: '/ikon-apple.png',
+    other: {
+      rel: 'apple-touch-icon-precomposed',
+      url: '/ikon-apple-touch-precomposed.png',
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<link
+  rel="
+
+shortcut icon"
+  href="/ikon-pintasan.png"
+/>
+<link rel="icon" href="/ikon.png" />
+<link rel="apple-touch-icon" href="/ikon-apple.png" />
+<link
+  rel="apple-touch-icon-precomposed"
+  href="/ikon-apple-touch-precomposed.png"
+/>
+```
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  icons: {
+    icon: [{ url: '/ikon.png' }, new URL('/ikon.png', 'https://example.com')],
+    shortcut: ['/ikon-pintasan.png'],
+    apple: [
+      { url: '/ikon-apple.png' },
+      { url: '/ikon-apple-x3.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      {
+        rel: 'apple-touch-icon-precomposed',
+        url: '/ikon-apple-touch-precomposed.png',
+      },
+    ],
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<link rel="shortcut icon" href="/ikon-pintasan.png" />
+<link rel="icon" href="/ikon.png" />
+<link rel="apple-touch-icon" href="/ikon-apple.png" />
+<link
+  rel="apple-touch-icon-precomposed"
+  href="/ikon-apple-touch-precomposed.png"
+/>
+<link rel="icon" href="https://example.com/ikon.png" />
+<link
+  rel="apple-touch-icon"
+  href="/ikon-apple-x3.png"
+  sizes="180x180"
+  type="image/png"
+/>
+```
+
+> **Baik untuk diketahui**: Tag meta `msapplication-*` tidak lagi didukung dalam build Chromium dari Microsoft Edge, dan oleh karena itu tidak lagi diperlukan.
+
+### `themeColor`
+
+Pelajari lebih lanjut tentang [theme-color](https://developer.mozilla.org/docs/Web/HTML/Element/meta/name/theme-color).
+
+**Tema sederhana**
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  themeColor: 'hitam',
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="theme-color" content="hitam" />
+```
+
+**Dengan atribut media**
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'sian' },
+    { media: '(prefers-color-scheme: dark)', color: 'hitam' },
+  ],
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="sian" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="hitam" />
+```
+
+### `manifest`
+
+Manifestasi aplikasi web, sebagaimana yang ditentukan dalam [spesifikasi Manifestasi Aplikasi Web](https://developer.mozilla.org/docs/Web/Manifest).
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  manifest: 'https://nextjs.org/manifest.json',
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<link rel="manifest" href="https://nextjs.org/manifest.json" />
+```
+
+### `twitter`
+
+Pelajari lebih lanjut tentang [referensi markup Kartu Twitter](https://developer.twitter.com/en/docs/twitter-for-websites/cards/overview/markup).
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Next.js',
+    description: 'Framework React untuk Web',
+    siteId: '1467726470533754880',
+    creator: '@nextjs',
+    creatorId: '1467726470533754880',
+    images: ['https://nextjs.org/og.png'],
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site:id" content="1467726470533754880" />
+<meta name="twitter:creator" content="@nextjs" />
+<meta name="twitter:creator:id" content="1467726470533754880" />
+<meta name="twitter:title" content="Next.js" />
+<meta name="twitter:description" content="Framework React untuk Web" />
+<meta name="twitter:image" content="https://nextjs.org/og.png" />
+```
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  twitter: {
+    card: 'app',
+    title: 'Next.js',
+    description: 'Framework React untuk Web',
+    siteId: '1467726470533754880',
+    creator: '@nextjs',
+    creatorId: '1467726470533754880',
+    images: {
+      url: 'https://nextjs.org/og.png',
+      alt: 'Logo Next.js',
+    },
+    app: {
+      name: 'aplikasi_twitter',
+      id: {
+        iphone: 'aplikasi_twitter://iphone',
+        ipad: 'aplikasi_twitter://ipad',
+        googleplay: 'aplikasi_twitter://googleplay',
+      },
+      url: {
+        iphone: 'https://iphone_url',
+        ipad: 'https://ipad_url',
+      },
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="twitter:site:id" content="1467726470533754880" />
+<meta name="twitter:creator" content="@nextjs" />
+<meta name="twitter:creator:id" content="1467726470533754880" />
+<meta name="twitter:title" content="Next.js" />
+<meta name="twitter:description" content="Framework React untuk Web" />
+<meta name="twitter:card" content="app" />
+<meta name="twitter:image" content="https://nextjs.org/og.png" />
+<meta name="twitter:image:alt" content="Logo Next.js" />
+<meta name="twitter:app:name:iphone" content="aplikasi_twitter" />
+<meta name="twitter:app:id:iphone" content="aplikasi_twitter://iphone" />
+<meta name="twitter:app:id:ipad" content="aplikasi_twitter://ipad" />
+<meta
+  name="twitter:app:id:googleplay"
+  content="aplikasi_twitter://googleplay"
+/>
+<meta name="twitter:app:url:iphone" content="https://iphone_url" />
+<meta name="twitter:app:url:ipad" content="https://ipad_url" />
+<meta name="twitter:app:name:ipad" content="aplikasi_twitter" />
+<meta name="twitter:app:name:googleplay" content="aplikasi_twitter" />
+```
+
+### `viewport`
+
+> **Baik untuk diketahui**: Tag meta `viewport` secara otomatis disetel dengan nilai default berikut. Biasanya, konfigurasi manual tidak diperlukan karena nilai default sudah mencukupi. Namun, informasi ini disediakan untuk kelengkapan.
+
+````jsx filename="layout.js / page.js"
+export const metadata = {
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+}
+``
+
+`
+
+```html filename="<head> hasil" hideLineNumbers
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1"
+/>
+````
+
+### `verification`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  verification: {
+    google: 'google',
+    yandex: 'yandex',
+    yahoo: 'yahoo',
+    other: {
+      me: ['email-saya', 'tautan-saya'],
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta name="google-site-verification" content="google" />
+<meta name="y_key" content="yahoo" />
+<meta name="yandex-verification" content="yandex" />
+<meta name="me" content="email-saya" />
+<meta name="me" content="tautan-saya" />
+```
+
+### `appleWebApp`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  itunes: {
+    appId: 'IDAppStoreSaya',
+    appArgument: 'ArgumenAplikasiSaya',
+  },
+  appleWebApp: {
+    title: 'Aplikasi Web Apple',
+    statusBarStyle: 'black-translucent',
+    startupImage: [
+      '/aset/startup/apple-touch-startup-image-768x1004.png',
+      {
+        url: '/aset/startup/apple-touch-startup-image-1536x2008.png',
+        media: '(device-width: 768px) and (device-height: 1024px)',
+      },
+    ],
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta
+  name="apple-itunes-app"
+  content="app-id=IDAppStoreSaya, app-argument=ArgumenAplikasiSaya"
+/>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Aplikasi Web Apple" />
+<link
+  href="/aset/startup/apple-touch-startup-image-768x1004.png"
+  rel="apple-touch-startup-image"
+/>
+<link
+  href="/aset/startup/apple-touch-startup-image-1536x2008.png"
+  media="(device-width: 768px) and (device-height: 1024px)"
+  rel="apple-touch-startup-image"
+/>
+<meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="black-translucent"
+/>
+```
+
+### `alternates`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  alternates: {
+    canonical: 'https://nextjs.org',
+    languages: {
+      'en-US': 'https://nextjs.org/en-US',
+      'de-DE': 'https://nextjs.org/de-DE',
+    },
+    media: {
+      'only screen and (max-width: 600px)': 'https://nextjs.org/mobile',
+    },
+    types: {
+      'application/rss+xml': 'https://nextjs.org/rss',
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<link rel="canonical" href="https://nextjs.org" />
+<link rel="alternate" hreflang="en-US" href="https://nextjs.org/en-US" />
+<link rel="alternate" hreflang="de-DE" href="https://nextjs.org/de-DE" />
+<link
+  rel="alternate"
+  media="only screen and (max-width: 600px)"
+  href="https://nextjs.org/mobile"
+/>
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  href="https://nextjs.org/rss"
+/>
+```
+
+### `appLinks`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  appLinks: {
+    ios: {
+      url: 'https://nextjs.org/ios',
+      app_store_id: 'IDAppStoreAplikasi',
+    },
+    android: {
+      package: 'com.example.android/package',
+      app_name: 'NamaAplikasiAndroid',
+    },
+    web: {
+      url: 'https://nextjs.org/web',
+      should_fallback: true,
+    },
+  },
+};
+```
+
+```html filename="<head> hasil" hideLineNumbers
+<meta property="al:ios:url" content="https://nextjs.org/ios" />
+<meta property="al:ios:app_store_id" content="IDAppStoreAplikasi" />
+<meta property="al:android:package" content="com.example.android/package" />
+<meta property="al:android:app_name" content="NamaAplikasiAndroid" />
+<meta property="al:web:url" content="https://nextjs.org/web" />
+<meta property="al:web:should_fallback" content="true" />
+```
+
+### `arsip`
+
+Menggambarkan kumpulan catatan, dokumen, atau materi lainnya yang memiliki nilai sejarah ([sumber](https://www.w3.org/TR/2011/WD-html5-20110113/links.html#rel-archives)).
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  archives: ['https://nextjs.org/13'],
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="archives" href="https://nextjs.org/13" />
+```
+
+### `aset`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  assets: ['https://nextjs.org/assets'],
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="assets" href="https://nextjs.org/assets" />
+```
+
+### `bookmark`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  bookmarks: ['https://nextjs.org/13'],
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="bookmarks" href="https://nextjs.org/13" />
+```
+
+### `kategori`
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  category: 'teknologi',
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<meta name="category" content="teknologi" />
+```
+
+### `lainnya`
+
+Semua opsi metadata seharusnya sudah tercakup dengan dukungan bawaan. Namun, mungkin ada tag metadata kustom yang spesifik untuk situs Anda, atau tag metadata baru yang baru saja dirilis. Anda dapat menggunakan opsi `lainnya` untuk merender tag metadata kustom apa pun.
+
+```jsx filename="layout.js / page.js"
+export const metadata = {
+  other: {
+    custom: 'meta',
+  },
+};
+```
+
+```html filename="<head> output" hideLineNumbers
+<meta name="custom" content="meta" />
+```
+
+## Metadata yang Tidak Didukung
+
+Tipe metadata berikut ini saat ini tidak memiliki dukungan bawaan. Namun, mereka masih dapat di-render dalam tata letak atau halaman itu sendiri.
+
+| Metadata                      | Rekomendasi                                                                                                                                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<meta http-equiv="...">`     | Gunakan Header HTTP yang sesuai melalui [`redirect()`](/docs/app/api-reference/functions/redirect), [Middleware](/docs/app/building-your-application/routing/middleware#nextresponse), [Header Keamanan](/docs/app/api-reference/next-config-js/headers) |
+| `<base>`                      | Render tag ini dalam tata letak atau halaman itu sendiri.                                                                                                                                                                                                |
+| `<noscript>`                  | Render tag ini dalam tata letak atau halaman itu sendiri.                                                                                                                                                                                                |
+| `<style>`                     | Pelajari lebih lanjut tentang [pemadanan gaya di Next.js](/docs/app/building-your-application/styling/css-modules).                                                                                                                                      |
+| `<script>`                    | Pelajari lebih lanjut tentang [menggunakan skrip](/docs/app/building-your-application/optimizing/scripts).                                                                                                                                               |
+| `<link rel="stylesheet" />`   | `import` stylesheet secara langsung dalam tata letak atau halaman itu sendiri.                                                                                                                                                                           |
+| `<link rel="preload />`       | Gunakan metode preload ReactDOM](#link-relpreload)                                                                                                                                                                                                       |
+| `<link rel="preconnect" />`   | Gunakan metode preconnect ReactDOM](#link-relpreconnect)                                                                                                                                                                                                 |
+| `<link rel="dns-prefetch" />` | Gunakan metode prefetchDNS ReactDOM](#link-reldns-prefetch)                                                                                                                                                                                              |
+
+### Petunjuk Sumber Daya
+
+Elemen `<link>` memiliki sejumlah kata kunci `rel` yang dapat digunakan untuk memberi petunjuk kepada browser bahwa sumber daya eksternal kemungkinan akan dibutuhkan. Browser menggunakan informasi ini untuk menerapkan optimasi pra-pemuatan tergantung pada kata kunci.
+
+Meskipun API Metadata tidak mendukung langsung petunjuk ini, Anda dapat menggunakan metode [`ReactDOM` baru](https://github.com/facebook/react/pull/26237) untuk menyisipkannya dengan aman ke dalam `<head>` dokumen.
+
+```tsx filename="app/preload-resources.tsx" switcher
+'use client';
+
+import ReactDOM from 'react-dom';
+
+export function PreloadResources() {
+  ReactDOM.preload('...', { as: '...' });
+  ReactDOM.preconnect('...', { crossOrigin: '...' });
+  ReactDOM.prefetchDNS('...');
+
+  return null;
+}
+```
+
+```jsx filename="app/preload-resources.js" switcher
+'use client';
+
+import ReactDOM from 'react-dom';
+
+export function PreloadResources() {
+  ReactDOM.preload('...', { as: '...' });
+  ReactDOM.preconnect('...', { crossOrigin: '...' });
+  ReactDOM.prefetchDNS('...');
+
+  return null;
+}
+```
+
+##### `<link rel="preload">`
+
+Mulai memuat sumber daya secara cepat dalam siklus rendering halaman (browser). [Dokumen MDN](https://developer.mozilla.org/docs/Web/HTML/Attributes/rel/preload).
+
+```tsx
+ReactDOM.preload(href: string, options: { as: string })
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="preload" href="..." as="..." />
+```
+
+##### `<link rel="preconnect">`
+
+Memulai koneksi ke asal secara preemptive. [Dokumen MDN](https://developer.mozilla.org/docs/Web/HTML/Attributes/rel/preconnect).
+
+```tsx
+ReactDOM.preconnect(href: string, options?: { crossOrigin?: string })
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="preconnect" href="..." crossorigin />
+```
+
+##### `<link rel="dns-prefetch">`
+
+Mencoba menyelesaikan nama domain sebelum sumber daya diminta. [Dokumen MDN](https://developer.mozilla.org/docs/Web/HTML/Attributes/rel/dns-prefetch).
+
+```tsx
+ReactDOM.prefetchDNS(href: string)
+```
+
+```html filename="<head> output" hideLineNumbers
+<link rel="dns-prefetch" href="..." />
+```
+
+> **Baik untuk diketahui**:
+>
+> - Metode-metode ini saat ini hanya didukung dalam Komponen Klien, yang masih di-render oleh Sisi Server pada saat memuat halaman awal.
+> - Fitur bawaan Next.js seperti `next/font`, `next/image`, dan `next/script` secara otomatis menangani petunjuk sumber daya yang relevan.
+> - React 18.3 belum termasuk definisi jenis untuk `ReactDOM.preload`, `ReactDOM.preconnect`, dan `ReactDOM.preconnectDNS`. Anda dapat menggunakan `// @ts-ignore` sebagai solusi sementara untuk menghindari kesalahan jenis.
+
+## Tipe
+
+Anda dapat menambahkan keamanan tipe
+
+pada metadata Anda dengan menggunakan tipe `Metadata`. Jika Anda menggunakan [plugin TypeScript bawaan](/docs/app/building-your-application/configuring/typescript) dalam IDE Anda, Anda tidak perlu menambahkan tipe secara manual, tetapi Anda masih dapat menambahkannya secara eksplisit jika Anda inginkan.
+
+### Objek `metadata`
+
+```tsx
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Next.js',
+};
+```
+
+### Fungsi `generateMetadata`
+
+#### Fungsi reguler
+
+```tsx
+import type { Metadata } from 'next';
+
+export function generateMetadata(): Metadata {
+  return {
+    title: 'Next.js',
+  };
+}
+```
+
+#### Fungsi async
+
+```tsx
+import type { Metadata } from 'next';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Next.js',
+  };
+}
+```
+
+#### Dengan prop segmen
+
+```tsx
+import type { Metadata } from 'next';
+
+type Props = {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export function generateMetadata({ params, searchParams }: Props): Metadata {
+  return {
+    title: 'Next.js',
+  };
+}
+
+export default function Page({ params, searchParams }: Props) {}
+```
+
+#### Dengan metadata induk
+
+```tsx
+import type { Metadata, ResolvingMetadata } from 'next';
+
+export async function generateMetadata(
+  { params, searchParams }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  return {
+    title: 'Next.js',
+  };
+}
+```
+
+#### Proyek JavaScript
+
+Untuk proyek JavaScript, Anda dapat menggunakan JSDoc untuk menambahkan keamanan tipe.
+
+```js
+/** @type {import("next").Metadata} */
+export const metadata = {
+  title: 'Next.js',
+};
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                                        |
+| --------- | ------------------------------------------------ |
+| `v13.2.0` | `metadata` dan `generateMetadata` diperkenalkan. |

@@ -1,0 +1,90 @@
+---
+title: Header
+description: Referensi API untuk fungsi Header.
+---
+
+# Header
+
+Fungsi `headers` memungkinkan Anda untuk membaca header permintaan HTTP yang masuk dari [Komponen Server](/docs/app/building-your-application/rendering/server-components).
+
+## `headers()`
+
+API ini memperluas [Web Headers API](https://developer.mozilla.org/docs/Web/API/Headers). Ini bersifat **read-only**, yang berarti Anda tidak dapat `set` / `delete` header permintaan keluar.
+
+```tsx filename="app/page.tsx" switcher
+import { headers } from 'next/headers';
+
+export default function Page() {
+  const headersList = headers();
+  const referer = headersList.get('referer');
+
+  return <div>Referer: {referer}</div>;
+}
+```
+
+```jsx filename="app/page.js" switcher
+import { headers } from 'next/headers';
+
+export default function Page() {
+  const headersList = headers();
+  const referer = headersList.get('referer');
+
+  return <div>Referer: {referer}</div>;
+}
+```
+
+> **Penting untuk diketahui**:
+>
+> - `headers()` adalah **[Fungsi Dinamis](/docs/app/building-your-application/rendering/server-components#server-rendering-strategies#dynamic-functions)** yang nilai-nilai yang dikembalikan tidak dapat diketahui sebelumnya. Menggunakannya dalam tata letak atau halaman akan memilih rute ke dalam **[pembaruan dinamis](/docs/app/building-your-application/rendering/server-components#dynamic-rendering)** saat waktu permintaan.
+
+### Referensi API
+
+```tsx
+const headersList = headers();
+```
+
+#### Parameter
+
+`headers` tidak menerima parameter apa pun.
+
+#### Pengembalian
+
+`headers` mengembalikan objek **read-only** [Web Headers](https://developer.mozilla.org/docs/Web/API/Headers).
+
+- [`Headers.entries()`](https://developer.mozilla.org/docs/Web/API/Headers/entries): Mengembalikan [`iterator`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Iteration_protocols) yang memungkinkan Anda untuk menjelajahi semua pasangan kunci / nilai yang terkandung dalam objek ini.
+- [`Headers.forEach()`](https://developer.mozilla.org/docs/Web/API/Headers/forEach): Menjalankan fungsi yang disediakan sekali untuk setiap pasangan kunci / nilai dalam objek `Headers` ini.
+- [`Headers.get()`](https://developer.mozilla.org/docs/Web/API/Headers/get): Mengembalikan urutan [`String`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String) dari semua nilai header dalam objek `Headers` dengan nama tertentu.
+- [`Headers.has()`](https://developer.mozilla.org/docs/Web/API/Headers/has): Mengembalikan boolean yang menyatakan apakah objek `Headers` mengandung header tertentu.
+- [`Headers.keys()`](https://developer.mozilla.org/docs/Web/API/Headers/keys): Mengembalikan [`iterator`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Iteration_protocols) yang memungkinkan Anda menjelajahi semua kunci pasangan kunci / nilai yang terkandung dalam objek ini.
+- [`Headers.values()`](https://developer.mozilla.org/docs/Web/API/Headers/values): Mengembalikan [`iterator`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Iteration_protocols) yang memungkinkan Anda menjelajahi semua nilai pasangan kunci / nilai yang terkandung dalam objek ini.
+
+### Contoh
+
+#### Penggunaan dengan Pemintaan Data
+
+`headers()` dapat digunakan dalam kombinasi dengan [Suspense untuk Pemintaan Data](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating).
+
+```jsx filename="app/page.js"
+import { headers } from 'next/headers';
+
+async function getUser() {
+  const headersInstance = headers();
+  const authorization = headersInstance.get('authorization');
+  // Teruskan header autorisasi
+  const res = await fetch('...', {
+    headers: { authorization },
+  });
+  return res.json();
+}
+
+export default async function UserPage() {
+  const user = await getUser();
+  return <h1>{user.name}</h1>;
+}
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                |
+| --------- | ------------------------ |
+| `v13.0.0` | Diperkenalkan `headers`. |

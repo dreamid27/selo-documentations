@@ -1,0 +1,89 @@
+---
+title: NextRequest
+description: Referensi API untuk NextRequest.
+---
+
+NextRequest memperluas [API Web Request](https://developer.mozilla.org/docs/Web/API/Request) dengan metode-metode kenyamanan tambahan.
+
+## `cookies`
+
+Baca atau ubah header [`Set-Cookie`](https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie) dari permintaan.
+
+### `set(nama, nilai)`
+
+Dengan memberikan sebuah nama, atur sebuah cookie dengan nilai yang diberikan pada permintaan.
+
+```ts
+// Dengan permintaan masuk /home
+// Atur cookie untuk menyembunyikan banner
+// permintaan akan memiliki header `Set-Cookie:show-banner=false;path=/home`
+request.cookies.set('show-banner', 'false');
+```
+
+### `get(nama)`
+
+Dengan memberikan nama cookie, kembalikan nilai dari cookie tersebut. Jika cookie tidak ditemukan, `undefined` akan dikembalikan. Jika terdapat banyak cookie, yang pertama akan dikembalikan.
+
+```ts
+// Dengan permintaan masuk /home
+// { nama: 'show-banner', nilai: 'false', Path: '/home' }
+request.cookies.get('show-banner');
+```
+
+### `getAll()`
+
+Dengan memberikan nama cookie, kembalikan nilai-nilai dari cookie tersebut. Jika tidak ada nama yang diberikan, kembalikan semua cookie pada permintaan.
+
+```ts
+// Dengan permintaan masuk /home
+// [
+//   { nama: 'experiments', nilai: 'new-pricing-page', Path: '/home' },
+//   { nama: 'experiments', nilai: 'winter-launch', Path: '/home' },
+// ]
+request.cookies.getAll('experiments');
+// Atau, dapatkan semua cookie pada permintaan
+request.cookies.getAll();
+```
+
+### `delete(nama)`
+
+Dengan memberikan nama cookie, hapus cookie dari permintaan.
+
+```ts
+// Mengembalikan true jika dihapus, false jika tidak ada yang dihapus
+request.cookies.delete('experiments');
+```
+
+### `has(nama)`
+
+Dengan memberikan nama cookie, kembalikan `true` jika cookie tersebut ada pada permintaan.
+
+```ts
+// Mengembalikan true jika cookie ada, false jika tidak ada
+request.cookies.has('experiments');
+```
+
+### `clear()`
+
+Hapus header `Set-Cookie` dari permintaan.
+
+```ts
+request.cookies.clear();
+```
+
+## `nextUrl`
+
+Memperluas [API URL](https://developer.mozilla.org/docs/Web/API/URL) bawaan dengan metode-metode kenyamanan tambahan, termasuk properti khusus Next.js.
+
+```ts
+// Dengan permintaan ke /home, pathname adalah /home
+request.nextUrl.pathname;
+// Dengan permintaan ke /home?name=lee, searchParams adalah { 'name': 'lee' }
+request.nextUrl.searchParams;
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                        |
+| --------- | -------------------------------- |
+| `v13.0.0` | `useSearchParams` diperkenalkan. |

@@ -1,0 +1,71 @@
+---
+judul: basePath
+deskripsi: Gunakan `basePath` untuk mendeploy aplikasi Next.js di bawah sub-path dari sebuah domain.
+---
+
+# basePath
+
+{/* Konten dokumen ini dibagi antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak harus dibungkus dalam sebuah komponen. */}
+
+Untuk mendeploy aplikasi Next.js di bawah sub-path dari sebuah domain, Anda dapat menggunakan opsi konfigurasi `basePath`.
+
+`basePath` memungkinkan Anda untuk menetapkan awalan path untuk aplikasi. Misalnya, untuk menggunakan `/dokumen` daripada `''` (string kosong, nilai default), buka `next.config.js` dan tambahkan konfigurasi `basePath`:
+
+```js filename="next.config.js"
+module.exports = {
+  basePath: "/dokumen",
+};
+```
+
+> **Baik untuk diketahui**: Nilai ini harus diatur pada saat waktu pembuatan (build time) dan tidak dapat diubah tanpa melakukan re-build, karena nilainya disisipkan dalam bundel sisi klien.
+
+### Tautan
+
+Ketika membuat tautan ke halaman lain menggunakan `next/link` dan `next/router`, `basePath` akan otomatis diterapkan.
+
+Misalnya, dengan menggunakan `/tentang`, secara otomatis akan menjadi `/dokumen/tentang` ketika `basePath` diatur ke `/dokumen`.
+
+```js
+export default function HalamanBeranda() {
+  return (
+    <>
+      <Link href="/tentang">Halaman Tentang</Link>
+    </>
+  );
+}
+```
+
+Keluaran HTML:
+
+```html
+<a href="/dokumen/tentang">Halaman Tentang</a>
+```
+
+Hal ini memastikan bahwa Anda tidak perlu mengubah semua tautan dalam aplikasi Anda ketika mengubah nilai `basePath`.
+
+### Gambar
+
+Ketika menggunakan komponen [`next/image`](/dokumen/app/referensi-api/komponen/gambar), Anda perlu menambahkan `basePath` di depan `src`.
+
+Misalnya, dengan menggunakan `/dokumen/saya.png`, gambar Anda akan disajikan dengan benar ketika `basePath` diatur ke `/dokumen`.
+
+```jsx
+import Gambar from "next/image";
+
+function Beranda() {
+  return (
+    <>
+      <h1>Beranda Saya</h1>
+      <Gambar
+        src="/dokumen/saya.png"
+        alt="Gambar penulis"
+        width={500}
+        height={500}
+      />
+      <p>Selamat datang di beranda saya!</p>
+    </>
+  );
+}
+
+export default Beranda;
+```

@@ -1,0 +1,48 @@
+---
+title: assetPrefix
+description: Pelajari cara menggunakan opsi konfigurasi assetPrefix untuk mengonfigurasi CDN Anda.
+---
+
+# assetPrefix
+
+> **Perhatian**: [Mendeploy ke Vercel](/docs/app/building-your-application/deploying) secara otomatis mengkonfigurasi CDN global untuk proyek Next.js Anda.
+> Anda tidak perlu mengatur Asset Prefix secara manual.
+
+> **Menarik untuk diketahui**: Next.js 9.5+ menambahkan dukungan untuk [Base Path](/docs/app/api-reference/next-config-js/basePath) yang dapat disesuaikan, yang lebih cocok
+> digunakan untuk meng-hosting aplikasi Anda di sub-path seperti `/docs`.
+> Kami tidak menyarankan Anda menggunakan Asset Prefix kustom untuk penggunaan ini.
+
+Untuk mengatur [CDN](https://en.wikipedia.org/wiki/Content_delivery_network), Anda dapat mengatur prefix asset dan mengonfigurasi asal CDN Anda agar mengarah ke domain yang di-host oleh Next.js.
+
+Buka `next.config.js` dan tambahkan konfigurasi `assetPrefix`:
+
+```javascript
+const isProd = process.env.NODE_ENV === "production";
+
+module.exports = {
+  // Gunakan CDN di produksi dan localhost untuk pengembangan.
+  assetPrefix: isProd ? "https://cdn.mydomain.com" : undefined,
+};
+```
+
+Next.js akan secara otomatis menggunakan prefix aset Anda untuk file JavaScript dan CSS yang diambil dari jalur `/_next/` (folder `.next/static/`). Misalnya, dengan konfigurasi di atas, permintaan berikut untuk chunk JS:
+
+```
+/_next/static/chunks/4b9b41aaa062cbbfeff4add70f256968c51ece5d.4d708494b3aed70c04f0.js
+```
+
+Akan menjadi:
+
+```
+https://cdn.mydomain.com/_next/static/chunks/4b9b41aaa062cbbfeff4add70f256968c51ece5d.4d708494b3aed70c04f0.js
+```
+
+Konfigurasi yang tepat untuk mengunggah file Anda ke CDN tertentu akan tergantung pada pilihan CDN Anda. Satu-satunya folder yang perlu Anda hosting di CDN Anda adalah konten dari `.next/static/`, yang harus diunggah sebagai `_next/static/` seperti permintaan URL di atas menunjukkan. **Jangan mengunggah sisa folder `.next/` Anda**, karena Anda seharusnya tidak mengungkapkan kode server dan konfigurasi lainnya ke publik.
+
+Meskipun `assetPrefix` mencakup permintaan ke `_next/static`, ini tidak mempengaruhi jalur-jalur berikut:
+
+- File-file dalam folder [public](/docs/app/building-your-application/optimizing/static-assets); jika Anda ingin melayani aset-aset itu melalui CDN, Anda harus memperkenalkan prefix tersebut sendiri.
+
+```
+
+```

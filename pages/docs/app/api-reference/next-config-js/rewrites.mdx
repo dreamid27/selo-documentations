@@ -1,0 +1,446 @@
+---
+title: Menambahkan Rewrite
+description: Tambahkan rewrites ke aplikasi Next.js Anda.
+---
+
+{/* Isi dokumen ini dibagi antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Setiap konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Rewrites memungkinkan Anda untuk memetakan jalur permintaan masuk ke jalur tujuan yang berbeda.
+
+Rewrites berfungsi sebagai proksi URL dan menyembunyikan jalur tujuan, sehingga terlihat seperti pengguna tidak mengubah lokasi mereka di situs. Sebaliknya, [pengalihan](/docs/app/api-reference/next-config-js/redirects) akan mengalihkan ke halaman baru dan menampilkan perubahan URL.
+
+Untuk menggunakan rewrites, Anda dapat menggunakan kunci `rewrites` dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/about',
+        destination: '/',
+      },
+    ];
+  },
+};
+```
+
+Rewrites diterapkan pada perutean sisi klien, `<Link href="/about">` akan memiliki rewrite yang diterapkan dalam contoh di atas.
+
+`rewrites` adalah fungsi async yang diharapkan mengembalikan entah array atau objek dari array (lihat di bawah) yang berisi objek dengan properti `source` dan `destination`:
+
+- `source`: `String` - adalah pola jalur permintaan masuk.
+- `destination`: `String` adalah jalur yang ingin Anda rutekan.
+- `basePath`: `false` atau `undefined` - jika false, basePath tidak akan disertakan saat mencocokkan, dapat digunakan hanya untuk rewrite eksternal.
+- `locale`: `false` atau `undefined` - apakah bahasa harus tidak disertakan saat mencocokkan.
+- `has` adalah array [objek has](#header-cookie-and-query-matching) dengan properti `type`, `key`, dan `value`.
+- `missing` adalah array [objek missing](#header-cookie-and-query-matching) dengan properti `type`, `key`, dan `value`.
+
+Ketika fungsi `rewrites` mengembalikan array, rewrites diterapkan setelah memeriksa sistem berkas (halaman dan berkas `/public`) dan sebelum rute dinamis. Ketika fungsi `rewrites` mengembalikan objek array dengan bentuk tertentu, perilaku ini dapat diubah dan dikontrol dengan lebih halus, sesuai dengan `v10.1` dari Next.js:
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Rewrite ini diperiksa setelah header/redirects
+        // dan sebelum semua berkas termasuk berkas-berkas _next/public
+        // yang memungkinkan mengganti berkas halaman
+        {
+          source: '/some-page',
+          destination: '/somewhere-else',
+          has: [{ type: 'query', key: 'overrideMe' }],
+        },
+      ],
+      afterFiles: [
+        // Rewrite ini diperiksa setelah berkas halaman/public
+        // diperiksa tetapi sebelum rute dinamis
+        {
+          source: '/non-existent',
+          destination: '/somewhere-else',
+        },
+      ],
+      fallback: [
+        // Rewrite ini diperiksa setelah berkas halaman/public
+        // dan rute dinamis diperiksa
+        {
+          source: '/:path*',
+          destination: `https://my-old-site.com/:path*`,
+        },
+      ],
+    };
+  },
+};
+```
+
+> **Berguna untuk diketahui**: rewrite di `beforeFiles` tidak memeriksa sistem berkas/rute dinamis segera setelah cocok dengan sumber, mereka terus berlanjut sampai semua `beforeFiles` telah diperiksa.
+
+Urutan rute Next.js yang diperiksa adalah sebagai berikut:
+
+1. [header](/docs/app/api-reference/next-config-js/headers) diperiksa/diterapkan
+2. [redirects](/docs/app/api-reference/next-config-js/redirects) diperiksa/diterapkan
+3. Rewrite `beforeFiles` diperiksa/diterapkan
+4. berkas statis dari [direktori publik](/docs/app/building-your-application/optimizing/static-assets), berkas `_next/static`, dan halaman non-dinamis diperiksa/dilayani
+5. Rewrite `afterFiles` diperiksa/diterapkan, jika salah satu rewrite ini cocok, kita memeriksa rute dinamis/berkas statis setelah setiap cocok
+6. Rewrite `fallback` diperiksa/diterapkan, ini diterapkan sebelum merender halaman 404 dan setelah rute dinamis/semua aset statis diperiksa. Jika Anda menggunakan [fallback: true/'blocking'](/docs/pages/api-reference/functions/get-static-paths#fallback-true) di `getStaticPaths`, rewrites `fallback` yang ditentukan dalam `next.config.js` Anda _tidak_ akan dijalankan.
+
+## Parameter Rewrite
+
+Ketika menggunakan parameter dalam rewrite, parameter akan diteruskan secara default dalam kueri ketika tidak ada parameter yang digunakan dalam `destination`.
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/old-about/:path*',
+        destination: '/about', // Parameter :path tidak digunakan di sini sehingga akan secara otomatis diteruskan dalam kueri
+      },
+    ];
+  },
+};
+```
+
+Jika sebuah parameter digunakan dalam tujuan, maka tidak ada parameter yang akan secara otomatis diteruskan dalam kueri.
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/docs/:path*',
+        destination: '/:path*', // Parameter :path digunakan di sini sehingga tidak akan secara otomatis diteruskan dalam kueri
+      },
+    ];
+  },
+};
+```
+
+Anda masih dapat meneruskan parameter secara manual dalam kueri jika salah satu sudah digunakan dalam tujuan dengan menentukan kueri dalam `destination`.
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/:first/:second',
+        destination: '/:first?second=:second',
+        // Karena parameter :first digunakan dalam tujuan, parameter :second
+        // tidak akan secara otomatis ditambahkan dalam kueri meskipun kita dapat menambahkannya
+        // seperti
+
+ yang ditunjukkan di atas
+      },
+    ]
+  },
+}
+```
+
+> **Berguna untuk diketahui**: Halaman statis dari [Optimasi Statis Otomatis](/docs/pages/building-your-application/rendering/automatic-static-optimization) atau [params prerendering](/docs/pages/building-your-application/data-fetching/get-static-props) dari rewrites akan diurai di sisi klien setelah hidrasi dan disediakan dalam kueri.
+
+## Pencocokan Jalur
+
+Pencocokan jalur diperbolehkan, misalnya `/blog/:slug` akan cocok dengan `/blog/hello-world` (tanpa jalur bersarang):
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog/:slug',
+        destination: '/news/:slug', // Parameter yang cocok dapat digunakan dalam tujuan
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Jalur Wildcard
+
+Untuk mencocokkan jalur wildcard, Anda dapat menggunakan `*` setelah parameter, misalnya `/blog/:slug*` akan cocok dengan `/blog/a/b/c/d/hello-world`:
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog/:slug*',
+        destination: '/news/:slug*', // Parameter yang cocok dapat digunakan dalam tujuan
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Jalur Regex
+
+Untuk mencocokkan jalur regex, Anda dapat membungkus regex dalam tanda kurung setelah parameter, misalnya `/blog/:slug(\\d{1,})` akan cocok dengan `/blog/123` tetapi tidak dengan `/blog/abc`:
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/old-blog/:post(\\d{1,})',
+        destination: '/blog/:post', // Parameter yang cocok dapat digunakan dalam tujuan
+      },
+    ];
+  },
+};
+```
+
+Karakter berikut `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` digunakan untuk pencocokan jalur regex, sehingga ketika digunakan dalam `source` sebagai nilai non-khusus, mereka harus dihindari dengan menambahkan `\\` sebelumnya:
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        // ini akan cocok dengan `/english(default)/something` yang diminta
+        source: '/english\\(default\\)/:slug',
+        destination: '/en-us/:slug',
+      },
+    ];
+  },
+};
+```
+
+## Pencocokan Header, Cookie, dan Query
+
+Untuk hanya mencocokkan rewrite ketika header, cookie, atau nilai query juga cocok dengan bidang `has` atau tidak cocok dengan bidang `missing` dapat digunakan. Semua item `source` dan semua item `has` harus cocok, dan semua item `missing` harus tidak cocok agar rewrite diterapkan.
+
+Item `has` dan `missing` dapat memiliki bidang berikut:
+
+- `type`: `String` - harus menjadi `header`, `cookie`, `host`, atau `query`.
+- `key`: `String` - kunci dari jenis yang dipilih untuk dicocokkan.
+- `value`: `String` atau `undefined` - nilai yang akan diperiksa, jika tidak ditentukan, setiap nilai akan cocok. String seperti regex dapat digunakan untuk menangkap bagian tertentu dari nilai, misalnya jika nilai `first-(?<paramName>.*)` digunakan untuk `first-second` maka `second` akan dapat digunakan dalam tujuan dengan `:paramName`.
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      // jika header `x-rewrite-me` ada,
+      // rewrite ini akan diterapkan
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-rewrite-me',
+          },
+        ],
+        destination: '/another-page',
+      },
+      // jika header `x-rewrite-me` tidak ada,
+      // rewrite ini akan diterapkan
+      {
+        source: '/:path*',
+        missing: [
+          {
+            type: 'header',
+            key: 'x-rewrite-me',
+          },
+        ],
+        destination: '/another-page',
+      },
+      // jika sumber, query, dan cookie cocok,
+      // rewrite ini akan diterapkan
+      {
+        source: '/specific/:path*',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            // nilai halaman tidak akan tersedia dalam
+            // tujuan karena nilai disediakan dan tidak
+            // menggunakan grup penangkapan bernama misalnya (?<page>home)
+            value: 'home',
+          },
+          {
+            type: 'cookie',
+            key: 'authorized',
+            value: 'true',
+          },
+        ],
+        destination: '/:path*/home',
+      },
+      // jika header `x-authorized` ada dan
+      // berisi nilai yang cocok, rewrite ini akan diterapkan
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-authorized',
+            value: '(?<authorized>yes|true)',
+          },
+        ],
+        destination: '/home?authorized=:authorized',
+      },
+      // jika host adalah `example.com`,
+      // rewrite ini akan diterapkan
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'example.com',
+          },
+        ],
+        destination: '/another-page',
+      },
+    ];
+  },
+};
+```
+
+## Rewrite ke URL eksternal
+
+<details>
+  <summary>Contoh</summary>
+
+- [Adopsi Bertahap Next.js](https://github.com/vercel/next.js/tree/canary/examples/custom-routes-proxying)
+- [Menggunakan Zona Ganda](https://github.com/vercel/next.js/tree/canary/examples/with-zones)
+
+</details>
+
+Rewrites memungkinkan Anda untuk menulis ulang ke URL eksternal. Ini sangat berguna untuk mengadopsi Next.js secara bertahap. Berikut adalah contoh rewrite untuk mengarahkan rute `/blog` aplikasi utama Anda ke situs eksternal.
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/blog',
+        destination: 'https://example.com/blog',
+      },
+      {
+        source: '/blog/:slug',
+        destination: 'https://example.com/blog/:slug', // Parameter yang cocok dapat digunakan dalam tujuan
+      },
+    ];
+  },
+};
+```
+
+Jika Anda menggunakan `trailingSlash: true`, Anda juga perlu memas
+
+ukkan tanda garis miring di parameter `source`. Jika server tujuan juga mengharapkan tanda garis miring di parameter `destination`, maka perlu dimasukkan juga.
+
+```js filename="next.config.js"
+module.exports = {
+  trailingSlash: true,
+  async rewrites() {
+    return [
+      {
+        source: '/blog/',
+        destination: 'https://example.com/blog/',
+      },
+      {
+        source: '/blog/:path*/',
+        destination: 'https://example.com/blog/:path*/',
+      },
+    ];
+  },
+};
+```
+
+### Adopsi Bertahap Next.js
+
+Anda juga dapat membuat Next.js melakukan proxy ke situs web yang sudah ada setelah memeriksa semua rute Next.js.
+
+Dengan cara ini, Anda tidak perlu mengubah konfigurasi rewrite ketika bermigrasi ke lebih banyak halaman Next.js
+
+```js filename="next.config.js"
+module.exports = {
+  async rewrites() {
+    return {
+      fallback: [
+        {
+          source: '/:path*',
+          destination: `https://custom-routes-proxying-endpoint.vercel.app/:path*`,
+        },
+      ],
+    };
+  },
+};
+```
+
+### Rewrites dengan dukungan basePath
+
+Ketika memanfaatkan dukungan [`basePath`](/docs/app/api-reference/next-config-js/basePath) dengan rewrites, setiap `source` dan `destination` secara otomatis diawali dengan `basePath` kecuali Anda menambahkan `basePath: false` ke rewrite:
+
+```js filename="next.config.js"
+module.exports = {
+  basePath: '/docs',
+
+  async rewrites() {
+    return [
+      {
+        source: '/with-basePath', // secara otomatis menjadi /docs/with-basePath
+        destination: '/another', // secara otomatis menjadi /docs/another
+      },
+      {
+        // tidak menambahkan /docs ke /without-basePath karena basePath: false diatur
+        // Catatan: ini tidak dapat digunakan untuk rewrite internal misalnya `destination: '/another'`
+        source: '/without-basePath',
+        destination: 'https://example.com',
+        basePath: false,
+      },
+    ];
+  },
+};
+```
+
+### Rewrites dengan dukungan i18n
+
+Ketika memanfaatkan dukungan [`i18n`](/docs/app/building-your-application/routing/internationalization) dengan rewrites, setiap `source` dan `destination` secara otomatis diawali dengan `locale` yang dikonfigurasi kecuali Anda menambahkan `locale: false` ke rewrite. Jika `locale: false` digunakan, Anda harus menambahkan `locale` dalam parameter `source` dan `destination` agar cocok dengan benar.
+
+```js filename="next.config.js"
+module.exports = {
+  i18n: {
+    locales: ['en', 'fr', 'de'],
+    defaultLocale: 'en',
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/with-locale', // secara otomatis menangani semua bahasa
+        destination: '/another', // secara otomatis meneruskan bahasa
+      },
+      {
+        // tidak menangani bahasa secara otomatis karena locale: false diatur
+        source: '/nl/with-locale-manual',
+        destination: '/nl/another',
+        locale: false,
+      },
+      {
+        // ini cocok dengan '/' karena `en` adalah defaultLocale
+        source: '/en',
+        destination: '/en/another',
+        locale: false,
+      },
+      {
+        // masih memungkinkan mencocokkan semua bahasa bahkan ketika locale: false diatur
+        source: '/:locale/api-alias/:path*',
+        destination: '/api/:path*',
+        locale: false,
+      },
+      {
+        // ini akan dikonversi menjadi /(en|fr|de)/(.*) sehingga tidak akan cocok dengan
+        // jalur tingkat atas `/` atau `/fr` seperti yang dilakukan /:path*
+        source: '/(.*)',
+        destination: '/another',
+      },
+    ];
+  },
+};
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan              |
+| --------- | ---------------------- |
+| `v13.3.0` | Menambahkan `missing`. |
+| `v10.2.0` | Menambahkan `has`.     |
+| `v9.5.0`  | Menambahkan header.    |

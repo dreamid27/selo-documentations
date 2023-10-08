@@ -1,0 +1,88 @@
+---
+title: urlImports
+description: Konfigurasi Next.js untuk mengizinkan pengimporan modul dari URL eksternal (eksperimental).
+---
+
+{/* Konten dokumen ini digunakan baik oleh aplikasi maupun router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Pengimporan URL adalah fitur eksperimental yang memungkinkan Anda mengimpor modul langsung dari server eksternal (bukan dari disk lokal).
+
+> **Peringatan**: Fitur ini adalah eksperimental. Hanya gunakan domain yang Anda percayai untuk diunduh dan dieksekusi di mesin Anda. Mohon berhati-hati dan berwaspada sampai fitur ini dianggap stabil.
+
+Untuk mengaktifkannya, tambahkan awalan URL yang diizinkan di dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    urlImports: ['https://example.com/assets/', 'https://cdn.skypack.dev'],
+  },
+};
+```
+
+Kemudian, Anda dapat mengimpor modul langsung dari URL:
+
+```js
+import { a, b, c } from 'https://example.com/assets/some/module.js';
+```
+
+Pengimporan URL dapat digunakan di mana saja pengimporan paket normal dapat digunakan.
+
+## Model Keamanan
+
+Fitur ini dirancang dengan **keamanan sebagai prioritas utama**. Pertama, kami menambahkan bendera eksperimental yang memaksa Anda untuk secara eksplisit mengizinkan domain yang menerima pengimporan URL. Kami sedang bekerja untuk membatasi pengimporan URL agar dieksekusi dalam sandbox peramban menggunakan [Edge Runtime](/docs/app/api-reference/edge).
+
+## Berkas Penguncian (Lockfile)
+
+Saat menggunakan pengimporan URL, Next.js akan membuat direktori `next.lock` yang berisi berkas penguncian dan aset yang diambil. Direktori ini **harus dicommit ke Git**, tidak boleh diabaikan oleh `.gitignore`.
+
+- Saat menjalankan `next dev`, Next.js akan mengunduh dan menambahkan semua Pengimporan URL yang baru ditemukan ke dalam berkas penguncian Anda.
+- Saat menjalankan `next build`, Next.js akan menggunakan hanya berkas penguncian untuk membangun aplikasi untuk produksi.
+
+Biasanya, tidak diperlukan permintaan jaringan, dan berkas penguncian yang kadaluwarsa akan menyebabkan pembangunan gagal. Satu pengecualian adalah sumber daya yang merespons dengan `Cache-Control: no-cache`. Sumber daya ini akan memiliki entri `no-cache` dalam berkas penguncian dan akan selalu diambil dari jaringan pada setiap pembangunan.
+
+## Contoh
+
+### Skypack
+
+```js
+import confetti from 'https://cdn.skypack.dev/canvas-confetti';
+import { useEffect } from 'react';
+
+export default () => {
+  useEffect(() => {
+    confetti();
+  });
+  return <p>Halo</p>;
+};
+```
+
+### Pengimporan Gambar Statis
+
+```js
+import Image from 'next/image';
+import logo from 'https://example.com/assets/logo.png';
+
+export default () => (
+  <div>
+    <Image src={logo} placeholder="blur" />
+  </div>
+);
+```
+
+### URL dalam CSS
+
+```css
+.className {
+  background: url('https://example.com/assets/hero.jpg');
+}
+```
+
+### Pengimporan Aset
+
+```js
+const logo = new URL('https://example.com/assets/file.txt', import.meta.url);
+
+console.log(logo.pathname);
+
+// mencetak "/_next/static/media/file.a9727b5d.txt"
+```

@@ -1,5 +1,15 @@
 {
   "appDir": "appDir",
+
+  "redirects": "redirects",
+  "rewrites": "rewrites",
+  "serverComponentsExternalPackages": "serverComponentsExternalPackages",
+  "trailingSlash": "trailingSlash",
+  "transpilePackages": "transpilePackages",
+  "turbo": "turbo",
+  "typedRoutes": "typedRoutes",
+  "typescript": "typescript",
+  "urlImports": "urlImports",
   "webpack": "Webpack",
   "webVitalsAttribution": "webVitalsAttribution"
 }

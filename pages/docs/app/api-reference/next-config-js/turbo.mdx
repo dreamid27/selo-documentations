@@ -1,0 +1,74 @@
+---
+title: Turbo (Eksperimental)
+nav_title: Turbo
+description: Konfigurasi Next.js dengan opsi yang khusus untuk Turbopack
+---
+
+# Turbo (Eksperimental)
+
+{/* Konten dari dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama seharusnya tidak dibungkus dalam komponen. */}
+
+> **Peringatan**: Fitur-fitur ini bersifat eksperimental dan hanya akan berfungsi dengan `next --turbo`.
+
+## Pemuat webpack
+
+Saat ini, Turbopack mendukung sebagian dari API pemuat webpack, yang memungkinkan Anda untuk menggunakan beberapa pemuat webpack untuk mengubah kode dalam Turbopack.
+
+Untuk mengonfigurasi pemuat, tambahkan nama-nama pemuat yang telah Anda instal dan opsi apa pun dalam `next.config.js`, memetakan ekstensi file ke daftar pemuat:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      rules: {
+        // Format dengan opsi
+        '*.md': [
+          {
+            loader: '@mdx-js/loader',
+            options: {
+              format: 'md',
+            },
+          },
+        ],
+        // Format tanpa opsi
+        '*.mdx': ['@mdx-js/loader'],
+      },
+    },
+  },
+};
+```
+
+Kemudian, dengan konfigurasi di atas, Anda dapat menggunakan kode yang telah diubah dari aplikasi Anda:
+
+```js
+import MyDoc from './my-doc.mdx';
+
+export default function Home() {
+  return <MyDoc />;
+}
+```
+
+## Alias Penyelesaian
+
+Melalui `next.config.js`, Turbopack dapat dikonfigurasi untuk mengubah penyelesaian modul melalui alias, mirip dengan konfigurasi [`resolve.alias`](https://webpack.js.org/configuration/resolve/#resolvealias) webpack.
+
+Untuk mengonfigurasi alias penyelesaian, peta pola impor ke destinasi baru mereka dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        underscore: 'lodash',
+        mocha: { browser: 'mocha/browser-entry.js' },
+      },
+    },
+  },
+};
+```
+
+Ini mengalias impor dari paket `underscore` ke paket `lodash`. Dengan kata lain, `import underscore from 'underscore'` akan memuat modul `lodash` daripada `underscore`.
+
+Turbopack juga mendukung alias kondisional melalui bidang ini, mirip dengan [ekspor kondisional Node.js](https://nodejs.org/docs/latest-v18.x/api/packages.html#conditional-exports). Saat ini, hanya kondisi `browser` yang didukung. Dalam kasus di atas, impor modul `mocha` akan diubah menjadi `mocha/browser-entry.js` ketika Turbopack ditargetkan untuk lingkungan peramban.
+
+Untuk informasi lebih lanjut dan panduan tentang cara memigrasikan aplikasi Anda ke Turbopack dari webpack, lihat [dokumentasi Turbopack tentang kompatibilitas webpack](https://turbo.build/pack/docs/migrating-from-webpack).

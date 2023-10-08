@@ -1,0 +1,20 @@
+---
+title: Direktori dist
+description: Tetapkan sebuah direktori pembangunan kustom untuk digunakan sebagai pengganti direktori .next bawaan.
+---
+
+# distDir
+
+Anda dapat menentukan sebuah nama untuk digunakan sebagai direktori pembangunan kustom, sebagai pengganti `.next`.
+
+Buka `next.config.js` dan tambahkan konfigurasi `distDir`:
+
+```js filename="next.config.js"
+module.exports = {
+  distDir: "build",
+};
+```
+
+Sekarang jika Anda menjalankan `next build`, Next.js akan menggunakan `build` sebagai pengganti folder bawaan `.next`.
+
+> `distDir` **seharusnya tidak** keluar dari direktori proyek Anda. Sebagai contoh, `../build` adalah sebuah direktori yang **tidak valid**.

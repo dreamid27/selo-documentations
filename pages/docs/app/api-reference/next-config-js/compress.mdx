@@ -1,0 +1,18 @@
+---
+judul: Kompresi
+deskripsi: Next.js menyediakan kompresi gzip untuk mengompresi konten yang dirender dan file statis, ini hanya berfungsi dengan target server. Pelajari lebih lanjut di sini.
+---
+
+# Kompresi
+
+{/* Konten dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam sebuah komponen. */}
+
+Next.js menyediakan [**kompresi gzip**](https://tools.ietf.org/html/rfc6713#section-3) untuk mengompresi konten yang dirender dan file statis. Secara umum, Anda akan ingin mengaktifkan kompresi pada proxy HTTP seperti [nginx](https://www.nginx.com/) untuk mengurangi beban dari proses `Node.js`.
+
+Untuk menonaktifkan **kompresi**, buka `next.config.js` dan nonaktifkan konfigurasi `compress`:
+
+```javascript filename="next.config.js"
+module.exports = {
+  compress: false,
+};
+```

@@ -1,0 +1,24 @@
+---
+title: webVitalsAttribution
+description: Pelajari cara menggunakan opsi webVitalsAttribution untuk mengidentifikasi sumber masalah Web Vitals.
+---
+
+{/* Konten dokumen ini dibagi antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama sebaiknya tidak dibungkus dalam komponen. */}
+
+Saat melakukan pemecahan masalah yang berkaitan dengan Web Vitals, seringkali bermanfaat jika kita dapat mengidentifikasi sumber masalah tersebut.
+Sebagai contoh, dalam kasus Cumulative Layout Shift (CLS), kita mungkin ingin mengetahui elemen pertama yang bergeser saat terjadi pergeseran tata letak terbesar.
+Atau, dalam kasus Largest Contentful Paint (LCP), kita mungkin ingin mengidentifikasi elemen yang sesuai dengan LCP untuk halaman tersebut.
+Jika elemen LCP adalah gambar, mengetahui URL sumber daya gambar dapat membantu kita menemukan aset yang perlu dioptimalkan.
+
+Mengidentifikasi penyumbang terbesar pada nilai Web Vitals, yang disebut [atribusi](https://github.com/GoogleChrome/web-vitals/blob/4ca38ae64b8d1e899028c692f94d4c56acfc996c/README.md#attribution),
+memungkinkan kita untuk mendapatkan informasi yang lebih mendalam seperti entri untuk [PerformanceEventTiming](https://developer.mozilla.org/docs/Web/API/PerformanceEventTiming), [PerformanceNavigationTiming](https://developer.mozilla.org/docs/Web/API/PerformanceNavigationTiming), dan [PerformanceResourceTiming](https://developer.mozilla.org/docs/Web/API/PerformanceResourceTiming).
+
+Atribusi dinonaktifkan secara default di Next.js tetapi dapat diaktifkan **per metrik** dengan menentukan yang berikut dalam `next.config.js`.
+
+```js filename="next.config.js"
+experimental: {
+  webVitalsAttribution: ['CLS', 'LCP'];
+}
+```
+
+Nilai atribusi yang valid adalah semua metrik `web-vitals` yang ditentukan dalam tipe [`NextWebVitalsMetric`](https://github.com/vercel/next.js/blob/442378d21dd56d6e769863eb8c2cb521a463a2e0/packages/next/shared/lib/utils.ts#L43).

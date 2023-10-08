@@ -1,0 +1,75 @@
+---
+title: Konfigurasi Kustom Webpack
+nav_title: webpack
+description: Pelajari cara menyesuaikan konfigurasi webpack yang digunakan oleh Next.js
+---
+
+{/* Konten dari dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak harus dibungkus dalam komponen. */}
+
+> **Baik untuk diketahui**: perubahan pada konfigurasi webpack tidak dicakup oleh semver, jadi lanjutkan dengan risiko Anda sendiri
+
+Sebelum melanjutkan untuk menambahkan konfigurasi webpack kustom ke aplikasi Anda, pastikan Next.js tidak sudah mendukung kasus penggunaan Anda:
+
+- [Impor CSS](/docs/app/building-your-application/styling)
+- [Modul CSS](/docs/app/building-your-application/styling/css-modules)
+- [Impor Sass/SCSS](/docs/app/building-your-application/styling/sass)
+- [Modul Sass/SCSS](/docs/app/building-your-application/styling/sass)
+- [preact](https://github.com/vercel/next.js/tree/canary/examples/using-preact)
+
+Beberapa fitur yang sering diminta tersedia sebagai plugin:
+
+- [@next/mdx](https://github.com/vercel/next.js/tree/canary/packages/next-mdx)
+- [@next/bundle-analyzer](https://github.com/vercel/next.js/tree/canary/packages/next-bundle-analyzer)
+
+Untuk memperluas penggunaan `webpack` kami, Anda dapat mendefinisikan sebuah fungsi yang memperluas konfigurasi di dalam `next.config.js`, seperti ini:
+
+```js filename="next.config.js"
+module.exports = {
+  webpack: (
+    config,
+    { buildId, dev, isServer, defaultLoaders, nextRuntime, webpack }
+  ) => {
+    // Penting: kembalikan konfigurasi yang telah dimodifikasi
+    return config;
+  },
+};
+```
+
+> Fungsi `webpack` dieksekusi dua kali, sekali untuk server dan sekali untuk klien. Ini memungkinkan Anda membedakan antara konfigurasi klien dan server menggunakan properti `isServer`.
+
+Argumen kedua untuk fungsi `webpack` adalah objek dengan properti-properti berikut:
+
+- `buildId`: `String` - ID pembangunan, digunakan sebagai pengidentifikasi unik antara pembangunan
+- `dev`: `Boolean` - Menunjukkan apakah kompilasi akan dilakukan dalam mode pengembangan
+- `isServer`: `Boolean` - Ini `true` untuk kompilasi sisi server, dan `false` untuk kompilasi sisi klien
+- `nextRuntime`: `String | undefined` - Target runtime untuk kompilasi sisi server; baik `"edge"` atau `"nodejs"`, ini `undefined` untuk kompilasi sisi klien.
+- `defaultLoaders`: `Object` - Beban bawaan yang digunakan secara internal oleh Next.js:
+  - `babel`: `Object` - Konfigurasi bawaan `babel-loader`
+
+Contoh penggunaan `defaultLoaders.babel`:
+
+```js
+// Contoh konfigurasi untuk menambahkan loader yang bergantung pada babel-loader
+// Sumber ini diambil dari sumber plugin @next/mdx:
+// https://github.com/vercel/next.js/tree/canary/packages/next-mdx
+module.exports = {
+  webpack: (config, options) => {
+    config.module.rules.push({
+      test: /\.mdx/,
+      use: [
+        options.defaultLoaders.babel,
+        {
+          loader: '@mdx-js/loader',
+          options: pluginOptions.options,
+        },
+      ],
+    });
+
+    return config;
+  },
+};
+```
+
+#### `nextRuntime`
+
+Perhatikan bahwa `isServer` bernilai `true` ketika `nextRuntime` adalah `"edge"` atau `"nodejs"`, `nextRuntime` "`edge`" saat ini hanya untuk middleware dan Komponen Server di runtime edge.

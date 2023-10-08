@@ -1,6 +1,8 @@
 {
   "appDir": "appDir",
 
+  "productionBrowserSourceMaps": "productionBrowserSourceMaps",
+  "reactStrictMode": "reactStrictMode",
   "redirects": "redirects",
   "rewrites": "rewrites",
   "serverComponentsExternalPackages": "serverComponentsExternalPackages",

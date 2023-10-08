@@ -1,0 +1,22 @@
+---
+title: reactStrictMode
+description: Seluruh runtime Next.js kini patuh pada Strict Mode, pelajari cara mengaktifkannya
+---
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten yang dibagikan sebaiknya tidak dibungkus dalam komponen. */}
+
+> **Penting untuk diketahui**: Sejak Next.js 13.4, Strict Mode secara otomatis aktif dengan router `app`, sehingga konfigurasi di atas hanya diperlukan untuk `pages`. Anda masih dapat menonaktifkan Strict Mode dengan mengatur `reactStrictMode: false`.
+
+> **Disarankan**: Kami sangat menyarankan Anda mengaktifkan Strict Mode dalam aplikasi Next.js Anda untuk lebih mempersiapkan aplikasi Anda terhadap masa depan React.
+
+[Strict Mode](https://react.dev/reference/react/StrictMode) dari React adalah fitur hanya untuk mode pengembangan yang digunakan untuk menyoroti potensi masalah dalam sebuah aplikasi. Ini membantu mengidentifikasi siklus hidup yang tidak aman, penggunaan API yang sudah usang, dan beberapa fitur lainnya.
+
+Runtime Next.js sudah patuh pada Strict Mode. Untuk mengaktifkannya, konfigurasikan opsi berikut dalam `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  reactStrictMode: true,
+};
+```
+
+Jika Anda atau tim Anda belum siap untuk menggunakan Strict Mode dalam seluruh aplikasi Anda, tidak masalah! Anda dapat secara bertahap melakukan migrasi halaman demi halaman dengan menggunakan `<React.StrictMode>`.

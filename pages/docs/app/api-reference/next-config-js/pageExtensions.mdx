@@ -1,0 +1,24 @@
+---
+title: pageExtensions
+description: Perluas ekstensi halaman default yang digunakan oleh Next.js saat menentukan halaman dalam Pages Router.
+---
+
+{/* Konten dari dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten bersama tidak harus dibungkus dalam sebuah komponen. */}
+
+# pageExtensions
+
+Secara default, Next.js menerima berkas dengan ekstensi berikut: `.tsx`, `.ts`, `.jsx`, `.js`. Ini dapat dimodifikasi untuk mengizinkan ekstensi lain seperti markdown (`.md`, `.mdx`).
+
+```js filename="next.config.js"
+const withMDX = require('@next/mdx')();
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  pageExtensions: ['ts', 'tsx', 'mdx'],
+  experimental: {
+    mdxRs: true,
+  },
+};
+
+module.exports = withMDX(nextConfig);
+```

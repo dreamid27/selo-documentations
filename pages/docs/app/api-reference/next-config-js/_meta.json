@@ -1,6 +1,9 @@
 {
   "appDir": "appDir",
 
+  "output": "output",
+  "pageExtensions": "pageExtensions",
+  "poweredByHeader": "poweredByHeader",
   "productionBrowserSourceMaps": "productionBrowserSourceMaps",
   "reactStrictMode": "reactStrictMode",
   "redirects": "redirects",

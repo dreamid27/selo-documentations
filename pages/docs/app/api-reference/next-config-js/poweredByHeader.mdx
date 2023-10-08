@@ -1,0 +1,14 @@
+---
+title: poweredByHeader
+description: Secara default, Next.js akan menambahkan header `x-powered-by`. Pelajari cara untuk menonaktifkannya di sini.
+---
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Setiap konten bersama tidak harus dibungkus dalam sebuah komponen. */}
+
+Secara default, Next.js akan menambahkan header `x-powered-by`. Untuk menonaktifkannya, buka `next.config.js` dan nonaktifkan konfigurasi `poweredByHeader`:
+
+```js filename="next.config.js"
+module.exports = {
+  poweredByHeader: false,
+};
+```

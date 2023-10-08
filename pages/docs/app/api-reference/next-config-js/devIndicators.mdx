@@ -1,0 +1,32 @@
+---
+title: Indikator Pengembangan
+description: Halaman yang dioptimalkan mencakup indikator untuk memberi tahu Anda apakah itu sedang dioptimalkan secara statis. Anda dapat memilih untuk menonaktifkannya di sini.
+---
+
+# devIndicators
+
+{/* Isi dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Ketika Anda mengedit kode Anda, dan Next.js mengkompilasi aplikasi, indikator kompilasi muncul di sudut kanan bawah halaman.
+
+> **Penting untuk diketahui**: Indikator ini hanya ada dalam mode pengembangan dan tidak akan muncul saat membangun dan menjalankan aplikasi dalam mode produksi.
+
+Dalam beberapa kasus, indikator ini dapat ditempatkan dengan tidak semestinya di halaman Anda, misalnya, ketika bertentangan dengan peluncur obrolan. Untuk mengubah posisinya, buka `next.config.js` dan atur `buildActivityPosition` dalam objek `devIndicators` menjadi `bottom-right` (default), `bottom-left`, `top-right`, atau `top-left`:
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivityPosition: "bottom-right",
+  },
+};
+```
+
+Dalam beberapa kasus, indikator ini mungkin tidak berguna untuk Anda. Untuk menghapusnya, buka `next.config.js` dan nonaktifkan konfigurasi `buildActivity` dalam objek `devIndicators`:
+
+```js filename="next.config.js"
+module.exports = {
+  devIndicators: {
+    buildActivity: false,
+  },
+};
+```

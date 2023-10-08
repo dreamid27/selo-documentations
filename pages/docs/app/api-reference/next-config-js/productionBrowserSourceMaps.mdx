@@ -1,0 +1,23 @@
+---
+title: productionBrowserSourceMaps
+description: Mengaktifkan pembuatan peta sumber browser selama pembangunan produksi.
+---
+
+{/* Konten dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Setiap konten bersama tidak seharusnya dibungkus dalam komponen. */}
+
+# productionBrowserSourceMaps
+
+Peta Sumber diaktifkan secara default selama pengembangan. Selama pembangunan produksi, mereka dinonaktifkan untuk mencegah sumber Anda bocor ke klien, kecuali jika Anda secara khusus menyetujuinya dengan menggunakan bendera konfigurasi.
+
+Next.js menyediakan bendera konfigurasi yang dapat Anda gunakan untuk mengaktifkan pembuatan peta sumber browser selama pembangunan produksi:
+
+```js filename="next.config.js"
+module.exports = {
+  productionBrowserSourceMaps: true,
+};
+```
+
+Ketika opsi `productionBrowserSourceMaps` diaktifkan, peta sumber akan dikeluarkan dalam direktori yang sama dengan file JavaScript. Next.js secara otomatis akan melayani file-file ini saat diminta.
+
+- Menambahkan peta sumber dapat meningkatkan waktu `next build`
+- Meningkatkan penggunaan memori selama `next build`

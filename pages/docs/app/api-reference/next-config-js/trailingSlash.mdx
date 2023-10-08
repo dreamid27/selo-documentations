@@ -1,0 +1,26 @@
+---
+title: trailingSlash
+description: Konfigurasikan halaman Next.js untuk meresolusi dengan atau tanpa garis miring akhir.
+---
+
+# trailingSlash
+
+{/* Konten dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Content</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan sebaiknya tidak dibungkus dalam komponen. */}
+
+Secara default, Next.js akan mengalihkan URL dengan garis miring akhir ke versi tanpa garis miring akhirnya. Misalnya, `/about/` akan diarahkan ke `/about`. Anda dapat mengkonfigurasi perilaku ini untuk berjalan sebaliknya, di mana URL tanpa garis miring akhir akan diarahkan ke versi dengan garis miring akhirnya.
+
+Buka `next.config.js` dan tambahkan konfigurasi `trailingSlash`:
+
+```js filename="next.config.js"
+module.exports = {
+  trailingSlash: true,
+};
+```
+
+Dengan opsi ini diatur, URL seperti `/about` akan diarahkan ke `/about/`.
+
+## Riwayat Versi
+
+| Versi    | Perubahan                    |
+| -------- | ---------------------------- |
+| `v9.5.0` | Ditambahkan `trailingSlash`. |

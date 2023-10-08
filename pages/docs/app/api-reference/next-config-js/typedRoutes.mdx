@@ -1,0 +1,20 @@
+---
+title: typedRoutes (eksperimental)
+nav_title: typedRoutes
+description: Aktifkan dukungan eksperimental untuk tautan dengan tipe statis.
+---
+
+# typedRoutes (eksperimental)
+
+Dukungan eksperimental untuk [tautan dengan tipe statis](/docs/app/building-your-application/configuring/typescript#statically-typed-links). Fitur ini memerlukan penggunaan App Router serta TypeScript dalam proyek Anda.
+
+```js filename="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    typedRoutes: true,
+  },
+};
+
+module.exports = nextConfig;
+```

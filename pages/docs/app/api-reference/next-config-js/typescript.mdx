@@ -1,0 +1,28 @@
+---
+title: TypeScript
+description: Secara default, Next.js melaporkan kesalahan TypeScript. Pelajari cara menonaktifkan perilaku ini di sini.
+---
+
+# TypeScript
+
+{/* Konten dokumen ini digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Konten</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Next.js akan gagal pada **bangunan produksi** (`next build`) ketika terdapat kesalahan TypeScript dalam proyek Anda.
+
+Jika Anda ingin Next.js menghasilkan kode produksi dengan risiko bahkan jika aplikasi Anda memiliki kesalahan, Anda dapat menonaktifkan langkah pemeriksaan tipe bawaan.
+
+Jika dinonaktifkan, pastikan Anda menjalankan pemeriksaan tipe sebagai bagian dari proses pembangunan atau penyebaran Anda, jika tidak, ini bisa sangat berbahaya.
+
+Buka `next.config.js` dan aktifkan opsi `ignoreBuildErrors` dalam konfigurasi `typescript`:
+
+```js filename="next.config.js"
+module.exports = {
+  typescript: {
+    // !! PERINGATAN !!
+    // Memungkinkan bangunan produksi berhasil diselesaikan bahkan jika
+    // proyek Anda memiliki kesalahan tipe.
+    // !! PERINGATAN !!
+    ignoreBuildErrors: true,
+  },
+};
+```

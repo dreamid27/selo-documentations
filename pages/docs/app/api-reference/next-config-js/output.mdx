@@ -1,0 +1,131 @@
+---
+title: Output
+description: Next.js secara otomatis melacak file-file yang dibutuhkan oleh setiap halaman untuk memudahkan penyebaran aplikasi Anda. Pelajari bagaimana cara kerjanya di sini.
+---
+
+# Output
+
+{/* Konten dokumen ini bersama-sama digunakan oleh aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten yang dibagikan seharusnya tidak dibungkus dalam komponen. */}
+
+Selama proses pembangunan, Next.js secara otomatis akan melacak setiap halaman beserta dependensinya untuk menentukan semua file yang dibutuhkan dalam penyebaran versi produksi aplikasi Anda.
+
+Fitur ini membantu mengurangi ukuran penyebaran secara drastis. Sebelumnya, saat melakukan penyebaran dengan Docker, Anda perlu memiliki semua file dari `dependencies` dalam paket Anda terinstal untuk menjalankan `next start`. Mulai dari Next.js 12, Anda dapat memanfaatkan Pelacakan File Output dalam direktori `.next/` untuk hanya menyertakan file yang diperlukan.
+
+Selain itu, ini menghilangkan kebutuhan untuk target 'serverless' yang sudah usang yang dapat menyebabkan berbagai masalah dan juga menciptakan duplikasi yang tidak perlu.
+
+## Cara Kerjanya
+
+Selama `next build`, Next.js akan menggunakan [`@vercel/nft`](https://github.com/vercel/nft) untuk menganalisis secara statis penggunaan `import`, `require`, dan `fs` untuk menentukan semua file yang mungkin akan dimuat oleh sebuah halaman.
+
+Server produksi Next.js juga dilacak untuk file yang dibutuhkan dan dioutputkan ke `.next/next-server.js.nft.json` yang dapat dimanfaatkan dalam produksi.
+
+Untuk memanfaatkan file `.nft.json` yang dihasilkan ke direktori output `.next`, Anda dapat membaca daftar file dalam setiap jejak yang bersifat relatif terhadap file `.nft.json` dan kemudian menyalinnya ke lokasi penyebaran Anda.
+
+## Menyalin File yang Dilacak Secara Otomatis
+
+Next.js dapat secara otomatis membuat folder `standalone` yang hanya menyalin file-file yang diperlukan untuk penyebaran produksi, termasuk file-file tertentu dalam `node_modules`.
+
+Untuk memanfaatkan penyalinan otomatis ini, Anda dapat mengaktifkannya dalam `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  output: 'standalone',
+};
+```
+
+Ini akan membuat folder di `.next/standalone` yang kemudian dapat disebarkan sendiri tanpa menginstal `node_modules`.
+
+Selain itu, sebuah file `server.js` minimal juga dioutputkan yang dapat digunakan sebagai alternatif dari `next start`. Server minimal ini secara default tidak menyalin folder `public` atau `.next/static`, karena sebaiknya folder-folder ini ditangani oleh CDN, meskipun folder-folder ini dapat disalin ke folder `standalone/public` dan `standalone/.next/static` secara manual, setelah itu file `server.js` akan melayani ini secara otomatis.
+
+> **Tingkatkan Pengetahuan Anda**:
+>
+> - Jika proyek Anda perlu mendengarkan port atau hostname tertentu, Anda dapat menentukan variabel lingkungan `PORT` atau `HOSTNAME` sebelum menjalankan `server.js`. Misalnya, jalankan `PORT=8080 HOSTNAME=0.0.0.0 node server.js` untuk memulai server pada `http://0.0.0.0:8080`.
+> - Jika proyek Anda menggunakan [Optimisasi Gambar](/docs/app/building-your-application/optimizing/images) dengan `loader` default, Anda harus menginstal `sharp` sebagai dependency:
+
+```bash filename="Terminal"
+npm i sharp
+```
+
+```bash filename="Terminal"
+yarn add sharp
+```
+
+```bash filename="Terminal"
+pnpm add sharp
+```
+
+```bash filename="Terminal"
+bun add sharp
+```
+
+## Catatan
+
+- Saat pelacakan dalam konfigurasi monorepo, direktori proyek secara default digunakan untuk pelacakan. Untuk `next build packages/web-app`, `packages/web-app` akan menjadi root pelacakan dan file-file di luar folder ini tidak akan disertakan. Untuk menyertakan file-file di luar folder ini, Anda dapat mengatur `experimental.outputFileTracingRoot` dalam `next.config.js` Anda.
+
+```js filename="packages/web-app/next.config.js"
+module.exports = {
+  experimental: {
+    // ini menyertakan file-file dari base monorepo dua direktori di atasnya
+    outputFileTracingRoot: path.join(__dirname, '../../'),
+  },
+};
+```
+
+- Ada beberapa kasus di mana Next.js mungkin gagal menyertakan file yang diperlukan, atau mungkin secara tidak benar menyertakan file yang tidak digunakan. Dalam kasus tersebut, Anda dapat memanfaatkan `experimental.outputFileTracingExcludes` dan `experimental.outputFileTracingIncludes` masing-masing dalam `next.config.js`. Setiap konfigurasi menerima objek dengan [minimatch globs](https://www.npmjs.com/package/minimatch) sebagai kunci untuk mencocokkan halaman-halaman tertentu dan nilai dari sebuah array dengan globs yang bersifat relatif terhadap root proyek untuk menyertakan atau mengabaikan dalam pelacakan.
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    outputFileTracingExcludes: {
+      '/api/hello': ['./un-necessary-folder/**/*'],
+    },
+    outputFileTracingIncludes: {
+      '/api/another': ['./necessary-folder/**/*'],
+    },
+  },
+};
+```
+
+- Saat ini, Next.js tidak melakukan apapun dengan file-file `.nft.json` yang dihasilkan. File-file tersebut harus dibaca oleh platform penyebaran Anda, misalnya [Vercel](https://vercel.com), untuk membuat penyebaran minimal. Dalam rilis mendatang, rencananya akan ada perintah baru yang dapat memanfaatkan file-file `.nft.json` ini.
+
+## Eksperimen `turbotrace`
+
+Pelacakan dependensi dapat menjadi lambat karena memerlukan perhitungan dan analisis yang sangat kompleks. Kami menciptakan `turbotrace` dalam Rust sebagai alternatif yang lebih cepat dan cerdas dibandingkan implementasi JavaScript.
+
+Untuk mengaktifkannya, Anda dapat menambahkan konfigurasi berikut ke `next.config.js` Anda:
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    turbot
+
+race: {
+      // kendalikan tingkat log turbotrace, default adalah `error`
+      logLevel?:
+      | 'bug'
+      | 'fatal'
+      | 'error'
+      | 'warning'
+      | 'hint'
+      | 'note'
+      | 'suggestions'
+      | 'info',
+      // kendalikan apakah log turbotrace harus berisi detail analisis, default adalah `false`
+      logDetail?: boolean
+      // tampilkan semua pesan log tanpa batasan
+      // turbotrace hanya menampilkan 1 pesan log untuk setiap kategori secara default
+      logAll?: boolean
+      // kendalikan direktori konteks turbotrace
+      // file-file di luar direktori konteks tidak akan dilacak
+      // set `experimental.outputFileTracingRoot` memiliki efek yang sama
+      // jika `experimental.outputFileTracingRoot` dan opsi ini diatur, maka `experimental.turbotrace.contextDirectory` akan digunakan
+      contextDirectory?: string
+      // jika ada ekspresi `process.cwd()` dalam kode Anda, Anda dapat mengatur opsi ini untuk memberi tahu `turbotrace` nilai dari `process.cwd()` saat melacak.
+      // sebagai contoh, require(process.cwd() + '/package.json') akan dilacak sebagai require('/path/to/cwd/package.json')
+      processCwd?: string
+      // kendalikan penggunaan memori maksimum dari `turbotrace`, dalam `MB`, default adalah `6000`.
+      memoryLimit?: number
+    },
+  },
+}
+```

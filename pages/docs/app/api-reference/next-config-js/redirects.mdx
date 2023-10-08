@@ -1,0 +1,315 @@
+---
+title: redirects
+description: Tambahkan pengalihan ke aplikasi Next.js Anda.
+---
+
+{/* Konten dari dokumen ini dibagi antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Semua konten bersama tidak harus dibungkus dalam komponen. */}
+
+# redirects
+
+Pengalihan memungkinkan Anda untuk mengalihkan jalur permintaan masuk ke jalur tujuan yang berbeda.
+
+Untuk menggunakan pengalihan, Anda dapat menggunakan kunci `redirects` dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: '/about',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
+};
+```
+
+`redirects` adalah fungsi async yang mengharapkan sebuah array yang mengandung objek dengan properti `source`, `destination`, dan `permanent`:
+
+- `source` adalah pola jalur permintaan masuk.
+- `destination` adalah jalur yang ingin Anda arahkan.
+- `permanent` `true` atau `false` - jika `true`, akan menggunakan kode status 308 yang menginstruksikan klien/mesin pencari untuk menyimpan pengalihan selamanya; jika `false`, akan menggunakan kode status 307 yang bersifat sementara dan tidak disimpan.
+
+> **Mengapa Next.js menggunakan 307 dan 308?** Secara tradisional, 302 digunakan untuk pengalihan sementara, dan 301 digunakan untuk pengalihan permanen, tetapi banyak browser mengubah metode permintaan pengalihan menjadi `GET`, tanpa memperhatikan metode asli. Misalnya, jika browser membuat permintaan ke `POST /v1/users` yang mengembalikan kode status `302` dengan lokasi `/v2/users`, permintaan selanjutnya mungkin menjadi `GET /v2/users` bukannya `POST /v2/users` yang diharapkan. Next.js menggunakan kode status pengalihan sementara 307 dan pengalihan permanen 308 untuk secara eksplisit mempertahankan metode permintaan yang digunakan.
+
+- `basePath`: `false` atau `undefined` - jika false, `basePath` tidak akan dimasukkan saat mencocokkan, hanya dapat digunakan untuk pengalihan eksternal.
+- `locale`: `false` atau `undefined` - apakah lokalisasi tidak perlu dimasukkan saat mencocokkan.
+- `has` adalah array dari [objek yang memiliki](#header-cookie-dan-pencocokan-kueri) properti `type`, `key`, dan `value`.
+- `missing` adalah array dari [objek yang hilang](#header-cookie-dan-pencocokan-kueri) dengan properti `type`, `key`, dan `value`.
+
+Pengalihan diperiksa sebelum sistem berkas yang mencakup halaman dan berkas `/public`.
+
+Pengalihan tidak diterapkan pada routing sisi klien (`Link`, `router.push`), kecuali [Middleware](/docs/app/building-your-application/routing/middleware) hadir dan mencocokkan jalur.
+
+Ketika pengalihan diterapkan, nilai kueri yang disediakan dalam permintaan akan diteruskan ke tujuan pengalihan. Misalnya, lihat konfigurasi pengalihan berikut:
+
+```js
+{
+  source: '/old-blog/:path*',
+  destination: '/blog/:path*',
+  permanent: false
+}
+```
+
+Saat `/old-blog/post-1?hello=world` diminta, klien akan diarahkan ke `/blog/post-1?hello=world`.
+
+## Pencocokan Jalur
+
+Pencocokan jalur diizinkan, misalnya `/old-blog/:slug` akan cocok dengan `/old-blog/hello-world` (tanpa jalur bersarang):
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: '/old-blog/:slug',
+        destination: '/news/:slug', // Parameter yang cocok dapat digunakan di tujuan
+        permanent: true,
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Jalur Wildcard
+
+Untuk mencocokkan jalur wildcard, Anda dapat menggunakan `*` setelah parameter, misalnya `/blog/:slug*` akan cocok dengan `/blog/a/b/c/d/hello-world`:
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: '/blog/:slug*',
+        destination: '/news/:slug*', // Parameter yang cocok dapat digunakan di tujuan
+        permanent: true,
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Jalur Regex
+
+Untuk mencocokkan jalur regex, Anda dapat membungkus regex dalam tanda kurung setelah parameter, misalnya `/post/:slug(\\d{1,})` akan cocok dengan `/post/123` tetapi tidak dengan `/post/abc`:
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: '/post/:slug(\\d{1,})',
+        destination: '/news/:slug', // Parameter yang cocok dapat digunakan di tujuan
+        permanent: false,
+      },
+    ];
+  },
+};
+```
+
+Karakter-karakter berikut digunakan untuk pencocokan jalur regex: `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?`, sehingga ketika digunakan dalam `source` sebagai nilai non-khusus, mereka harus dihindari dengan menambahkan `\\` sebelumnya:
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      {
+        // ini akan cocok dengan `/english(default)/something` yang diminta
+        source: '/english\\(default\\)/:slug',
+        destination: '/en-us/:slug',
+        permanent: false,
+      },
+    ];
+  },
+};
+```
+
+## Pencocokan Header, Cookie, dan Kueri
+
+Untuk hanya mencocokkan pengalihan saat nilai header, cookie, atau kueri juga cocok dengan bidang `has` atau tidak cocok dengan bidang `missing` dapat digunakan. Baik `source` maupun semua item `has` harus cocok, dan semua item `missing` tidak boleh cocok agar pengalihan diterapkan.
+
+Item `has` dan `missing` dapat memiliki bidang berikut:
+
+- `type`: `String` - harus menjadi `header`, `cookie`, `host`, atau `query`.
+- `key`: `String` - kunci dari jenis yang dipilih untuk dicocokkan.
+- `value`: `String` atau `undefined
+
+`- nilai yang ingin diperiksa, jika tidak didefinisikan, semua nilai akan cocok. String seperti regex dapat digunakan untuk menangkap bagian tertentu dari nilai, misalnya jika nilai`first-(?<paramName>.\*)`digunakan untuk`first-second`, maka `second`dapat digunakan di tujuan dengan`:paramName`.
+
+```js filename="next.config.js"
+module.exports = {
+  async redirects() {
+    return [
+      // jika header `x-redirect-me` hadir,
+      // pengalihan ini akan diterapkan
+      {
+        source: '/:path((?!another-page$).*)',
+        has: [
+          {
+            type: 'header',
+            key: 'x-redirect-me',
+          },
+        ],
+        permanent: false,
+        destination: '/another-page',
+      },
+      // jika header `x-dont-redirect` hadir,
+      // pengalihan ini TIDAK akan diterapkan
+      {
+        source: '/:path((?!another-page$).*)',
+        missing: [
+          {
+            type: 'header',
+            key: 'x-do-not-redirect',
+          },
+        ],
+        permanent: false,
+        destination: '/another-page',
+      },
+      // jika sumber, kueri, dan cookie cocok,
+      // pengalihan ini akan diterapkan
+      {
+        source: '/specific/:path*',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            // nilai halaman tidak akan tersedia di
+            // tujuan karena nilai telah diberikan dan tidak
+            // menggunakan grup tangkapan bernama, misalnya (?<page>home)
+            value: 'home',
+          },
+          {
+            type: 'cookie',
+            key: 'authorized',
+            value: 'true',
+          },
+        ],
+        permanent: false,
+        destination: '/another/:path*',
+      },
+      // jika header `x-authorized` hadir dan
+      // berisi nilai yang cocok, pengalihan ini akan diterapkan
+      {
+        source: '/',
+        has: [
+          {
+            type: 'header',
+            key: 'x-authorized',
+            value: '(?<authorized>yes|true)',
+          },
+        ],
+        permanent: false,
+        destination: '/home?authorized=:authorized',
+      },
+      // jika host adalah `example.com`,
+      // pengalihan ini akan diterapkan
+      {
+        source: '/:path((?!another-page$).*)',
+        has: [
+          {
+            type: 'host',
+            value: 'example.com',
+          },
+        ],
+        permanent: false,
+        destination: '/another-page',
+      },
+    ];
+  },
+};
+```
+
+### Pengalihan dengan dukungan basePath
+
+Ketika menggunakan [dukungan `basePath`](/docs/app/api-reference/next-config-js/basePath) dengan pengalihan, setiap `source` dan `destination` secara otomatis diawali dengan `basePath` kecuali Anda menambahkan `basePath: false` ke pengalihan:
+
+```js filename="next.config.js"
+module.exports = {
+  basePath: '/docs',
+
+  async redirects() {
+    return [
+      {
+        source: '/with-basePath', // secara otomatis menjadi /docs/with-basePath
+        destination: '/another', // secara otomatis menjadi /docs/another
+        permanent: false,
+      },
+      {
+        // tidak menambahkan /docs karena basePath: false telah ditetapkan
+        source: '/without-basePath',
+        destination: 'https://example.com',
+        basePath: false,
+        permanent: false,
+      },
+    ];
+  },
+};
+```
+
+### Pengalihan dengan dukungan i18n
+
+Ketika menggunakan [dukungan `i18n`](/docs/app/building-your-application/routing/internationalization) dengan pengalihan, setiap `source` dan `destination` secara otomatis diawali untuk menangani `locales` yang dikonfigurasi kecuali Anda menambahkan `locale: false` ke pengalihan. Jika `locale: false` digunakan, Anda harus menambahkan awalan `source` dan `destination` dengan bahasa yang ingin dicocokkan.
+
+```js filename="next.config.js"
+module.exports = {
+  i18n: {
+    locales: ['en', 'fr', 'de'],
+    defaultLocale: 'en',
+  },
+
+  async redirects() {
+    return [
+      {
+        source: '/with-locale', // secara otomatis menangani semua bahasa
+        destination: '/another', // secara otomatis meneruskan bahasa
+        permanent: false,
+      },
+      {
+        // tidak menangani bahasa secara otomatis karena locale: false telah ditetapkan
+        source: '/nl/with-locale-manual',
+        destination: '/nl/another',
+        locale: false,
+        permanent: false,
+      },
+      {
+        // ini cocok dengan '/' karena `en` adalah defaultLocale
+        source: '/en',
+        destination: '/en/another',
+        locale: false,
+        permanent: false,
+      },
+      // mungkin untuk mencocokkan semua bahasa bahkan ketika locale: false ditetapkan
+      {
+        source: '/:locale/page',
+        destination: '/en/newpage',
+        permanent: false,
+        locale: false,
+      },
+      {
+        // ini akan diubah menjadi /(en|fr|de)/(.*) sehingga tidak akan cocok dengan tingkat atas
+        // `/` atau /fr seperti yang dilakukan /:path*
+        source: '/(.*)',
+        destination: '/another',
+        permanent: false,
+      },
+    ];
+  },
+};
+```
+
+Dalam beberapa kasus langka, Anda mungkin perlu menetapkan kode status khusus untuk Klien HTTP lama agar pengalihan berfungsi dengan benar. Dalam kasus ini, Anda dapat menggunakan properti `statusCode` alih-alih properti `permanent`, tetapi tidak keduanya. Untuk memastikan kompatibilitas dengan IE11, header `Refresh` secara otomatis ditambahkan untuk kode status 308.
+
+## Pengalihan Lainnya
+
+- Di dalam [Rute API](/docs/pages/api-reference/functions/next-server), Anda dapat menggunakan `res.redirect()`.
+- Di dalam [`getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props) dan [`getServerSideProps`](/docs/pages/building-your-application/data-fetching/get-server-side-props), Anda dapat mengalihkan halaman-halaman tertentu pada waktu permintaan.
+
+## Riwayat Versi
+
+| Versi     | Perubahan              |
+| --------- | ---------------------- |
+| `v13.3.0` | Tambahkan `missing`.   |
+| `v10.2.0` | Tambahkan `has`.       |
+| `v9.5.0`  | Tambahkan `redirects`. |

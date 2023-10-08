@@ -1,0 +1,25 @@
+---
+title: transpilePackages
+description: Secara otomatis men-transpile dan mengelompokkan dependensi dari paket-paket lokal (seperti monorepo) atau dari dependensi eksternal (`node_modules`).
+---
+
+# transpilePackages
+
+{/* Isi dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Semua konten yang dibagikan tidak boleh dibungkus dalam komponen. */}
+
+Next.js dapat secara otomatis men-transpile dan mengelompokkan dependensi dari paket-paket lokal (seperti monorepo) atau dari dependensi eksternal (`node_modules`). Ini menggantikan paket `next-transpile-modules`.
+
+```js filename="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['@acme/ui', 'lodash-es'],
+};
+
+module.exports = nextConfig;
+```
+
+## Riwayat Versi
+
+| Versi     | Perubahan                        |
+| --------- | -------------------------------- |
+| `v13.0.0` | Menambahkan `transpilePackages`. |

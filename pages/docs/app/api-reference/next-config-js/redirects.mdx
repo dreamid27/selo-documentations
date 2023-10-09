@@ -133,9 +133,7 @@ Item `has` dan `missing` dapat memiliki bidang berikut:
 
 - `type`: `String` - harus menjadi `header`, `cookie`, `host`, atau `query`.
 - `key`: `String` - kunci dari jenis yang dipilih untuk dicocokkan.
-- `value`: `String` atau `undefined
-
-`- nilai yang ingin diperiksa, jika tidak didefinisikan, semua nilai akan cocok. String seperti regex dapat digunakan untuk menangkap bagian tertentu dari nilai, misalnya jika nilai`first-(?<paramName>.\*)`digunakan untuk`first-second`, maka `second`dapat digunakan di tujuan dengan`:paramName`.
+- `value`: `String` atau `undefined` - nilai yang ingin diperiksa, jika tidak didefinisikan, semua nilai akan cocok. String seperti regex dapat digunakan untuk menangkap bagian tertentu dari nilai, misalnya jika nilai`first-(?<paramName>.\*)`digunakan untuk`first-second`, maka `second`dapat digunakan di tujuan dengan`:paramName`.
 
 ```js filename="next.config.js"
 module.exports = {

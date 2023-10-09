@@ -1,0 +1,21 @@
+---
+title: generateBuildId
+description: Konfigurasikan ID build, yang digunakan untuk mengidentifikasi build saat ini di mana aplikasi Anda disajikan.
+---
+
+# generateBuildId
+
+{/* Konten dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan sebaiknya tidak dibungkus dalam komponen. */}
+
+Next.js menggunakan ID konstan yang dihasilkan pada waktu build untuk mengidentifikasi versi aplikasi Anda yang sedang disajikan. Hal ini dapat menyebabkan masalah dalam implementasi multi-server ketika `next build` dijalankan pada setiap server. Untuk menjaga ID build yang konsisten antara build, Anda dapat menyediakan ID build sendiri.
+
+Buka `next.config.js` dan tambahkan fungsi `generateBuildId`:
+
+```js filename="next.config.js"
+module.exports = {
+  generateBuildId: async () => {
+    // Anda dapat, misalnya, mendapatkan hash commit git terbaru di sini
+    return 'my-build-id';
+  },
+};
+```

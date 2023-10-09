@@ -1,0 +1,69 @@
+---
+title: incrementalCacheHandlerPath
+description: Konfigurasi cache Next.js yang digunakan untuk menyimpan dan memvalidasi data.
+---
+
+# incrementalCacheHandlerPath
+
+Dalam Next.js, [penangan cache default](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating) menggunakan cache sistem berkas. Ini tidak memerlukan konfigurasi tambahan, namun Anda dapat menyesuaikan penangan cache dengan menggunakan bidang `incrementalCacheHandlerPath` di dalam `next.config.js`.
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    incrementalCacheHandlerPath: require.resolve('./cache-handler.js'),
+  },
+};
+```
+
+Berikut adalah contoh penangan cache kustom:
+
+```js filename="cache-handler.js"
+const cache = new Map();
+
+module.exports = class CacheHandler {
+  constructor(options) {
+    this.options = options;
+    this.cache = {};
+  }
+
+  async get(key) {
+    return cache.get(key);
+  }
+
+  async set(key, data) {
+    cache.set(key, {
+      value: data,
+      lastModified: Date.now(),
+    });
+  }
+};
+```
+
+## Referensi API
+
+Penangan cache dapat mengimplementasikan metode-metode berikut: `get`, `set`, dan `revalidateTag`.
+
+### `get()`
+
+| Parameter | Tipe     | Deskripsi                       |
+| --------- | -------- | ------------------------------- |
+| `key`     | `string` | Kunci untuk nilai yang dicache. |
+
+Mengembalikan nilai yang dicache atau `null` jika tidak ditemukan.
+
+### `set()`
+
+| Parameter | Tipe             | Deskripsi                   |
+| --------- | ---------------- | --------------------------- |
+| `key`     | `string`         | Kunci untuk menyimpan data. |
+| `data`    | Data atau `null` | Data yang akan dicache.     |
+
+Mengembalikan `Promise<void>`.
+
+### `revalidateTag()`
+
+| Parameter | Tipe     | Deskripsi                   |
+| --------- | -------- | --------------------------- |
+| `tag`     | `string` | Tag cache untuk divalidasi. |
+
+Mengembalikan `Promise<void>`. Pelajari lebih lanjut tentang [memvalidasi data](/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating) atau fungsi [`revalidateTag()`](/docs/app/api-reference/functions/revalidateTag).

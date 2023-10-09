@@ -1,0 +1,473 @@
+---
+title: headers
+description: Add custom HTTP headers to your Next.js app.
+---
+
+{/* The content of this doc is shared between the app and pages router. You can use the `<PagesOnly>Content</PagesOnly>` component to add content that is specific to the Pages Router. Any shared content should not be wrapped in a component. */}
+
+# headers
+
+Anda dapat menetapkan header HTTP kustom pada respons terhadap permintaan masuk pada suatu path tertentu.
+
+Untuk menetapkan header HTTP kustom, Anda dapat menggunakan kunci `headers` dalam `next.config.js`:
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/about',
+        headers: [
+          {
+            key: 'x-custom-header',
+            value: 'nilai header kustom saya',
+          },
+          {
+            key: 'x-header-kustom-lainnya',
+            value: 'nilai header kustom lainnya saya',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+`headers` adalah sebuah fungsi async yang mengharapkan sebuah array berisi objek dengan properti `source` dan `headers`:
+
+- `source` adalah pola path permintaan masuk.
+- `headers` adalah sebuah array objek header respons, dengan properti `key` dan `value`.
+- `basePath`: `false` atau `undefined` - jika false, basePath tidak akan disertakan saat pencocokan, dapat digunakan hanya untuk pengalihan eksternal.
+- `locale`: `false` atau `undefined` - apakah locale tidak harus disertakan saat pencocokan.
+- `has` adalah sebuah array objek [has](#pencocokan-header-cookie-dan-query) dengan properti `type`, `key`, dan `value`.
+- `missing` adalah sebuah array objek [missing](#pencocokan-header-cookie-dan-query) dengan properti `type`, `key`, dan `value`.
+
+Header dicek sebelum sistem berkas yang mencakup halaman dan file `/public`.
+
+## Perilaku Penimpaan Header
+
+Jika dua header cocok dengan path yang sama dan mengatur kunci header yang sama, maka kunci header terakhir akan menimpa yang pertama. Dengan menggunakan header di bawah ini, path `/hello` akan menghasilkan header `x-hello` menjadi `world` karena nilai header terakhir yang diatur adalah `world`.
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'there',
+          },
+        ],
+      },
+      {
+        source: '/hello',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'world',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+## Pencocokan Path
+
+Pencocokan path diizinkan, misalnya `/blog/:slug` akan cocok dengan `/blog/hello-world` (tanpa path bersarang):
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:slug',
+        headers: [
+          {
+            key: 'x-slug',
+            value: ':slug', // Parameter yang cocok dapat digunakan dalam nilai
+          },
+          {
+            key: 'x-slug-:slug', // Parameter yang cocok dapat digunakan dalam kunci
+            value: 'nilai header kustom lainnya saya',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Path Wildcard
+
+Untuk mencocokkan path wildcard, Anda dapat menggunakan `*` setelah sebuah parameter, misalnya `/blog/:slug*` akan cocok dengan `/blog/a/b/c/d/hello-world`:
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:slug*',
+        headers: [
+          {
+            key: 'x-slug',
+            value: ':slug*', // Parameter yang cocok dapat digunakan dalam nilai
+          },
+          {
+            key: 'x-slug-:slug*', // Parameter yang cocok dapat digunakan dalam kunci
+            value: 'nilai header kustom lainnya saya',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+### Pencocokan Path Regex
+
+Untuk mencocokkan path regex, Anda dapat mengapit regex dengan tanda kurung setelah sebuah parameter, misalnya `/blog/:slug(\\d{1,})` akan cocok dengan `/blog/123` tapi tidak dengan `/blog/abc`:
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/blog/:post(\\d{1,})',
+        headers: [
+          {
+            key: 'x-post',
+            value: ':post',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+Karakter-karakter berikut `(`, `)`, `{`, `}`, `:`, `*`, `+`, `?` digunakan untuk pencocokan path regex, jadi ketika digunakan dalam `source` sebagai nilai yang bukan khusus, mereka harus dihindari dengan menambahkan `\\` sebelumnya:
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      {
+        // ini akan cocok dengan permintaan `/english(default)/something`
+        source: '/english\\(default\\)/:slug',
+        headers: [
+          {
+            key: 'x-header',
+            value: 'nilai',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+## Pencocokan Header, Cookie, dan Query
+
+Untuk hanya menerapkan header ketika nilai header, cookie, atau query juga cocok dengan bidang `has` atau tidak cocok dengan bidang `missing` dapat digunakan. Baik `source` maupun semua item `has` harus cocok, dan semua item `missing` tidak boleh cocok agar header diterapkan.
+
+Item `has` dan `missing` dapat memiliki bidang berikut:
+
+- `type`: `String` - harus berupa `header`, `cookie`, `host`, atau `query`.
+- `key`: `String` - kunci dari tipe yang dipilih untuk dicocokkan.
+- `value`: `String` atau `undefined` - nilai yang akan dicek, jika tidak ditentukan, maka setiap nilai akan cocok. String berupa regex dapat digunakan untuk menangkap bagian tertentu dari nilai, misalnya jika nilai `first-(?<paramName>.*)` digunakan untuk `first-second`, maka `second` akan dapat digunakan dalam tujuan dengan `:paramName`.
+
+```js filename="next.config.js"
+module.exports = {
+  async headers() {
+    return [
+      // if the header `x-add-header` is present,
+      // the `x-another-header` header will be applied
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-add-header',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: 'hello',
+          },
+        ],
+      },
+      // if the header `x-no-header` is not present,
+      // the `x-another-header` header will be applied
+      {
+        source: '/:path*',
+        missing: [
+          {
+            type: 'header',
+            key: 'x-no-header',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: 'hello',
+          },
+        ],
+      },
+      // if the source, query, and cookie are matched,
+      // the `x-authorized` header will be applied
+      {
+        source: '/specific/:path*',
+        has: [
+          {
+            type: 'query',
+            key: 'page',
+            // the page value will not be available in the
+            // header key/values since value is provided and
+            // doesn't use a named capture group e.g. (?<page>home)
+            value: 'home',
+          },
+          {
+            type: 'cookie',
+            key: 'authorized',
+            value: 'true',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-authorized',
+            value: ':authorized',
+          },
+        ],
+      },
+      // if the header `x-authorized` is present and
+      // contains a matching value, the `x-another-header` will be applied
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-authorized',
+            value: '(?<authorized>yes|true)',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: ':authorized',
+          },
+        ],
+      },
+      // if the host is `example.com`,
+      // this header will be applied
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'example.com',
+          },
+        ],
+        headers: [
+          {
+            key: 'x-another-header',
+            value: ':authorized',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+## Header dengan Dukungan `basePath`
+
+Ketika memanfaatkan dukungan [`basePath`](/docs/app/api-reference/next-config-js/basePath) dengan header, setiap `source` secara otomatis diberi awalan `basePath` kecuali Anda menambahkan `basePath: false` ke dalam header:
+
+```js filename="next.config.js"
+module.exports = {
+  basePath: '/dokumen',
+
+  async headers() {
+    return [
+      {
+        source: '/dengan-basePath', // menjadi /dokumen/dengan-basePath
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+      },
+      {
+        source: '/tanpa-basePath', // tidak diubah karena basePath: false telah diatur
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+        basePath: false,
+      },
+    ];
+  },
+};
+```
+
+## Header dengan Dukungan `i18n`
+
+Ketika memanfaatkan dukungan [`i18n`](/docs/app/building-your-application/routing/internationalization) dengan header, setiap `source` secara otomatis diberi awalan untuk menangani `locales` yang telah dikonfigurasi kecuali Anda menambahkan `locale: false` ke dalam header. Jika `locale: false` digunakan, Anda harus memberi awalan `source` dengan suatu bahasa agar sesuai dengan benar.
+
+```js filename="next.config.js"
+module.exports = {
+  i18n: {
+    locales: ['en', 'fr', 'de'],
+    defaultLocale: 'en',
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/dengan-lokalisasi', // secara otomatis menangani semua bahasa
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+      },
+      {
+        // tidak menangani bahasa secara otomatis karena locale: false telah diatur
+        source: '/nl/dengan-lokalisasi-manual',
+        locale: false,
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+      },
+      {
+        // ini cocok dengan '/' karena `en` adalah defaultLocale
+        source: '/en',
+        locale: false,
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+      },
+      {
+        // ini akan dikonversi menjadi /(en|fr|de)/(.*) sehingga tidak cocok dengan level atas
+        // `/` atau `/fr` seperti /:path* akan
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'x-hello',
+            value: 'dunia',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+## Kendali Cache
+
+Anda tidak dapat mengatur header `Cache-Control` di `next.config.js` untuk halaman atau aset, karena header ini akan ditimpa di produksi untuk memastikan respons dan aset statis dicache dengan efektif.
+
+Pelajari lebih lanjut tentang [penggunaan cache](/docs/app/building-your-application/caching) dengan App Router.
+
+## Pilihan
+
+### X-DNS-Prefetch-Control
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control) mengontrol pra-pengambilan DNS, memungkinkan peramban untuk melakukan resolusi nama domain secara proaktif pada tautan eksternal, gambar, CSS, JavaScript, dan lainnya. Pra-pengambilan ini dilakukan di latar belakang, sehingga [DNS](https://developer.mozilla.org/docs/Glossary/DNS) lebih mungkin diresolusi pada saat item yang dirujuk diperlukan. Hal ini mengurangi laten ketika pengguna mengklik tautan.
+
+```js
+{
+  key: 'X-DNS-Prefetch-Control',
+  value: 'aktif'
+}
+```
+
+### Strict-Transport-Security
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/Strict-Transport-Security) memberi tahu peramban bahwa situs hanya dapat diakses menggunakan HTTPS, bukan HTTP. Dengan konfigurasi di bawah ini, semua subdomain yang ada dan yang akan datang akan menggunakan HTTPS selama `max-age` 2 tahun. Ini menghalangi akses ke halaman atau subdomain yang hanya dapat disajikan melalui HTTP.
+
+Jika Anda mendeploy ke [Vercel](https://vercel.com/docs/concepts/edge-network/headers#strict-transport-security?utm_source=next-site&utm_medium=docs&utm_campaign=next-website), header ini tidak diperlukan karena secara otomatis ditambahkan ke semua deployment kecuali Anda mendeklarasikan `headers` di `next.config.js` Anda.
+
+```js
+{
+  key: 'Strict-Transport-Security',
+  value: 'max-age=63072000; includeSubDomains; preload'
+}
+```
+
+### X-Frame-Options
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Frame-Options) menunjukkan apakah situs diizinkan untuk ditampilkan dalam `iframe`. Ini dapat mencegah serangan clickjacking.
+
+**Header ini telah digantikan oleh opsi `frame-ancestors` CSP**, yang memiliki dukungan lebih baik di peramban modern.
+
+```js
+{
+  key: 'X-Frame-Options',
+  value: 'SAMEORIGIN'
+}
+```
+
+### Permissions-Policy
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/Permissions-Policy) memungkinkan Anda mengontrol fitur dan API apa yang dapat digunakan di peramban. Sebelumnya dikenal sebagai `Feature-Policy`.
+
+```js
+{
+  key: 'Permissions-Policy',
+  value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()'
+}
+```
+
+### X-Content-Type-Options
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/X-Content-Type-Options) mencegah peramban mencoba menebak jenis konten jika header `Content-Type` tidak diatur secara eksplisit. Ini dapat mencegah eksploitasi XSS untuk situs web yang memungkinkan pengguna mengunggah dan berbagi file.
+
+Sebagai contoh, seorang pengguna mencoba mengunduh gambar, tetapi menganggapnya sebagai jenis `Content-Type` yang berbeda seperti eksekusi, yang bisa jahat. Header ini juga berlaku untuk mengunduh ekstensi peramban. Nilai yang valid satu-satunya untuk header ini adalah `nosniff`.
+
+````js
+{
+  key: 'X-Content-Type-Options',
+  value: 'nosniff'
+}
+``
+
+`
+
+### Referrer-Policy
+
+[Header ini](https://developer.mozilla.org/docs/Web/HTTP/Headers/Referrer-Policy) mengontrol sejauh mana informasi yang akan disertakan oleh peramban saat menavigasi dari situs web saat ini (asal) ke situs web lain.
+
+```js
+{
+  key: 'Referrer-Policy',
+  value: 'asal-ketika-lintas-asal'
+}
+````
+
+### Content-Security-Policy
+
+Pelajari lebih lanjut tentang cara menambahkan [Kebijakan Keamanan Konten](/docs/app/building-your-application/configuring/content-security-policy) ke aplikasi Anda.
+
+## Riwayat Versi
+
+| Versi     | Perubahan              |
+| --------- | ---------------------- |
+| `v13.3.0` | Ditambahkan `missing`. |
+| `v10.2.0` | Ditambahkan `has`.     |
+| `v9.5.0`  | Header ditambahkan.    |

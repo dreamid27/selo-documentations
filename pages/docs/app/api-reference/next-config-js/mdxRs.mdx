@@ -1,0 +1,22 @@
+---
+title: mdxRs
+description: Manfaatkan kompilator Rust baru untuk mengkompilasi berkas MDX dalam App Router.
+---
+
+# mdxRs
+
+Digunakan dengan `@next/mdx`. Kompilasikan berkas MDX menggunakan kompilator Rust baru.
+
+```js filename="next.config.js"
+const withMDX = require('@next/mdx')();
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  pageExtensions: ['ts', 'tsx', 'mdx'],
+  experimental: {
+    mdxRs: true,
+  },
+};
+
+module.exports = withMDX(nextConfig);
+```

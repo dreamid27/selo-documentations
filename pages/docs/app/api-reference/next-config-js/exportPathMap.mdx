@@ -1,0 +1,84 @@
+---
+title: exportPathMap (Tidak Digunakan Lagi)
+nav_title: exportPathMap
+description: Sesuaikan halaman-halaman yang akan diekspor sebagai berkas HTML saat menggunakan `next export`.
+---
+
+{/* Konten dokumen ini digunakan baik oleh aplikasi maupun router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan tidak seharusnya dibungkus dalam komponen. */}
+
+> Fitur ini eksklusif untuk `next export` dan saat ini **tidak digunakan lagi** demi `getStaticPaths` dengan `pages` atau `generateStaticParams` dengan `app`.
+
+<details>
+  <summary>Contoh</summary>
+  
+- [Ekspor Statis](https://github.com/vercel/next.js/tree/canary/examples/with-static-export)
+
+</details>
+
+`exportPathMap` memungkinkan Anda untuk menentukan pemetaan jalur permintaan ke tujuan halaman, yang akan digunakan saat diekspor. Jalur yang didefinisikan dalam `exportPathMap` juga akan tersedia saat menggunakan [`next dev`](/docs/app/api-reference/next-cli#development).
+
+Mari kita mulai dengan contoh, untuk membuat `exportPathMap` kustom untuk sebuah aplikasi dengan halaman-halaman berikut:
+
+- `pages/index.js`
+- `pages/about.js`
+- `pages/post.js`
+
+Buka `next.config.js` dan tambahkan konfigurasi `exportPathMap` berikut:
+
+```js filename="next.config.js"
+module.exports = {
+  exportPathMap: async function (
+    defaultPathMap,
+    { dev, dir, outDir, distDir, buildId }
+  ) {
+    return {
+      '/': { page: '/' },
+      '/about': { page: '/about' },
+      '/p/hello-nextjs': { page: '/post', query: { title: 'hello-nextjs' } },
+      '/p/learn-nextjs': { page: '/post', query: { title: 'learn-nextjs' } },
+      '/p/deploy-nextjs': { page: '/post', query: { title: 'deploy-nextjs' } },
+    };
+  },
+};
+```
+
+> **Penting untuk diketahui**: Bidang `query` dalam `exportPathMap` tidak dapat digunakan dengan [halaman yang secara otomatis dioptimasi secara statis](/docs/pages/building-your-application/rendering/automatic-static-optimization) atau [halaman `getStaticProps`](/docs/pages/building-your-application/data-fetching/get-static-props) karena mereka di-render menjadi berkas HTML saat waktu pembuatan dan informasi query tambahan tidak dapat diberikan saat `next export`.
+
+Kemudian halaman-halaman tersebut akan diekspor sebagai berkas HTML, misalnya, `/about` akan menjadi `/about.html`.
+
+`exportPathMap` adalah sebuah fungsi `async` yang menerima 2 argumen: yang pertama adalah `defaultPathMap`, yang merupakan peta default yang digunakan oleh Next.js. Argumen kedua adalah sebuah objek dengan:
+
+- `dev` - `true` saat `exportPathMap` dipanggil dalam pengembangan. `false` saat menjalankan `next export`. Dalam pengembangan, `exportPathMap` digunakan untuk mendefinisikan rute-rute.
+- `dir` - Jalur absolut ke direktori proyek
+- `outDir` - Jalur absolut ke direktori `out/` ([dapat dikonfigurasi dengan `-o`](#customizing-the-output-directory)). Saat `dev` adalah `true`, nilai dari `outDir` akan menjadi `null`.
+- `distDir` - Jalur absolut ke direktori `.next/` (dapat dikonfigurasi dengan konfigurasi [`distDir`](/docs/pages/api-reference/next-config-js/distDir))
+- `buildId` - Id pembuatan yang dihasilkan
+
+Objek yang dikembalikan adalah peta halaman di mana `kunci` adalah `pathname` dan `nilai` adalah sebuah objek yang menerima bidang-bidang berikut:
+
+- `page`: `String` - halaman dalam direktori `pages` yang akan dirender
+- `query`: `Object` - objek `query` yang diteruskan ke `getInitialProps` saat prerendering. Defaultnya adalah `{}`
+
+> `pathname` yang diekspor juga dapat berupa nama berkas (misalnya, `/readme.md`), tetapi Anda mungkin perlu mengatur header `Content-Type` menjadi `text/html` saat melayani kontennya jika berbeda dari `.html`.
+
+## Menambahkan garis miring belakang
+
+Anda dapat mengkonfigurasi Next.js untuk mengekspor halaman-halaman sebagai berkas `index.html` dan memerlukan garis miring belakang, `/about` menjadi `/about/index.html` dan dapat diakses melalui `/about/`. Ini adalah perilaku default sebelum Next.js 9.
+
+Untuk beralih kembali dan menambahkan garis miring belakang, buka `next.config.js` dan aktifkan konfigurasi `trailingSlash`:
+
+```js filename="next.config.js"
+module.exports = {
+  trailingSlash: true,
+};
+```
+
+## Menyesuaikan direktori keluaran
+
+[`next export`](/docs/app/building-your-application/deploying/static-exports) akan menggunakan `out` sebagai direktori keluaran default, Anda dapat menyesuaikan ini dengan menggunakan argumen `-o`, seperti berikut:
+
+```bash filename="Terminal"
+next export -o outdir
+```
+
+> **Peringatan**: Penggunaan `exportPathMap` sudah tidak direkomendasikan lagi dan ditimpa oleh `getStaticPaths` di dalam `pages`. Kami tidak merekomendasikan penggunaan keduanya bersama-sama.

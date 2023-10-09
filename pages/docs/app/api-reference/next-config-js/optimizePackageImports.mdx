@@ -1,0 +1,22 @@
+---
+title: optimizePackageImports
+description:
+---
+
+# optimizePackageImports
+
+{/* Isi dokumen ini bersifat bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Semua konten bersama tidak harus dibungkus dalam sebuah komponen. */}
+
+Beberapa pustaka dapat mengekspor ratusan atau ribuan modul, yang dapat menyebabkan masalah kinerja dalam pengembangan dan produksi.
+
+Menambahkan sebuah pustaka ke `experimental.optimizePackageImports` hanya akan memuat modul-modul yang benar-benar Anda gunakan, sambil tetap memberi Anda kenyamanan dalam menulis pernyataan impor dengan banyak ekspor bernama.
+
+```js filename="next.config.js"
+module.exports = {
+  experimental: {
+    optimizePackageImports: ['nama-pustaka'],
+  },
+};
+```
+
+Pustaka seperti `@mui/icons-material`, `@mui/material`, `date-fns`, `lodash`, `lodash-es`, `react-bootstrap`, `@headlessui/react`, `@heroicons/react`, dan `lucide-react` sudah dioptimalkan secara default.

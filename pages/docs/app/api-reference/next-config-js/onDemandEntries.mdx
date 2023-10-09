@@ -1,0 +1,23 @@
+---
+title: onDemandEntries
+description: Konfigurasikan bagaimana Next.js akan menghapus dan menyimpan halaman yang dibuat dalam pengembangan.
+---
+
+# onDemandEntries
+
+{/* Konten dari dokumen ini dibagikan antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten yang dibagikan tidak harus dibungkus dalam komponen. */}
+
+Next.js mengekspos beberapa opsi yang memberikan Anda sejumlah kendali atas bagaimana server akan menghapus atau menyimpan halaman yang telah dibangun dalam pengembangan.
+
+Untuk mengubah pengaturan bawaan, buka `next.config.js` dan tambahkan konfigurasi `onDemandEntries`:
+
+```js filename="next.config.js"
+module.exports = {
+  onDemandEntries: {
+    // periode (dalam ms) di mana server akan menyimpan halaman dalam buffer
+    maxInactiveAge: 25 * 1000,
+    // jumlah halaman yang harus tetap ada secara bersamaan tanpa dihapus
+    pagesBufferLength: 2,
+  },
+};
+```

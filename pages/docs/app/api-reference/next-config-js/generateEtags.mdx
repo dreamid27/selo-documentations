@@ -1,0 +1,18 @@
+---
+title: generateEtags
+description: Secara default, Next.js akan menghasilkan etag untuk setiap halaman. Pelajari lebih lanjut tentang cara menonaktifkan generasi etag di sini.
+---
+
+# generateEtags
+
+{/* Konten dokumen ini digunakan bersama antara aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang spesifik untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam sebuah komponen. */}
+
+Secara default, Next.js akan menghasilkan [etag](https://en.wikipedia.org/wiki/HTTP_ETag) untuk setiap halaman. Anda mungkin ingin menonaktifkan generasi etag untuk halaman HTML tergantung pada strategi cache Anda.
+
+Buka `next.config.js` dan nonaktifkan opsi `generateEtags`:
+
+```js filename="next.config.js"
+module.exports = {
+  generateEtags: false,
+};
+```

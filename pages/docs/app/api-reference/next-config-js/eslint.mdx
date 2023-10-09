@@ -1,0 +1,24 @@
+---
+title: eslint
+description: Secara bawaan, Next.js melaporkan kesalahan dan peringatan ESLint selama proses pembuatan. Pelajari cara menonaktifkan perilaku ini di sini.
+---
+
+# eslint
+
+{/* Konten dokumen ini digunakan di aplikasi dan router halaman. Anda dapat menggunakan komponen `<PagesOnly>Isi</PagesOnly>` untuk menambahkan konten yang khusus untuk Router Halaman. Konten bersama tidak boleh dibungkus dalam komponen. */}
+
+Ketika ESLint terdeteksi dalam proyek Anda, Next.js akan gagal dalam **pembuatan produksi** (`next build`) ketika terdapat kesalahan.
+
+Jika Anda ingin Next.js menghasilkan kode produksi bahkan ketika aplikasi Anda memiliki kesalahan ESLint, Anda dapat menonaktifkan langkah linting bawaan sepenuhnya. Ini tidak disarankan kecuali Anda sudah memiliki ESLint dikonfigurasi untuk berjalan dalam bagian terpisah dari alur kerja Anda (misalnya, dalam CI atau hook pra-commit).
+
+Buka `next.config.js` dan aktifkan opsi `ignoreDuringBuilds` dalam konfigurasi `eslint`:
+
+```js filename="next.config.js"
+module.exports = {
+  eslint: {
+    // Peringatan: Ini memungkinkan pembuatan produksi untuk berhasil diselesaikan bahkan jika
+    // proyek Anda memiliki kesalahan ESLint.
+    ignoreDuringBuilds: true,
+  },
+};
+```

@@ -1,11 +1,25 @@
 {
   "index": {
-    "title": "Beranda",
-    "type": "page"
+    "type": "page",
+    "title": "Seloin",
+    "display": "hidden",
+    "theme": {
+      "layout": "raw"
+    }
   },
   "docs": {
-    "title": "Dokumentasi NextJS",
-    "type": "page"
+    "title": "Dokumentasi",
+    "type": "menu",
+    "items": {
+      "nextjs": {
+        "title": "NextJS",
+        "href": "/docs"
+      },
+      "nestjs": {
+        "title": "NestJS",
+        "href": "/nest"
+      }
+    }
   },
   "contact": {
     "title": "Kontak Saya↗",

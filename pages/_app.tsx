@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
+import './globals.css';
 
 // Check that PostHog is client-side (used to handle Next.js SSR)
 if (typeof window !== 'undefined') {
